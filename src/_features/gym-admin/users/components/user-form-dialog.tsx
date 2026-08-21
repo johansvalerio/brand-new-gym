@@ -10,6 +10,7 @@ export type UserFormPayload = {
   email: string
   phone: string | null
   avatar: string | null
+  role: NonNullable<Tables<"users">["role"]>
   membership_status: NonNullable<Tables<"users">["membership_status"]>
   membership_plan: NonNullable<Tables<"users">["membership_plan"]>
 }
@@ -18,7 +19,7 @@ interface UserFormDialogProps {
   open: boolean
   user?: Tables<"users"> | null
   onClose: () => void
-  onSubmit: (dto: UserFormPayload) => void
+  onSubmit: (dto: UserFormPayload) => Promise<void>
 }
 
 type FormState = {
@@ -26,6 +27,7 @@ type FormState = {
   last_name: string
   email: string
   phone: string
+  role: UserFormPayload["role"]
   membership_status: UserFormPayload["membership_status"]
   membership_plan: UserFormPayload["membership_plan"]
   avatar: string
@@ -36,6 +38,7 @@ const emptyForm: FormState = {
   last_name: "",
   email: "",
   phone: "",
+  role: "user",
   membership_status: "active",
   membership_plan: "basic",
   avatar: "",
@@ -43,25 +46,30 @@ const emptyForm: FormState = {
 
 export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialogProps) {
   const isEdit = Boolean(user)
-  const [form, setForm] = useState<FormState>(() => {
-    if (!user) return emptyForm
-
-    return {
-      first_name: user.first_name ?? "",
-      last_name: user.last_name ?? "",
-      email: user.email ?? "",
-      phone: user.phone ?? "",
-      membership_status: user.membership_status ?? "active",
-      membership_plan: user.membership_plan ?? "basic",
-      avatar: user.avatar ?? "",
-    }
-  })
+  const [form, setForm] = useState<FormState>(emptyForm)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const firstFieldRef = useRef<HTMLInputElement>(null)
 
+  // Sync form with the user being edited whenever the dialog opens.
   useEffect(() => {
     if (!open) return
-
+    setErrors({})
+    if (user) {
+      setForm({
+        first_name: user.first_name ?? "",
+        last_name: user.last_name ?? "",
+        email: user.email ?? "",
+        phone: user.phone ?? "",
+        role: user.role ?? "user",
+        membership_status: user.membership_status ?? "active",
+        membership_plan: user.membership_plan ?? "basic",
+        avatar: user.avatar ?? "",
+      })
+    } else {
+      setForm(emptyForm)
+    }
+    // Focus the first field for keyboard users.
     const t = setTimeout(() => firstFieldRef.current?.focus(), 50)
     return () => clearTimeout(t)
   }, [open, user])
@@ -75,6 +83,8 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [open, onClose])
+
+  if (!open) return null
 
   const set = (key: keyof FormState, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -92,26 +102,30 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
     return Object.keys(next).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
 
-    onSubmit({
-      first_name: form.first_name.trim(),
-      last_name: form.last_name.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim() || null,
-      avatar: form.avatar.trim() || null,
-      membership_status: form.membership_status as UserFormPayload["membership_status"],
-      membership_plan: form.membership_plan as UserFormPayload["membership_plan"],
-    })
+    setIsSubmitting(true)
+    try {
+      await onSubmit({
+        first_name: form.first_name.trim(),
+        last_name: form.last_name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim() || null,
+        avatar: form.avatar.trim() || null,
+        role: form.role,
+        membership_status: form.membership_status as UserFormPayload["membership_status"],
+        membership_plan: form.membership_plan as UserFormPayload["membership_plan"],
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
-
-  if (!open) return null
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-24"
       role="dialog"
       aria-modal="true"
       aria-labelledby="user-form-title"
@@ -197,7 +211,20 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <Field label="Rol" htmlFor="role">
+              <select
+                id="role"
+                value={form.role}
+                onChange={(e) => set("role", e.target.value as UserFormPayload["role"])}
+                className={inputCls()}
+              >
+                <option value="user">Usuario</option>
+                <option value="coach">Coach</option>
+                <option value="admin">Admin</option>
+              </select>
+            </Field>
+
             <Field label="Estado" htmlFor="membership_status">
               <select
                 id="membership_status"
@@ -241,15 +268,17 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
             <button
               type="button"
               onClick={onClose}
-              className="cursor-pointer rounded-none border border-border px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-foreground transition-colors hover:bg-secondary"
+              disabled={isSubmitting}
+              className="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed rounded-none border border-border px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-foreground transition-colors hover:bg-secondary"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
+              disabled={isSubmitting}
+              className="flex cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed items-center gap-2 rounded-none bg-primary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
             >
-              {isEdit ? "Guardar cambios" : "Crear miembro"}
+              {isSubmitting ? "Guardando..." : (isEdit ? "Guardar cambios" : "Crear miembro")}
             </button>
           </div>
         </form>

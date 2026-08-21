@@ -163,11 +163,11 @@ export default function ConstellationBackground() {
             const twinkle =
               0.6 +
               0.4 *
-                Math.sin(
-                  timeRef.current *
-                    ((p1.twinkleSpeed + p2.twinkleSpeed) / 2 +
-                      (p1.twinkleOffset + p2.twinkleOffset) / 2),
-                );
+              Math.sin(
+                timeRef.current *
+                ((p1.twinkleSpeed + p2.twinkleSpeed) / 2 +
+                  (p1.twinkleOffset + p2.twinkleOffset) / 2),
+              );
             ctx.strokeStyle = hsla(alpha * twinkle);
             ctx.beginPath();
             ctx.moveTo(x1, y1);

@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState } from "react"
 import { X, Package } from "lucide-react"
-import type { CreateProductDto, Product } from "@/_features/gym-admin/products/types"
+import type { CreateProductDto, ProductRow } from "@/_features/gym-admin/products/hooks/useProducts"
 
 interface ProductFormDialogProps {
   open: boolean
   /** When present, the dialog is in "edit" mode and pre-fills its fields. */
-  product?: Product | null
+  product?: ProductRow | null
   onClose: () => void
-  onSubmit: (dto: CreateProductDto) => void
+  onSubmit: (dto: CreateProductDto) => Promise<void>
 }
 
 type FormState = {
@@ -32,6 +32,7 @@ export function ProductFormDialog({ open, product, onClose, onSubmit }: ProductF
   const isEdit = Boolean(product)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const firstFieldRef = useRef<HTMLInputElement>(null)
 
   // Sync form with the product being edited whenever the dialog opens.
@@ -81,21 +82,27 @@ export function ProductFormDialog({ open, product, onClose, onSubmit }: ProductF
     return Object.keys(next).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
-    onSubmit({
-      product_name: form.product_name.trim(),
-      product_description: form.product_description.trim() || null,
-      product_price: Number(form.product_price),
-      product_stock: Number(form.product_stock),
-      product_image: form.product_image.trim() || null,
-    })
+    
+    setIsSubmitting(true)
+    try {
+      await onSubmit({
+        product_name: form.product_name.trim(),
+        product_description: form.product_description.trim() || null,
+        product_price: Number(form.product_price),
+        product_stock: Number(form.product_stock),
+        product_image: form.product_image.trim() || null,
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-24"
       role="dialog"
       aria-modal="true"
       aria-labelledby="product-form-title"
@@ -195,15 +202,17 @@ export function ProductFormDialog({ open, product, onClose, onSubmit }: ProductF
             <button
               type="button"
               onClick={onClose}
-              className="cursor-pointer rounded-none border border-border px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-foreground transition-colors hover:bg-secondary"
+              disabled={isSubmitting}
+              className="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed rounded-none border border-border px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-foreground transition-colors hover:bg-secondary"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
+              disabled={isSubmitting}
+              className="flex cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed items-center gap-2 rounded-none bg-primary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
             >
-              {isEdit ? "Guardar cambios" : "Crear producto"}
+              {isSubmitting ? "Guardando..." : (isEdit ? "Guardar cambios" : "Crear producto")}
             </button>
           </div>
         </form>

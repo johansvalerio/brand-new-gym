@@ -1,9 +1,14 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { LayoutGrid, Table2, Plus, Search, PackageOpen } from "lucide-react"
-import type { CreateProductDto, Product } from "@/_features/gym-admin/products/types"
-import { mockProducts } from "@/_features/gym-admin/products/data/mock"
+import { LayoutGrid, Table2, Plus, Search, PackageOpen, Loader2 } from "lucide-react"
+import type { CreateProductDto, ProductRow } from "@/_features/gym-admin/products/hooks/useProducts"
+import {
+  useProducts,
+  useCreateProduct,
+  useUpdateProduct,
+  useDeleteProduct,
+} from "@/_features/gym-admin/products/hooks/useProducts"
 import { ProductsCards } from "./products-card"
 import { ProductsTable } from "./products-table"
 import { ProductFormDialog } from "./product-form-dialog"
@@ -13,15 +18,18 @@ import { currency } from "./utils"
 type ViewMode = "cards" | "table"
 
 export function Products() {
-  // Front-only state seeded from the imported mock.
-  const [products, setProducts] = useState<Product[]>(mockProducts)
+  const { data: products = [], isLoading } = useProducts()
+  const createProduct = useCreateProduct()
+  const updateProduct = useUpdateProduct()
+  const deleteProduct = useDeleteProduct()
+
   const [view, setView] = useState<ViewMode>("cards")
   const [query, setQuery] = useState("")
 
   // Dialog state
   const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<Product | null>(null)
-  const [deleting, setDeleting] = useState<Product | null>(null)
+  const [editing, setEditing] = useState<ProductRow | null>(null)
+  const [deleting, setDeleting] = useState<ProductRow | null>(null)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -39,39 +47,39 @@ export function Products() {
     return { count: products.length, units, value }
   }, [products])
 
-  // ─── CRUD (front-only) ───
+  // ─── CRUD ───
   const openCreate = () => {
     setEditing(null)
     setFormOpen(true)
   }
-  const openEdit = (product: Product) => {
+  const openEdit = (product: ProductRow) => {
     setEditing(product)
     setFormOpen(true)
   }
 
-  const handleSubmit = (dto: CreateProductDto) => {
-    const now = new Date().toISOString()
+  const handleSubmit = async (dto: CreateProductDto) => {
     if (editing) {
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.product_id === editing.product_id ? { ...p, ...dto, product_updated_at: now } : p,
-        ),
-      )
+      await updateProduct.mutateAsync({ id: editing.product_id, dto })
     } else {
-      const nextId = products.reduce((max, p) => Math.max(max, p.product_id), 0) + 1
-      setProducts((prev) => [
-        { product_id: nextId, ...dto, product_created_at: now, product_updated_at: now },
-        ...prev,
-      ])
+      await createProduct.mutateAsync(dto)
     }
     setFormOpen(false)
     setEditing(null)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleting) return
-    setProducts((prev) => prev.filter((p) => p.product_id !== deleting.product_id))
+    await deleteProduct.mutateAsync(deleting)
     setDeleting(null)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Cargando productos...
+      </div>
+    )
   }
 
   return (

@@ -1,20 +1,27 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { LayoutGrid, Table2, Plus, Search, User as UserIcon } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
-import { useUsers } from "@/_features/gym-admin/users/hooks/useUsers"
+import { LayoutGrid, Table2, Plus, Search, User as UserIcon, Loader2 } from "lucide-react"
+import {
+  useUsers,
+  useCreateUser,
+  useUpdateUser,
+  useDeleteUser,
+} from "@/_features/gym-admin/users/hooks/useUsers"
+import type { UserRow } from "@/_features/gym-admin/users/hooks/useUsers"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { UsersCards } from "./users-card"
 import { UsersTable } from "./users-table"
 import { UserFormDialog, type UserFormPayload } from "./user-form-dialog"
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog"
-import type { UserRow } from "@/_features/gym-admin/users/hooks/useUsers"
 
 type ViewMode = "cards" | "table"
 
 export function Users() {
-  const { users, loading, error, refetch, setUsers } = useUsers()
+  const { data: users = [], isLoading, error } = useUsers()
+  const createUser = useCreateUser()
+  const updateUser = useUpdateUser()
+  const deleteUser = useDeleteUser()
   const { isAdmin, loading: authLoading } = useAuthSession()
   const [view, setView] = useState<ViewMode>("cards")
   const [query, setQuery] = useState("")
@@ -61,88 +68,42 @@ export function Users() {
 
   const handleSubmit = async (payload: UserFormPayload) => {
     if (!canManageUsers) return
-
-    const supabase = createClient()
-
-    try {
-      if (editing) {
-        const { error } = await supabase
-          .from("users")
-          .update({
-            first_name: payload.first_name,
-            last_name: payload.last_name,
-            email: payload.email,
-            phone: payload.phone,
-            avatar: payload.avatar,
-            membership_status: payload.membership_status,
-            membership_plan: payload.membership_plan,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", editing.id)
-
-        if (error) throw error
-
-        setUsers((prev) =>
-          prev.map((user) =>
-            user.id === editing.id
-              ? {
-                ...user,
-                first_name: payload.first_name,
-                last_name: payload.last_name,
-                email: payload.email,
-                phone: payload.phone,
-                avatar: payload.avatar,
-                membership_status: payload.membership_status,
-                membership_plan: payload.membership_plan,
-                updated_at: new Date().toISOString(),
-              }
-              : user,
-          ),
-        )
-      } else {
-        const { data, error } = await supabase
-          .from("users")
-          .insert({
-            first_name: payload.first_name,
-            last_name: payload.last_name,
-            email: payload.email,
-            phone: payload.phone,
-            avatar: payload.avatar,
-            membership_status: payload.membership_status,
-            membership_plan: payload.membership_plan,
-            join_date: new Date().toISOString(),
-            last_visit: new Date().toISOString(),
-          })
-          .select()
-          .single()
-
-        if (error) throw error
-
-        setUsers((prev) => [data, ...prev])
-      }
-
-      setFormOpen(false)
-      setEditing(null)
-      await refetch()
-    } catch (err) {
-      console.error(err)
+    if (editing) {
+      await updateUser.mutateAsync({
+        id: editing.id,
+        dto: {
+          first_name: payload.first_name,
+          last_name: payload.last_name,
+          email: payload.email,
+          phone: payload.phone,
+          avatar: payload.avatar,
+          role: payload.role,
+          membership_status: payload.membership_status,
+          membership_plan: payload.membership_plan,
+        },
+      })
+    } else {
+      await createUser.mutateAsync({
+        first_name: payload.first_name,
+        last_name: payload.last_name,
+        email: payload.email,
+        phone: payload.phone,
+        avatar: payload.avatar,
+        role: payload.role,
+        membership_status: payload.membership_status,
+        membership_plan: payload.membership_plan,
+        join_date: new Date().toISOString(),
+        last_visit: new Date().toISOString(),
+      })
     }
+    setFormOpen(false)
+    setEditing(null)
   }
 
   const confirmDelete = async () => {
     if (!canManageUsers || !deleting) return
-
-    const supabase = createClient()
-    const { error } = await supabase.from("users").delete().eq("id", deleting.id)
-
-    if (error) {
-      console.error(error)
-      return
-    }
-
-    setUsers((prev) => prev.filter((user) => user.id !== deleting.id))
+    await deleteUser.mutateAsync(deleting)
     setDeleting(null)
-    await refetch()
   }
 
   if (authLoading) {
@@ -234,12 +195,13 @@ export function Users() {
 
         {error ? (
           <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            {error}
+            {error instanceof Error ? error.message : String(error)}
           </div>
         ) : null}
 
-        {loading ? (
-          <div className="rounded-lg border border-dashed border-border bg-card/50 px-6 py-10 text-center text-sm text-muted-foreground">
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-card/50 px-6 py-10 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
             Cargando miembros desde Supabase...
           </div>
         ) : filtered.length === 0 ? (
@@ -258,7 +220,6 @@ export function Users() {
       </div>
 
       <UserFormDialog
-        key={editing?.id ?? "new-user"}
         open={formOpen}
         user={editing}
         onClose={() => {

@@ -7,8 +7,152 @@
 ---
 
 **Project:** Gym Landing Page
-**Updated:** 2026-08-07
+**Updated:** 2026-08-21
 **Category:** Fitness/Gym App
+
+---
+
+## Project Architecture (Screaming Architecture)
+
+```
+src/
+├── app/                      # Next.js 16 App Router (pages, layout, error, robots, sitemap)
+│   ├── page.tsx              # Landing
+│   ├── users/  products/     # Admin pages (thin wrappers over _features)
+│   └── auth/                 # Login
+├── _features/                # Feature modules — the real structure
+│   ├── gym-landing/          # Landing sections (hero, pricing, gallery, FinalCTA...)
+│   ├── gym-admin/            # users/ and products/, each with components/ + hooks/
+│   ├── auth/                 # useAuthSession hook + login UI
+│   └── shared/               # FloatingNav, PageTransitionOverlay, usePageTransition
+├── components/
+│   ├── ui/                   # shadcn-style primitives
+│   └── providers/            # QueryProvider, AppToaster
+├── lib/supabase/             # client.ts (browser), server.ts
+└── types/database.types.ts   # GENERATED from Supabase — single source of truth for types
+```
+
+**Rules:**
+- New feature → new folder under `_features/<name>/` with `components/` and `hooks/`. `shared/` only for cross-feature code.
+- Page files in `app/` stay thin: they render the feature component.
+- Never hand-edit `database.types.ts`; regenerate it from the DB and derive row/DTO types from `Tables` / `TablesInsert` / `TablesUpdate`.
+
+---
+
+## Data Layer — Supabase
+
+**Tables:**
+
+| Table | Key columns | Notes |
+|---|---|---|
+| `public.users` | `id`, `auth_id` (→ auth.users), `email`, `role` | Profile per auth user; `role` enum `user_role`: **`admin` \| `user` \| `coach`** (NOT "member") |
+| `public.products` | `product_id`, `product_name`, `product_price`, `product_stock` | All columns prefixed `product_` |
+
+**Environment:** `.env.local` → `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Browser access via `createClient()` from `@/lib/supabase/client`.
+
+**RLS model (verified in DB — the real security layer):**
+
+| Table | Policy | Access |
+|---|---|---|
+| users | "Users can view/insert/update own profile" | `auth.uid() = auth_id`; **own-profile UPDATE cannot change `role`** (anti self-escalation, 2026-08-21) |
+| users | "Admins can view/update/insert/delete all users" | `is_admin()` |
+| users | "Coaches can view users" | `is_coach()` |
+| products | "Products viewable by everyone" | `SELECT` → `true` |
+| products | "Products editable by admin" | `ALL` → `is_admin()` |
+
+> **Golden rule:** the frontend guard (`isAdmin` hiding UI) is cosmetic. Real protection lives in these RLS policies. Any new table or privileged column must ship with its policy — not just a hidden button.
+
+---
+
+## State & Data Fetching — TanStack Query v5
+
+**Provider:** `src/components/providers/query-provider.tsx` — defaults: `staleTime: 60_000`, `refetchOnWindowFocus: false`, `retry: 1` (queries) / `retry: 0` (mutations). Devtools included.
+
+**Conventions (replicate exactly in new features):**
+
+1. **Query keys factory** per entity:
+   ```ts
+   export const userKeys = {
+     all: ["users"] as const,
+     detail: (id: string) => ["users", id] as const,
+   }
+   ```
+2. **One hooks file per feature** (`_features/<x>/hooks/use<X>.ts`) exporting `use<X>`, `useCreate<X>`, `useUpdate<X>`, `useDelete<X>`.
+3. **Mutations** run Supabase calls, throw on `error`, invalidate `keys.all` on success.
+4. **Optimistic deletes** — canonical pattern (snapshot → remove → rollback):
+   ```ts
+   onMutate: async (item) => {
+     await queryClient.cancelQueries({ queryKey: keys.all })
+     const previous = queryClient.getQueryData<Row[]>(keys.all)
+     queryClient.setQueryData<Row[]>(keys.all, (old) => old?.filter((r) => r.id !== item.id) ?? old)
+     return { previous }
+   },
+   onSuccess: (_, item) => toast.success(...)          // no invalidate here
+   onError: (error, item, ctx) => {
+     if (ctx?.previous) queryClient.setQueryData(keys.all, ctx.previous)
+     toast.error(...)
+   },
+   onSettled: () => queryClient.invalidateQueries({ queryKey: keys.all })
+   ```
+5. Delete hooks receive the **full row** (not just the id) so toasts can show the entity name.
+
+---
+
+## Feedback System — Sonner Toasts
+
+**Mount:** `<AppToaster />` (root layout) → `position="top-right"`, Lucide icons (`CheckCircle2` success / `XCircle` error). Styles live in `globals.css` under `/* Sonner toasts: tactical neon */`.
+
+**Rules:**
+- Toasts fire **in the hooks** (`onSuccess` / `onError`), never in components.
+- Success: `toast.success(\`Usuario "${name}" creado correctamente\`)` — include the entity name.
+- Error: `toast.error("No se pudo crear el usuario", { description: error.message })` — always surface Supabase's message.
+
+**Visual spec (already in CSS — keep consistent):**
+
+| Element | Spec |
+|---|---|
+| Surface | `#09090B`, border `#1A1A1A`, radius 8px, dark drop shadow |
+| Success | left 3px bar `#96D906` + green glow + green icon (border stays neutral) |
+| Error | left 3px bar `#EF4444` **+ red-tinted border** + red icon |
+| Title | Geist Sans 12px, uppercase, tracking 0.06em, white |
+| Description | Geist Mono 12px, `#A1A1AA` |
+
+---
+
+## Authentication & Route Protection
+
+- **OAuth only** (Google / Facebook). No email+password.
+- **`src/proxy.ts`** (runs on document requests): `/users` + `/products` unauthenticated → redirect `/auth/login`; `/auth/login` while authenticated → redirect `/`.
+- **`useAuthSession()`** (`_features/auth/hooks/`): session + `isAdmin` — the role is read from the **DB (`users.role`)**, never from Google's `user_metadata`.
+- **Admin menu** in FloatingNav renders `Usuarios` / `Productos` items only when `isAdmin`.
+- **Logout:** `supabase.auth.signOut()` then `navigate('/auth/login')`.
+
+---
+
+## Navigation & Page Transitions
+
+Interactive navigation (buttons, menu items) must use `usePageTransition().navigate(href)` — NOT `router.push` directly. It plays the GSAP curtain exit (`window` event `gsap-page-exit`) and pushes after `TRANSITION_DURATION_MS + 20ms`. Plain `<a>` links are only for in-page hash anchors (landing sections).
+
+---
+
+## Admin Page Pattern (standard anatomy)
+
+Every admin page (`/users`, `/products`, and future ones) follows:
+
+1. **Guard:** `const { isAdmin, loading } = useAuthSession()`; while loading → centered loader; `!isAdmin` → "Acceso restringido" card (stay on page, don't redirect).
+2. Ambient glows background + section header (chip + H2 with primary keyword).
+3. **Stats row** (3 stat cards) + search input + view toggle (cards/table) + primary "Nuevo" button.
+4. Data via feature hooks (TanStack). Loading / empty / error states each get a styled block.
+5. CRUD through two dialogs: `FormDialog` (create+edit, syncs from row on open) and `ConfirmDeleteDialog`.
+
+---
+
+## Development Environment
+
+- **Always `http://localhost:3000`** — never `127.0.0.1` (Next.js 16 blocks cross-origin dev resources from 127.0.0.1 → JS chunks blocked → no hydration → client components like FloatingNav don't render).
+- Type-check with `npx tsc --noEmit` (framework owns compilation; this is the verification command).
+- Supabase MCP is configured (pinned to this project) for SQL, migrations, and advisors.
+- Known leftover: `src/_features/gym-admin/data/mock.ts` references a deleted `../types` — delete it if unused.
 
 ---
 
@@ -387,3 +531,8 @@ Before delivering any UI code, verify:
 - [ ] Canvas/particle effects stop when offscreen (RAF cleanup in useEffect return)
 - [ ] Climax CTA has social proof row
 - [ ] All sections have independent GSAP scrollTrigger entrance
+- [ ] CRUD mutations fire Sonner toasts in the hooks (success with entity name, error with `error.message`)
+- [ ] New tables/columns: RLS policy included + `database.types.ts` regenerated + types derived (`Tables`/`TablesInsert`/`TablesUpdate`)
+- [ ] TanStack hooks follow the keys-factory + invalidate (+ optimistic delete) conventions
+- [ ] Interactive navigation uses `navigate()` (page transition), not raw `router.push`
+- [ ] `npx tsc --noEmit` passes; app verified at `http://localhost:3000`

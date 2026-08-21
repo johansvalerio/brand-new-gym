@@ -1,13 +1,13 @@
 "use client"
 
 import { Dumbbell, Pencil, Trash2 } from "lucide-react"
-import type { Product } from "@/_features/gym-admin/products/types"
+import type { ProductRow } from "@/_features/gym-admin/products/hooks/useProducts"
 import { currency, stockBadgeClasses, stockLabel, stockLevel } from "./utils"
 
 interface ProductsCardsProps {
-  products: Product[]
-  onEdit: (product: Product) => void
-  onDelete: (product: Product) => void
+  products: ProductRow[]
+  onEdit: (product: ProductRow) => void
+  onDelete: (product: ProductRow) => void
 }
 
 export function ProductsCards({ products, onEdit, onDelete }: ProductsCardsProps) {

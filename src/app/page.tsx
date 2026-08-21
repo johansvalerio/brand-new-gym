@@ -1,4 +1,3 @@
-import { FloatingNav } from "@/_features/gym-landing/components/FloatingNav";
 import { StoryText2 } from "@/_features/gym-landing/components/StoryText2";
 import { DifferencesSection } from "@/_features/gym-landing/components/DifferencesSection";
 import { EquipmentCarousel } from "@/_features/gym-landing/components/EquipmentCarousel";
@@ -98,7 +97,6 @@ export default function Home() {
       />
       <BreadcrumbSchema items={breadcrumbItems} />
       <main className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30">
-        <FloatingNav />
         <Hero2 />
         <StoryText2 />
         <DifferencesSection />

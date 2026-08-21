@@ -1,13 +1,29 @@
 "use client";
 
 import { MapPin, Clock, Navigation, Zap } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export function LocationHours() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setNow(new Date());
+    }, 60 * 1000);
+
+    const onFocus = () => setNow(new Date());
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
+
   const hours = [
     {
       days: "Lunes - Viernes",
@@ -71,6 +87,58 @@ export function LocationHours() {
     };
   }, []);
 
+  const WEEKDAYS: readonly string[] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const getCostaRicaTime = (date: Date) => {
+    // Nunca parsear strings de fecha: Chromium rechaza "2026-8-21" (sin
+    // zero-padding) con Invalid Date. El día sale directo del formatter.
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Costa_Rica",
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    });
+
+    const parts = formatter.formatToParts(date);
+    const values = Object.fromEntries(
+      parts.filter((part) => part.type !== "literal").map((part) => [part.type, part.value]),
+    ) as Record<string, string>;
+
+    return {
+      dayIndex: WEEKDAYS.indexOf(values.weekday),
+      totalMinutes: Number(values.hour) * 60 + Number(values.minute),
+    };
+  };
+
+  const currentCostaRicaTime = getCostaRicaTime(now);
+
+  const isOpenNow = (() => {
+    const { dayIndex, totalMinutes } = currentCostaRicaTime;
+
+    if (dayIndex === 0) return false;
+
+    if (dayIndex >= 1 && dayIndex <= 5) {
+      return (
+        (totalMinutes >= 5 * 60 && totalMinutes < 10 * 60) ||
+        (totalMinutes >= 15 * 60 && totalMinutes < 21 * 60)
+      );
+    }
+
+    if (dayIndex === 6) {
+      return totalMinutes >= 5 * 60 && totalMinutes < 11 * 60;
+    }
+
+    return false;
+  })();
+
+  const statusClasses = isOpenNow
+    ? "border-primary/40 bg-background/80 text-primary"
+    : "border-red-500/40 bg-red-500/5 text-red-500";
+
+  const statusDotClasses = isOpenNow ? "bg-primary" : "bg-red-500";
+  const statusLabel = isOpenNow ? "Abierto Ahora" : "Cerrado Ahora";
+
   return (
     <section
       id="location"
@@ -80,18 +148,18 @@ export function LocationHours() {
       {/* ░░ Background — a soft "beacon" spotlight, no grid ░░ */}
       <div className="absolute inset-0 pointer-events-none">
         {/* Central beacon glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] bg-primary/6 blur-[140px] rounded-full" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-175 h-125 bg-primary/6 blur-[140px] rounded-full" />
         {/* Two faint corner washes for depth */}
-        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-secondary/6 blur-[120px] rounded-full" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-accent/6 blur-[120px] rounded-full" />
+        <div className="absolute top-0 left-1/4 w-100 h-100 bg-secondary/6 blur-[120px] rounded-full" />
+        <div className="absolute bottom-0 right-1/4 w-100 h-100 bg-accent/6 blur-[120px] rounded-full" />
         {/* Top hairline divider */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-primary/30 to-transparent" />
       </div>
 
       <div className="container mx-auto max-w-7xl relative z-10">
         {/* ░░ Section header (site pattern: chip + H2 + SVG underline + desc) ░░ */}
         <div className="text-center mb-20">
-       
+
           <h2 className="font-heading text-4xl md:text-6xl font-black uppercase text-foreground mb-6 leading-[0.95]">
             Encuéntranos
             <span className="text-primary relative inline-block">
@@ -141,7 +209,7 @@ export function LocationHours() {
             />
 
             {/* Gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-t from-background via-background/50 to-transparent" />
 
             {/* Animated Route Line SVG */}
             <svg
@@ -191,13 +259,18 @@ export function LocationHours() {
             </div>
 
             {/* Open-now status pill */}
-            <div className="absolute top-5 left-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-md border border-primary/40">
+            <div
+              className={`absolute top-5 left-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-md border ${statusClasses}`}
+            >
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+                <span
+                  className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${isOpenNow ? "animate-ping bg-primary" : "animate-ping bg-red-500"
+                    }`}
+                />
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${statusDotClasses}`} />
               </span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary font-bold">
-                Abierto Ahora
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold">
+                {statusLabel}
               </span>
             </div>
 
@@ -255,14 +328,12 @@ export function LocationHours() {
                 {hours.map((item, idx) => (
                   <li
                     key={idx}
-                    className={`flex flex-col justify-between py-2 border-b border-border/20 last:border-0 ${
-                      item.isClosed ? "text-primary" : ""
-                    }`}
+                    className={`flex flex-col justify-between py-2 border-b border-border/20 last:border-0 ${item.isClosed ? "text-primary" : ""
+                      }`}
                   >
                     <span
-                      className={`font-medium ${
-                        item.isClosed ? "font-bold opacity-70" : "text-muted-foreground"
-                      }`}
+                      className={`font-medium ${item.isClosed ? "font-bold opacity-70" : "text-muted-foreground"
+                        }`}
                     >
                       {item.days}
                     </span>
@@ -270,9 +341,8 @@ export function LocationHours() {
                       {item.hours.map((hour, hIdx) => (
                         <span
                           key={hIdx}
-                          className={`${
-                            item.isClosed ? "font-bold" : "text-foreground font-medium"
-                          }`}
+                          className={`${item.isClosed ? "font-bold" : "text-foreground font-medium"
+                            }`}
                         >
                           {hour}
                         </span>
@@ -331,14 +401,12 @@ export function LocationHours() {
               {hours.map((item, idx) => (
                 <li
                   key={idx}
-                  className={`flex flex-col justify-between py-2 border-b border-border/20 last:border-0 ${
-                    item.isClosed ? "text-primary" : ""
-                  }`}
+                  className={`flex flex-col justify-between py-2 border-b border-border/20 last:border-0 ${item.isClosed ? "text-primary" : ""
+                    }`}
                 >
                   <span
-                    className={`font-medium ${
-                      item.isClosed ? "font-bold opacity-70" : "text-muted-foreground"
-                    }`}
+                    className={`font-medium ${item.isClosed ? "font-bold opacity-70" : "text-muted-foreground"
+                      }`}
                   >
                     {item.days}
                   </span>
@@ -346,9 +414,8 @@ export function LocationHours() {
                     {item.hours.map((hour, hIdx) => (
                       <span
                         key={hIdx}
-                        className={`${
-                          item.isClosed ? "font-bold" : "text-foreground font-medium"
-                        }`}
+                        className={`${item.isClosed ? "font-bold" : "text-foreground font-medium"
+                          }`}
                       >
                         {hour}
                       </span>

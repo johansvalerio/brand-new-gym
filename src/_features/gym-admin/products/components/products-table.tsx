@@ -1,8 +1,10 @@
 "use client"
 
 import { Dumbbell, Pencil, Trash2 } from "lucide-react"
-import type { Product } from "@/_features/gym-admin/products/types"
+import type { Tables } from "@/types/database.types"
 import { currency, stockBadgeClasses, stockLabel, stockLevel } from "./utils"
+
+type Product = Tables<"products">;
 
 interface ProductsTableProps {
   products: Product[]

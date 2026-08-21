@@ -1,16 +1,18 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { AlertTriangle } from "lucide-react"
-import type { Product } from "@/_features/gym-admin/products/types"
+import type { ProductRow } from "@/_features/gym-admin/products/hooks/useProducts"
 
 interface ConfirmDeleteDialogProps {
-  product: Product | null
+  product: ProductRow | null
   onCancel: () => void
-  onConfirm: () => void
+  onConfirm: () => Promise<void>
 }
 
 export function ConfirmDeleteDialog({ product, onCancel, onConfirm }: ConfirmDeleteDialogProps) {
+  const [isDeleting, setIsDeleting] = useState(false)
+
   useEffect(() => {
     if (!product) return
     const onKey = (e: KeyboardEvent) => {
@@ -24,7 +26,7 @@ export function ConfirmDeleteDialog({ product, onCancel, onConfirm }: ConfirmDel
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-24"
       role="alertdialog"
       aria-modal="true"
       aria-labelledby="confirm-delete-title"
@@ -45,15 +47,24 @@ export function ConfirmDeleteDialog({ product, onCancel, onConfirm }: ConfirmDel
         <div className="mt-6 flex items-center justify-end gap-3">
           <button
             onClick={onCancel}
-            className="cursor-pointer rounded-none border border-border px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-foreground transition-colors hover:bg-secondary"
+            disabled={isDeleting}
+            className="cursor-pointer disabled:opacity-50 border border-border px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-foreground hover:bg-secondary"
           >
             Cancelar
           </button>
           <button
-            onClick={onConfirm}
-            className="cursor-pointer rounded-none bg-destructive px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-white transition-all hover:-translate-y-0.5 hover:opacity-90"
+            disabled={isDeleting}
+            onClick={async () => {
+              setIsDeleting(true)
+              try {
+                await onConfirm()
+              } finally {
+                setIsDeleting(false)
+              }
+            }}
+            className="cursor-pointer bg-destructive px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-white disabled:opacity-50 hover:bg-destructive/90"
           >
-            Eliminar
+            {isDeleting ? "Eliminando..." : "Eliminar"}
           </button>
         </div>
       </div>
