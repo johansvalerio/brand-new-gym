@@ -2,10 +2,10 @@
 
 import { useEffect } from "react"
 import { AlertTriangle } from "lucide-react"
-import type { User as UserType } from "@/_features/gym-admin/users/types"
+import type { Tables } from "@/types/database.types"
 
 interface ConfirmDeleteDialogProps {
-  user: UserType | null
+  user: Tables<"users"> | null
   onCancel: () => void
   onConfirm: () => void
 }
@@ -21,6 +21,8 @@ export function ConfirmDeleteDialog({ user, onCancel, onConfirm }: ConfirmDelete
   }, [user, onCancel])
 
   if (!user) return null
+
+  const fullName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || "este miembro"
 
   return (
     <div
@@ -39,7 +41,7 @@ export function ConfirmDeleteDialog({ user, onCancel, onConfirm }: ConfirmDelete
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           {'¿Seguro que deseas eliminar '}
-          <span className="font-semibold text-foreground">{user.user_first_name} {user.user_last_name}</span>
+          <span className="font-semibold text-foreground">{fullName}</span>
           {'? Esta acción no se puede deshacer.'}
         </p>
         <div className="mt-6 flex items-center justify-end gap-3">

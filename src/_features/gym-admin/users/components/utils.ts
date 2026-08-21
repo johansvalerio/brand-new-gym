@@ -1,4 +1,7 @@
-import type { MembershipStatus, MembershipPlan } from "../types"
+import type { Tables } from "@/types/database.types"
+
+type MembershipStatus = NonNullable<Tables<"users">["membership_status"]>
+type MembershipPlan = NonNullable<Tables<"users">["membership_plan"]>
 
 export function statusBadgeClasses(status: MembershipStatus): string {
   const base = "rounded-full border px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-wider"
@@ -6,7 +9,7 @@ export function statusBadgeClasses(status: MembershipStatus): string {
     case "active":
       return `${base} border-primary/30 bg-primary/10 text-primary`
     case "inactive":
-      return `${base} border-muted-foreground/30 bg-muted-10 text-muted-foreground`
+      return `${base} border-muted-foreground/30 bg-muted/10 text-muted-foreground`
     case "pending":
       return `${base} border-yellow-500/30 bg-yellow-500/10 text-yellow-500`
     case "expired":
@@ -35,7 +38,6 @@ export function membershipBadgeClasses(plan: MembershipPlan): string {
   const base = "rounded-full border px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-wider"
   switch (plan) {
     case "elite":
-      return `${base} border-primary/30 bg-primary/10 text-primary`
     case "premium":
       return `${base} border-primary/30 bg-primary/10 text-primary`
     case "basic":

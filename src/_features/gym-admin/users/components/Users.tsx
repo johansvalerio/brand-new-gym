@@ -2,74 +2,170 @@
 
 import { useMemo, useState } from "react"
 import { LayoutGrid, Table2, Plus, Search, User as UserIcon } from "lucide-react"
-import type { CreateUserDto, User } from "@/_features/gym-admin/users/types"
-import { mockUsers } from "@/_features/gym-admin/users/data/mock"
+import { createClient } from "@/lib/supabase/client"
+import { useUsers } from "@/_features/gym-admin/users/hooks/useUsers"
+import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { UsersCards } from "./users-card"
 import { UsersTable } from "./users-table"
-import { UserFormDialog } from "./user-form-dialog"
+import { UserFormDialog, type UserFormPayload } from "./user-form-dialog"
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog"
+import type { UserRow } from "@/_features/gym-admin/users/hooks/useUsers"
 
 type ViewMode = "cards" | "table"
 
 export function Users() {
-  const [users, setUsers] = useState<User[]>(mockUsers)
+  const { users, loading, error, refetch, setUsers } = useUsers()
+  const { isAdmin, loading: authLoading } = useAuthSession()
   const [view, setView] = useState<ViewMode>("cards")
   const [query, setQuery] = useState("")
-
   const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<User | null>(null)
-  const [deleting, setDeleting] = useState<User | null>(null)
+  const [editing, setEditing] = useState<UserRow | null>(null)
+  const [deleting, setDeleting] = useState<UserRow | null>(null)
+
+  const canManageUsers = isAdmin
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return users
-    return users.filter(
-      (u) =>
-        u.user_first_name.toLowerCase().includes(q) ||
-        u.user_last_name.toLowerCase().includes(q) ||
-        u.user_email.toLowerCase().includes(q),
-    )
+
+    return users.filter((user) => {
+      const fullName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim().toLowerCase()
+      return (
+        fullName.includes(q) ||
+        (user.email ?? "").toLowerCase().includes(q) ||
+        (user.phone ?? "").toLowerCase().includes(q)
+      )
+    })
   }, [users, query])
 
   const stats = useMemo(() => {
-    const active = users.filter((u) => u.user_membership_status === "active").length
-    const premium = users.filter((u) => u.user_membership_plan === "premium" || u.user_membership_plan === "elite").length
+    const active = users.filter((u) => u.membership_status === "active").length
+    const premium = users.filter(
+      (u) => u.membership_plan === "premium" || u.membership_plan === "elite",
+    ).length
+
     return { total: users.length, active, premium }
   }, [users])
 
   const openCreate = () => {
+    if (!canManageUsers) return
     setEditing(null)
     setFormOpen(true)
   }
 
-  const openEdit = (user: User) => {
+  const openEdit = (user: UserRow) => {
+    if (!canManageUsers) return
     setEditing(user)
     setFormOpen(true)
   }
 
-  const handleSubmit = (dto: CreateUserDto) => {
-    const now = new Date().toISOString()
-    if (editing) {
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.user_id === editing.user_id ? { ...u, ...dto, user_updated_at: now } : u,
-        ),
-      )
-    } else {
-      const nextId = users.reduce((max, u) => Math.max(max, u.user_id), 0) + 1
-      setUsers((prev) => [
-        { user_id: nextId, ...dto, user_created_at: now, user_updated_at: now },
-        ...prev,
-      ])
+  const handleSubmit = async (payload: UserFormPayload) => {
+    if (!canManageUsers) return
+
+    const supabase = createClient()
+
+    try {
+      if (editing) {
+        const { error } = await supabase
+          .from("users")
+          .update({
+            first_name: payload.first_name,
+            last_name: payload.last_name,
+            email: payload.email,
+            phone: payload.phone,
+            avatar: payload.avatar,
+            membership_status: payload.membership_status,
+            membership_plan: payload.membership_plan,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", editing.id)
+
+        if (error) throw error
+
+        setUsers((prev) =>
+          prev.map((user) =>
+            user.id === editing.id
+              ? {
+                ...user,
+                first_name: payload.first_name,
+                last_name: payload.last_name,
+                email: payload.email,
+                phone: payload.phone,
+                avatar: payload.avatar,
+                membership_status: payload.membership_status,
+                membership_plan: payload.membership_plan,
+                updated_at: new Date().toISOString(),
+              }
+              : user,
+          ),
+        )
+      } else {
+        const { data, error } = await supabase
+          .from("users")
+          .insert({
+            first_name: payload.first_name,
+            last_name: payload.last_name,
+            email: payload.email,
+            phone: payload.phone,
+            avatar: payload.avatar,
+            membership_status: payload.membership_status,
+            membership_plan: payload.membership_plan,
+            join_date: new Date().toISOString(),
+            last_visit: new Date().toISOString(),
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+
+        setUsers((prev) => [data, ...prev])
+      }
+
+      setFormOpen(false)
+      setEditing(null)
+      await refetch()
+    } catch (err) {
+      console.error(err)
     }
-    setFormOpen(false)
-    setEditing(null)
   }
 
-  const confirmDelete = () => {
-    if (!deleting) return
-    setUsers((prev) => prev.filter((u) => u.user_id !== deleting.user_id))
+  const confirmDelete = async () => {
+    if (!canManageUsers || !deleting) return
+
+    const supabase = createClient()
+    const { error } = await supabase.from("users").delete().eq("id", deleting.id)
+
+    if (error) {
+      console.error(error)
+      return
+    }
+
+    setUsers((prev) => prev.filter((user) => user.id !== deleting.id))
     setDeleting(null)
+    await refetch()
+  }
+
+  if (authLoading) {
+    return (
+      <section className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+        Cargando acceso del administrador...
+      </section>
+    )
+  }
+
+  if (!canManageUsers) {
+    return (
+      <section className="relative min-h-screen overflow-hidden bg-background">
+        <div className="relative z-10 mx-auto flex max-w-4xl items-center justify-center px-4 py-20 text-center">
+          <div className="rounded-lg border border-border bg-card px-8 py-10 shadow-sm">
+            <p className="font-sans text-xl font-black uppercase tracking-tight text-foreground">Acceso restringido</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Solo los usuarios con rol <span className="font-semibold text-primary">admin</span> pueden gestionar miembros.
+            </p>
+          </div>
+        </div>
+      </section>
+    )
   }
 
   return (
@@ -136,7 +232,17 @@ export function Users() {
           </div>
         </div>
 
-        {filtered.length === 0 ? (
+        {error ? (
+          <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        ) : null}
+
+        {loading ? (
+          <div className="rounded-lg border border-dashed border-border bg-card/50 px-6 py-10 text-center text-sm text-muted-foreground">
+            Cargando miembros desde Supabase...
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 py-20 text-center">
             <UserIcon className="h-10 w-10 text-muted-foreground/40" />
             <p className="mt-4 font-sans text-lg font-bold text-foreground">Sin resultados</p>
@@ -145,13 +251,14 @@ export function Users() {
             </p>
           </div>
         ) : view === "cards" ? (
-          <UsersCards users={filtered} onEdit={openEdit} onDelete={setDeleting} />
+          <UsersCards users={filtered} onEdit={openEdit} onDelete={setDeleting} canManage={canManageUsers} />
         ) : (
-          <UsersTable users={filtered} onEdit={openEdit} onDelete={setDeleting} />
+          <UsersTable users={filtered} onEdit={openEdit} onDelete={setDeleting} canManage={canManageUsers} />
         )}
       </div>
 
       <UserFormDialog
+        key={editing?.id ?? "new-user"}
         open={formOpen}
         user={editing}
         onClose={() => {
@@ -160,7 +267,12 @@ export function Users() {
         }}
         onSubmit={handleSubmit}
       />
-      <ConfirmDeleteDialog user={deleting} onCancel={() => setDeleting(null)} onConfirm={confirmDelete} />
+
+      <ConfirmDeleteDialog
+        user={deleting}
+        onCancel={() => setDeleting(null)}
+        onConfirm={confirmDelete}
+      />
     </section>
   )
 }
@@ -191,9 +303,8 @@ function ToggleBtn({
       aria-selected={active}
       onClick={onClick}
       title={label}
-      className={`flex cursor-pointer items-center gap-2 rounded px-3 py-1.5 font-sans text-xs font-semibold uppercase tracking-wider transition-colors ${
-        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-      }`}
+      className={`flex cursor-pointer items-center gap-2 rounded px-3 py-1.5 font-sans text-xs font-semibold uppercase tracking-wider transition-colors ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+        }`}
     >
       {children}
       <span className="hidden md:inline">{label}</span>

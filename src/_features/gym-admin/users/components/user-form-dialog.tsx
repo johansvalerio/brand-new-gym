@@ -2,60 +2,66 @@
 
 import { useEffect, useRef, useState } from "react"
 import { X, User } from "lucide-react"
-import type { CreateUserDto, User as UserType } from "@/_features/gym-admin/users/types"
+import type { Tables } from "@/types/database.types"
+
+export type UserFormPayload = {
+  first_name: string
+  last_name: string
+  email: string
+  phone: string | null
+  avatar: string | null
+  membership_status: NonNullable<Tables<"users">["membership_status"]>
+  membership_plan: NonNullable<Tables<"users">["membership_plan"]>
+}
 
 interface UserFormDialogProps {
   open: boolean
-  /** When present, the dialog is in "edit" mode and pre-fills its fields. */
-  user?: UserType | null
+  user?: Tables<"users"> | null
   onClose: () => void
-  onSubmit: (dto: CreateUserDto) => void
+  onSubmit: (dto: UserFormPayload) => void
 }
 
 type FormState = {
-  user_first_name: string
-  user_last_name: string
-  user_email: string
-  user_phone: string
-  user_membership_status: string
-  user_membership_plan: string
-  user_avatar: string
+  first_name: string
+  last_name: string
+  email: string
+  phone: string
+  membership_status: UserFormPayload["membership_status"]
+  membership_plan: UserFormPayload["membership_plan"]
+  avatar: string
 }
 
 const emptyForm: FormState = {
-  user_first_name: "",
-  user_last_name: "",
-  user_email: "",
-  user_phone: "",
-  user_membership_status: "active",
-  user_membership_plan: "basic",
-  user_avatar: "",
+  first_name: "",
+  last_name: "",
+  email: "",
+  phone: "",
+  membership_status: "active",
+  membership_plan: "basic",
+  avatar: "",
 }
 
 export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialogProps) {
   const isEdit = Boolean(user)
-  const [form, setForm] = useState<FormState>(emptyForm)
+  const [form, setForm] = useState<FormState>(() => {
+    if (!user) return emptyForm
+
+    return {
+      first_name: user.first_name ?? "",
+      last_name: user.last_name ?? "",
+      email: user.email ?? "",
+      phone: user.phone ?? "",
+      membership_status: user.membership_status ?? "active",
+      membership_plan: user.membership_plan ?? "basic",
+      avatar: user.avatar ?? "",
+    }
+  })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const firstFieldRef = useRef<HTMLInputElement>(null)
 
-  // Sync form with the user being edited whenever the dialog opens.
   useEffect(() => {
     if (!open) return
-    setErrors({})
-    if (user) {
-      setForm({
-        user_first_name: user.user_first_name,
-        user_last_name: user.user_last_name,
-        user_email: user.user_email,
-        user_phone: user.user_phone,
-        user_membership_status: user.user_membership_status,
-        user_membership_plan: user.user_membership_plan,
-        user_avatar: user.user_avatar ?? "",
-      })
-    } else {
-      setForm(emptyForm)
-    }
-    // Focus the first field for keyboard users.
+
     const t = setTimeout(() => firstFieldRef.current?.focus(), 50)
     return () => clearTimeout(t)
   }, [open, user])
@@ -70,17 +76,18 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
     return () => window.removeEventListener("keydown", onKey)
   }, [open, onClose])
 
-  if (!open) return null
-
-  const set = (key: keyof FormState, value: string) => setForm((f) => ({ ...f, [key]: value }))
+  const set = (key: keyof FormState, value: string) =>
+    setForm((prev) => ({ ...prev, [key]: value }))
 
   const validate = () => {
     const next: Record<string, string> = {}
-    if (!form.user_first_name.trim()) next.user_first_name = "El nombre es obligatorio."
-    if (!form.user_last_name.trim()) next.user_last_name = "El apellido es obligatorio."
-    if (!form.user_email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.user_email))
-      next.user_email = "Ingresa un email válido."
-    if (!form.user_phone.trim()) next.user_phone = "El teléfono es obligatorio."
+
+    if (!form.first_name.trim()) next.first_name = "El nombre es obligatorio."
+    if (!form.last_name.trim()) next.last_name = "El apellido es obligatorio."
+    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      next.email = "Ingresa un email válido."
+    }
+
     setErrors(next)
     return Object.keys(next).length === 0
   }
@@ -88,18 +95,19 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
+
     onSubmit({
-      user_first_name: form.user_first_name.trim(),
-      user_last_name: form.user_last_name.trim(),
-      user_email: form.user_email.trim(),
-      user_phone: form.user_phone.trim(),
-      user_membership_status: form.user_membership_status as any,
-      user_membership_plan: form.user_membership_plan as any,
-      user_join_date: new Date().toISOString(),
-      user_last_visit: new Date().toISOString(),
-      user_avatar: form.user_avatar.trim() || null,
+      first_name: form.first_name.trim(),
+      last_name: form.last_name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim() || null,
+      avatar: form.avatar.trim() || null,
+      membership_status: form.membership_status as UserFormPayload["membership_status"],
+      membership_plan: form.membership_plan as UserFormPayload["membership_plan"],
     })
   }
+
+  if (!open) return null
 
   return (
     <div
@@ -130,10 +138,11 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
                 {isEdit ? "Editar miembro" : "Nuevo miembro"}
               </h2>
               <p className="text-xs text-muted-foreground">
-                {isEdit ? `ID #${user?.user_id}` : "Agregar al gimnasio"}
+                {isEdit ? `ID #${user?.id}` : "Agregar al gimnasio"}
               </p>
             </div>
           </div>
+
           <button
             onClick={onClose}
             aria-label="Cerrar"
@@ -145,54 +154,55 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
 
         <form onSubmit={handleSubmit} className="relative flex flex-col gap-4 px-6 py-5">
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Nombre" htmlFor="user_first_name" error={errors.user_first_name}>
+            <Field label="Nombre" htmlFor="first_name" error={errors.first_name}>
               <input
                 ref={firstFieldRef}
-                id="user_first_name"
-                value={form.user_first_name}
-                onChange={(e) => set("user_first_name", e.target.value)}
+                id="first_name"
+                value={form.first_name}
+                onChange={(e) => set("first_name", e.target.value)}
                 placeholder="Carlos"
-                className={inputCls(errors.user_first_name)}
+                className={inputCls(errors.first_name)}
               />
             </Field>
-            <Field label="Apellido" htmlFor="user_last_name" error={errors.user_last_name}>
+
+            <Field label="Apellido" htmlFor="last_name" error={errors.last_name}>
               <input
-                id="user_last_name"
-                value={form.user_last_name}
-                onChange={(e) => set("user_last_name", e.target.value)}
+                id="last_name"
+                value={form.last_name}
+                onChange={(e) => set("last_name", e.target.value)}
                 placeholder="Ramírez"
-                className={inputCls(errors.user_last_name)}
+                className={inputCls(errors.last_name)}
               />
             </Field>
           </div>
 
-          <Field label="Email" htmlFor="user_email" error={errors.user_email}>
+          <Field label="Email" htmlFor="email" error={errors.email}>
             <input
-              id="user_email"
+              id="email"
               type="email"
-              value={form.user_email}
-              onChange={(e) => set("user_email", e.target.value)}
+              value={form.email}
+              onChange={(e) => set("email", e.target.value)}
               placeholder="carlos@email.com"
-              className={inputCls(errors.user_email)}
+              className={inputCls(errors.email)}
             />
           </Field>
 
-          <Field label="Teléfono" htmlFor="user_phone" error={errors.user_phone}>
+          <Field label="Teléfono" htmlFor="phone">
             <input
-              id="user_phone"
-              value={form.user_phone}
-              onChange={(e) => set("user_phone", e.target.value)}
+              id="phone"
+              value={form.phone}
+              onChange={(e) => set("phone", e.target.value)}
               placeholder="+506 8888-1111"
-              className={inputCls(errors.user_phone)}
+              className={inputCls()}
             />
           </Field>
 
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Estado" htmlFor="user_membership_status">
+            <Field label="Estado" htmlFor="membership_status">
               <select
-                id="user_membership_status"
-                value={form.user_membership_status}
-                onChange={(e) => set("user_membership_status", e.target.value)}
+                id="membership_status"
+                value={form.membership_status}
+                onChange={(e) => set("membership_status", e.target.value as UserFormPayload["membership_status"])}
                 className={inputCls()}
               >
                 <option value="active">Activo</option>
@@ -201,11 +211,12 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
                 <option value="expired">Expirado</option>
               </select>
             </Field>
-            <Field label="Plan" htmlFor="user_membership_plan">
+
+            <Field label="Plan" htmlFor="membership_plan">
               <select
-                id="user_membership_plan"
-                value={form.user_membership_plan}
-                onChange={(e) => set("user_membership_plan", e.target.value)}
+                id="membership_plan"
+                value={form.membership_plan}
+                onChange={(e) => set("membership_plan", e.target.value as UserFormPayload["membership_plan"])}
                 className={inputCls()}
               >
                 <option value="basic">Básico</option>
@@ -216,11 +227,11 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
             </Field>
           </div>
 
-          <Field label="URL de avatar (opcional)" htmlFor="user_avatar">
+          <Field label="URL de avatar (opcional)" htmlFor="avatar">
             <input
-              id="user_avatar"
-              value={form.user_avatar}
-              onChange={(e) => set("user_avatar", e.target.value)}
+              id="avatar"
+              value={form.avatar}
+              onChange={(e) => set("avatar", e.target.value)}
               placeholder="https://..."
               className={inputCls()}
             />
@@ -259,20 +270,19 @@ function Field({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="font-sans text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <label htmlFor={htmlFor} className="flex flex-col gap-2 text-sm text-foreground">
+      <span className="font-sans text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
-      </label>
+      </span>
       {children}
       {error ? <span className="text-xs text-destructive">{error}</span> : null}
-    </div>
+    </label>
   )
 }
 
 function inputCls(error?: string) {
   return [
-    "w-full rounded-md border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60",
-    "outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30",
-    error ? "border-destructive" : "border-border",
+    "w-full rounded-md border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60",
+    error ? "border-destructive focus:border-destructive" : "border-border focus:border-primary focus:ring-2 focus:ring-primary/30",
   ].join(" ")
 }
