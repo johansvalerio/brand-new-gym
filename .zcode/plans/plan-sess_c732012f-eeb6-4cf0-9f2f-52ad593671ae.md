@@ -1,35 +1,45 @@
-Agregar el servidor MCP oficial de Supabase a ZCode con tu token de acceso:
+Página de perfil `/users/profile/[id]` — accesible para el dueño del perfil (cualquier rol con sesión) y para admins (cualquier perfil), con CRUD solo para admin.
 
-## Pasos
+## Reglas de acceso (núcleo del cambio pedido)
+- Sin sesión → `proxy.ts` ya redirige a login (`/users/*` está en protectedPaths con startsWith ✓).
+- Con sesión, viendo **su propio** perfil (`profile.auth_id === session.user.id`) → ✅ siempre permitido (RLS "Users can view own profile" ya lo respalda).
+- `isAdmin` viendo **cualquier** perfil → ✅ + botones CRUD visibles.
+- Con sesión pero **sin admin** viendo perfil ajeno → tarjeta "Acceso restringido" (UI más estricta que RLS, que permite lectura a coaches — intencional).
 
-1. **Leer** `C:\Users\johan\.zcode\cli\config.json` (config de usuario — aplica a todos tus workspaces y NO se commitea a git). Verificar su contenido actual para no sobrescribir nada.
+## Archivos nuevos
 
-2. **Agregar** el servidor bajo `mcp.servers`:
+**1. `src/app/users/profile/[id]/page.tsx`** — Server Component delgada, forma Next 16:
+`{ params }: PageProps<"/users/profile/[id]">` → `const { id } = await params` → `<UserProfile id={id} />`.
 
-```json
-{
-  "mcp": {
-    "servers": {
-      "supabase": {
-        "command": "npx",
-        "args": ["-y", "@supabase/mcp-supabase@latest"],
-        "env": {
-          "SUPABASE_ACCESS_TOKEN": "sbp_e989...f3f0"
-        }
-      }
-    }
-  }
-}
-```
+**2. `src/_features/gym-admin/profile/components/user-profile.tsx`** (`"use client"`):
+- **Datos**: hook `useUser(id)` en `useUsers.ts` con `userKeys.detail(id)` (la key por fin se usa) — fetch `.eq("id", id).maybeSingle()`.
+- **Guard combinado** (sesión + perfil cargados): `allowed = isAdmin || profile?.auth_id === session?.user?.id`.
+- **Estados**: skeleton con espacio reservado (sin CLS), "Miembro no encontrado" con volver, "Acceso restringido" para no-admin ajeno, y perfil.
+- **CRUD solo admin** (reutilizando los dialogs existentes, sin duplicar nada):
+  - Botón "Editar" → abre `UserFormDialog` (mismo componente de /users) con el row cargado.
+  - Botón "Eliminar" → abre `ConfirmDeleteDialog`; al confirmar usa `useDeleteUser` (toast + optimista ya incluidos) y navega de vuelta.
+  - Tras editar, la invalidación existente (`keys.all`) refresca el detalle automáticamente.
+- **Botón "Volver"**: admin → `/users`; no-admin → `/` (evita mandarlo a una página que le muestra "Acceso restringido").
 
-   - El token va en `env` (no como argumento CLI) para que no aparezca en la lista de procesos del sistema.
-   - Si el archivo ya tiene otros servidores/ajustes, se fusiona sin tocar lo existente.
+**Diseño del perfil** (modo Operate, estética táctica MASTER):
+- Glows ambientales + hairline superior; chip "PERFIL DE MIEMBRO" + H1 nombre (keyword `text-primary`) + email mono.
+- Hero card: avatar grande (grayscale→color hover), badge de rol (ADMIN/COACH/USUARIO con color), badges estado/plan reutilizando `utils.ts`, ID interno, provider.
+- Grid Contacto · Membresía · Actividad (join_date, last_visit, verificaciones) — stack mobile / 3 cols desktop.
+- Acciones (solo isAdmin): Editar + Eliminar; no-admin solo ve su info.
+- Entrada GSAP `y:60, stagger:0.18, power3.out` con scrollTrigger, respeta `prefers-reduced-motion`.
 
-3. **Validar** que el JSON quedó bien formado.
+**3. Punto de entrada para todos — "Mi perfil" en el avatar menu** (`FloatingNav.tsx`):
+- `useAuthSession` se extiende para traer el row propio completo (hoy solo consulta `role`; pasa a `select("*")` y expone `profile`) — misma query, cero costo extra.
+- Item de menú "Mi perfil" (icono User) para cualquier usuario logueado → `navigate(\`/users/profile/${profile.id}\`)`, visible cuando el perfil cargó.
 
-4. **Reinicio**: los servidores MCP se conectan al inicio de sesión, así que necesitarás reiniciar ZCode (o reconectar el servidor desde Settings → MCP). Después dispondré de herramientas como ejecutar SQL, gestionar proyectos, migraciones, etc. directamente en tu Supabase.
+**4. Entrada admin — botón Eye** en `users-card.tsx` (junto a Editar/Eliminar, gated por `canManage`) y acción equivalente en `users-table.tsx` → navega al perfil con `usePageTransition`.
 
-## Notas
-- El paquete oficial `@supabase/mcp-supabase` tiene un modo `--read-only` si en el futuro querés que solo pueda leer; por ahora queda con acceso completo como pediste.
-- Opcional: `--project-ref` para limitarlo a un solo proyecto de Supabase en vez de toda tu cuenta.
-- El plan del fix del logout (redirigir a `/` tras `signOut` en `FloatingNav.tsx`) sigue pendiente de tu aprobación — lo podemos hacer en cuanto apruebes.
+**5. `MASTER.md`**: nota en "Admin Page Pattern" sobre la página de perfil, `useUser` + key detail, y la regla de acceso (dueño siempre, admin todo, CRUD solo admin).
+
+## Verificación
+- `npx tsc --noEmit` limpio.
+- Navegador localhost:3000: (1) admin entra desde /users con el ojo → perfil de Johans con botones CRUD → editar funciona → volver; (2) "Mi perfil" desde el menú del avatar navega al propio; (3) mobile 375px sin scroll horizontal.
+
+## Fuera de alcance
+- Refactor de layouts server (plan anterior, queda pendiente).
+- Edición de campos que el form no cubre hoy (membership_start/end, address).

@@ -10,6 +10,7 @@ import {
 } from "@/_features/gym-admin/users/hooks/useUsers"
 import type { UserRow } from "@/_features/gym-admin/users/hooks/useUsers"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
+import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
 import { UsersCards } from "./users-card"
 import { UsersTable } from "./users-table"
 import { UserFormDialog, type UserFormPayload } from "./user-form-dialog"
@@ -23,6 +24,7 @@ export function Users() {
   const updateUser = useUpdateUser()
   const deleteUser = useDeleteUser()
   const { isAdmin, loading: authLoading } = useAuthSession()
+  const { navigate } = usePageTransition()
   const [view, setView] = useState<ViewMode>("cards")
   const [query, setQuery] = useState("")
   const [formOpen, setFormOpen] = useState(false)
@@ -213,9 +215,9 @@ export function Users() {
             </p>
           </div>
         ) : view === "cards" ? (
-          <UsersCards users={filtered} onEdit={openEdit} onDelete={setDeleting} canManage={canManageUsers} />
+          <UsersCards users={filtered} onEdit={openEdit} onDelete={setDeleting} onView={(u) => navigate(`/users/profile/${u.id}`)} canManage={canManageUsers} />
         ) : (
-          <UsersTable users={filtered} onEdit={openEdit} onDelete={setDeleting} canManage={canManageUsers} />
+          <UsersTable users={filtered} onEdit={openEdit} onDelete={setDeleting} onView={(u) => navigate(`/users/profile/${u.id}`)} canManage={canManageUsers} />
         )}
       </div>
 

@@ -8,11 +8,26 @@ import type { Tables } from "@/types/database.types";
 export function useAuthSession() {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<SupabaseUser | null>(null);
-    const [role, setRole] = useState<Tables<"users">["role"] | null>(null);
+    const [profile, setProfile] = useState<Tables<"users"> | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const supabase = createClient();
+
+        const syncProfile = async (authId: string | undefined) => {
+            if (!authId) {
+                setProfile(null);
+                return;
+            }
+
+            const { data: row } = await supabase
+                .from("users")
+                .select("*")
+                .eq("auth_id", authId)
+                .maybeSingle();
+
+            setProfile(row ?? null);
+        };
 
         const syncSession = async () => {
             const {
@@ -21,18 +36,7 @@ export function useAuthSession() {
 
             setSession(currentSession);
             setUser(currentSession?.user ?? null);
-
-            if (currentSession?.user?.id) {
-                const { data: profile } = await supabase
-                    .from("users")
-                    .select("role")
-                    .eq("auth_id", currentSession.user.id)
-                    .maybeSingle();
-
-                setRole(profile?.role ?? null);
-            } else {
-                setRole(null);
-            }
+            await syncProfile(currentSession?.user?.id);
 
             setLoading(false);
         };
@@ -44,18 +48,7 @@ export function useAuthSession() {
         } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
             setSession(nextSession);
             setUser(nextSession?.user ?? null);
-
-            if (nextSession?.user?.id) {
-                const { data: profile } = await supabase
-                    .from("users")
-                    .select("role")
-                    .eq("auth_id", nextSession.user.id)
-                    .maybeSingle();
-
-                setRole(profile?.role ?? null);
-            } else {
-                setRole(null);
-            }
+            await syncProfile(nextSession?.user?.id);
 
             setLoading(false);
         });
@@ -68,8 +61,9 @@ export function useAuthSession() {
     return {
         session,
         user,
-        role,
-        isAdmin: role === "admin",
+        profile,
+        role: profile?.role ?? null,
+        isAdmin: profile?.role === "admin",
         loading,
     };
 }

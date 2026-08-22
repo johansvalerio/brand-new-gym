@@ -145,6 +145,12 @@ Every admin page (`/users`, `/products`, and future ones) follows:
 4. Data via feature hooks (TanStack). Loading / empty / error states each get a styled block.
 5. CRUD through two dialogs: `FormDialog` (create+edit, syncs from row on open) and `ConfirmDeleteDialog`.
 
+### Member Profile Page (`/users/profile/[id]`)
+
+Thin server page (`PageProps<"/users/profile/[id]">` + `await params`) rendering `_features/gym-admin/profile/components/user-profile.tsx` (client). Data via `useUser(id)` with `userKeys.detail(id)` — the `["users", id]` key invalidated automatically by `keys.all`.
+
+**Access rules:** own profile → always allowed (any role with session, RLS-backed). Admin → any profile + CRUD buttons (`UserFormDialog` + `ConfirmDeleteDialog` reused, not duplicated). Non-admin on someone else → "Acceso restringido" card. "Mi perfil" menu item in FloatingNav (needs `profile.id` from `useAuthSession`, which exposes the full own row).
+
 ---
 
 ## Development Environment

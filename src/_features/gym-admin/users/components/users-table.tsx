@@ -1,6 +1,6 @@
 "use client"
 
-import { User, Pencil, Trash2 } from "lucide-react"
+import { User, Pencil, Trash2, Eye } from "lucide-react"
 import type { Tables } from "@/types/database.types"
 import { membershipBadgeClasses, membershipLabel, statusBadgeClasses, statusLabel } from "./utils"
 
@@ -10,10 +10,11 @@ interface UsersTableProps {
   users: UserRow[]
   onEdit: (user: UserRow) => void
   onDelete: (user: UserRow) => void
+  onView: (user: UserRow) => void
   canManage?: boolean
 }
 
-export function UsersTable({ users, onEdit, onDelete, canManage = true }: UsersTableProps) {
+export function UsersTable({ users, onEdit, onDelete, onView, canManage = true }: UsersTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">
       <div className="overflow-x-auto">
@@ -94,6 +95,13 @@ export function UsersTable({ users, onEdit, onDelete, canManage = true }: UsersT
                   {canManage ? (
                     <td className="whitespace-nowrap px-4 py-3">
                       <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => onView(user)}
+                          aria-label={`Ver perfil de ${fullName}`}
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
                         <button
                           onClick={() => onEdit(user)}
                           aria-label={`Editar ${fullName}`}

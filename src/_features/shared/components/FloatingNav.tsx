@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, Settings, LogOut, Ticket, ShieldCheck } from 'lucide-react';
+import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, Settings, LogOut, ShieldCheck, UserCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { usePageTransition } from '@/_features/shared/hooks/usePageTransition';
 
@@ -31,11 +31,13 @@ type UserProfile = {
   email: string | null;
   avatar: string | null;
   isAdmin: boolean;
+  profileId: string | null;
 };
 
 function getUserProfile(
   user: { user_metadata?: Record<string, unknown>; email?: string | null } | null,
   isAdmin: boolean,
+  profileId: string | null,
 ): UserProfile | null {
   if (!user) return null;
 
@@ -57,13 +59,17 @@ function getUserProfile(
     email: user.email ?? null,
     avatar,
     isAdmin, // viene del hook → DB, no de user_metadata
+    profileId,
   };
 }
 
 export function FloatingNav() {
   const [scrolled, setScrolled] = useState(false);
-  const { user, loading, isAdmin } = useAuthSession();
-  const userProfile = useMemo(() => getUserProfile(user, isAdmin), [user, isAdmin]);
+  const { user, loading, isAdmin, profile } = useAuthSession();
+  const userProfile = useMemo(
+    () => getUserProfile(user, isAdmin, profile?.id ?? null),
+    [user, isAdmin, profile],
+  );
   const { navigate } = usePageTransition();
 
 
@@ -177,6 +183,12 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
         <DropdownMenuSeparator className="my-2" />
 
         <DropdownMenuGroup>
+          {user.profileId ? (
+            <DropdownMenuItem onClick={() => navigate(`/users/profile/${user.profileId}`)} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+              <UserCircle className="h-4 w-4 mr-1" />
+              Mi perfil
+            </DropdownMenuItem>
+          ) : null}
           {
             user.isAdmin && (
               <DropdownMenuItem onClick={() => navigate('/users')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">

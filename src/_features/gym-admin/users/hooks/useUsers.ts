@@ -36,6 +36,26 @@ export function useUsers() {
   })
 }
 
+async function fetchUser(id: string): Promise<UserRow | null> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
+export function useUser(id: string) {
+  return useQuery({
+    queryKey: userKeys.detail(id),
+    queryFn: () => fetchUser(id),
+    enabled: Boolean(id),
+  })
+}
+
 export function useCreateUser() {
   const queryClient = useQueryClient()
 

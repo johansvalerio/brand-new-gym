@@ -1,6 +1,6 @@
 "use client"
 
-import { User, Pencil, Trash2 } from "lucide-react"
+import { User, Pencil, Trash2, Eye } from "lucide-react"
 import type { Tables } from "@/types/database.types"
 import { membershipBadgeClasses, membershipLabel, statusBadgeClasses, statusLabel } from "./utils"
 
@@ -10,10 +10,11 @@ interface UsersCardsProps {
   users: UserRow[]
   onEdit: (user: UserRow) => void
   onDelete: (user: UserRow) => void
+  onView: (user: UserRow) => void
   canManage?: boolean
 }
 
-export function UsersCards({ users, onEdit, onDelete, canManage = true }: UsersCardsProps) {
+export function UsersCards({ users, onEdit, onDelete, onView, canManage = true }: UsersCardsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {users.map((user) => {
@@ -74,6 +75,13 @@ export function UsersCards({ users, onEdit, onDelete, canManage = true }: UsersC
 
                 {canManage ? (
                   <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => onView(user)}
+                      aria-label={`Ver perfil de ${fullName}`}
+                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
                     <button
                       onClick={() => onEdit(user)}
                       aria-label={`Editar ${fullName}`}
