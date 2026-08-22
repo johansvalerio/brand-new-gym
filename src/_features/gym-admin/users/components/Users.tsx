@@ -10,6 +10,7 @@ import {
 } from "@/_features/gym-admin/users/hooks/useUsers"
 import type { UserRow } from "@/_features/gym-admin/users/hooks/useUsers"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
+import { useCoaches } from "@/_features/gym-admin/users/hooks/useCoaches"
 import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
 import { UsersCards } from "./users-card"
 import { UsersTable } from "./users-table"
@@ -23,15 +24,18 @@ export function Users() {
   const createUser = useCreateUser()
   const updateUser = useUpdateUser()
   const deleteUser = useDeleteUser()
-  const { isAdmin, loading: authLoading } = useAuthSession()
+  const { isAdmin, isCoach, loading: authLoading } = useAuthSession()
+  const { data: coaches = [] } = useCoaches()
   const { navigate } = usePageTransition()
   const [view, setView] = useState<ViewMode>("cards")
   const [query, setQuery] = useState("")
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<UserRow | null>(null)
   const [deleting, setDeleting] = useState<UserRow | null>(null)
-
+  
+  const canViewUsers = isAdmin || isCoach
   const canManageUsers = isAdmin
+  const canAssignRoutine = isAdmin || isCoach
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -80,6 +84,7 @@ export function Users() {
           phone: payload.phone,
           avatar: payload.avatar,
           role: payload.role,
+          coach_id: payload.coach_id,
           membership_status: payload.membership_status,
           membership_plan: payload.membership_plan,
         },
@@ -92,6 +97,7 @@ export function Users() {
         phone: payload.phone,
         avatar: payload.avatar,
         role: payload.role,
+        coach_id: payload.coach_id,
         membership_status: payload.membership_status,
         membership_plan: payload.membership_plan,
         join_date: new Date().toISOString(),
@@ -116,14 +122,14 @@ export function Users() {
     )
   }
 
-  if (!canManageUsers) {
+  if (!canViewUsers) {
     return (
       <section className="relative min-h-screen overflow-hidden bg-background">
         <div className="relative z-10 mx-auto flex max-w-4xl items-center justify-center px-4 py-20 text-center">
           <div className="rounded-lg border border-border bg-card px-8 py-10 shadow-sm">
             <p className="font-sans text-xl font-black uppercase tracking-tight text-foreground">Acceso restringido</p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Solo los usuarios con rol <span className="font-semibold text-primary">admin</span> pueden gestionar miembros.
+              Solo los usuarios con rol <span className="font-semibold text-primary">admin o coach</span> pueden ver los miembros.
             </p>
           </div>
         </div>
@@ -215,15 +221,32 @@ export function Users() {
             </p>
           </div>
         ) : view === "cards" ? (
-          <UsersCards users={filtered} onEdit={openEdit} onDelete={setDeleting} onView={(u) => navigate(`/users/profile/${u.id}`)} canManage={canManageUsers} />
+          <UsersCards 
+            users={filtered} 
+            onEdit={openEdit} 
+            onDelete={setDeleting} 
+            onView={(u) => navigate(`/users/profile/${u.id}`)} 
+            onAssignRoutine={(u) => navigate(`/users/profile/${u.id}/routine`)}
+            canManage={canManageUsers} 
+            canAssignRoutine={canAssignRoutine}
+          />
         ) : (
-          <UsersTable users={filtered} onEdit={openEdit} onDelete={setDeleting} onView={(u) => navigate(`/users/profile/${u.id}`)} canManage={canManageUsers} />
+          <UsersTable 
+            users={filtered} 
+            onEdit={openEdit} 
+            onDelete={setDeleting} 
+            onView={(u) => navigate(`/users/profile/${u.id}`)} 
+            onAssignRoutine={(u) => navigate(`/users/profile/${u.id}/routine`)}
+            canManage={canManageUsers} 
+            canAssignRoutine={canAssignRoutine}
+          />
         )}
       </div>
 
       <UserFormDialog
         open={formOpen}
         user={editing}
+        coaches={coaches}
         onClose={() => {
           setFormOpen(false)
           setEditing(null)

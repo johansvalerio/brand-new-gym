@@ -3,11 +3,13 @@
 import { useEffect, useRef, useState } from "react"
 import { X, Package } from "lucide-react"
 import type { CreateProductDto, ProductRow } from "@/_features/gym-admin/products/hooks/useProducts"
+import type { CategoryRow } from "@/_features/gym-admin/products/hooks/useCategories"
 
 interface ProductFormDialogProps {
   open: boolean
   /** When present, the dialog is in "edit" mode and pre-fills its fields. */
   product?: ProductRow | null
+  categories: CategoryRow[]
   onClose: () => void
   onSubmit: (dto: CreateProductDto) => Promise<void>
 }
@@ -18,6 +20,7 @@ type FormState = {
   product_price: string
   product_stock: string
   product_image: string
+  category_id: string
 }
 
 const emptyForm: FormState = {
@@ -26,9 +29,10 @@ const emptyForm: FormState = {
   product_price: "",
   product_stock: "",
   product_image: "",
+  category_id: "",
 }
 
-export function ProductFormDialog({ open, product, onClose, onSubmit }: ProductFormDialogProps) {
+export function ProductFormDialog({ open, product, categories, onClose, onSubmit }: ProductFormDialogProps) {
   const isEdit = Boolean(product)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -46,6 +50,7 @@ export function ProductFormDialog({ open, product, onClose, onSubmit }: ProductF
         product_price: String(product.product_price),
         product_stock: String(product.product_stock),
         product_image: product.product_image ?? "",
+        category_id: product.category_id ?? "",
       })
     } else {
       setForm(emptyForm)
@@ -94,6 +99,7 @@ export function ProductFormDialog({ open, product, onClose, onSubmit }: ProductF
         product_price: Number(form.product_price),
         product_stock: Number(form.product_stock),
         product_image: form.product_image.trim() || null,
+        category_id: form.category_id || null,
       })
     } finally {
       setIsSubmitting(false)
@@ -102,7 +108,7 @@ export function ProductFormDialog({ open, product, onClose, onSubmit }: ProductF
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-24"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="product-form-title"
@@ -196,6 +202,22 @@ export function ProductFormDialog({ open, product, onClose, onSubmit }: ProductF
               placeholder="https://..."
               className={inputCls()}
             />
+          </Field>
+
+          <Field label="Categoría (opcional)" htmlFor="category_id">
+            <select
+              id="category_id"
+              value={form.category_id}
+              onChange={(e) => set("category_id", e.target.value)}
+              className={inputCls()}
+            >
+              <option value="">Sin categoría</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
           </Field>
 
           <div className="mt-2 flex items-center justify-end gap-3">

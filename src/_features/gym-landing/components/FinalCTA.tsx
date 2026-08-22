@@ -2,10 +2,11 @@
 
 import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Flame, Dumbbell } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { usePageTransition } from "@/_features/shared/hooks/usePageTransition";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -15,6 +16,7 @@ export function FinalCTA() {
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [mousePos, setMousePos] = useState({ x: 0.5, y: 0.5 });
+  const { navigate } = usePageTransition();
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -150,7 +152,7 @@ export function FinalCTA() {
       </div>
 
       <div className="cta-content container relative z-10 text-center max-w-5xl px-6">
-      
+
 
         <h2 className="cta-title font-heading text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black uppercase text-foreground mb-8 leading-[0.9] tracking-tighter">
           <span className="block overflow-hidden">
@@ -196,6 +198,7 @@ export function FinalCTA() {
           <Button
             ref={buttonRef}
             size="lg"
+            onClick={() => navigate('/auth/login')}
             className="relative bg-primary text-primary-foreground hover:bg-primary/95 font-heading tracking-[0.2em] uppercase text-base md:text-lg px-12 md:px-16 h-16 md:h-20 rounded-none ring-2 ring-primary ring-offset-4 ring-offset-background focus-visible:ring-primary hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 shadow-2xl shadow-primary/40"
           >
             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />

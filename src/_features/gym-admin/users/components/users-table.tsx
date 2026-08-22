@@ -1,6 +1,6 @@
 "use client"
 
-import { User, Pencil, Trash2, Eye } from "lucide-react"
+import { User, Pencil, Trash2, Eye, Dumbbell } from "lucide-react"
 import type { Tables } from "@/types/database.types"
 import { membershipBadgeClasses, membershipLabel, statusBadgeClasses, statusLabel } from "./utils"
 
@@ -11,10 +11,12 @@ interface UsersTableProps {
   onEdit: (user: UserRow) => void
   onDelete: (user: UserRow) => void
   onView: (user: UserRow) => void
+  onAssignRoutine?: (user: UserRow) => void
   canManage?: boolean
+  canAssignRoutine?: boolean
 }
 
-export function UsersTable({ users, onEdit, onDelete, onView, canManage = true }: UsersTableProps) {
+export function UsersTable({ users, onEdit, onDelete, onView, onAssignRoutine, canManage = true, canAssignRoutine = false }: UsersTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">
       <div className="overflow-x-auto">
@@ -115,6 +117,27 @@ export function UsersTable({ users, onEdit, onDelete, onView, canManage = true }
                           className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
+                        </button>
+                        {canAssignRoutine && onAssignRoutine && (
+                          <button
+                            onClick={() => onAssignRoutine(user)}
+                            aria-label={`Crear rutina del miembro ${fullName}`}
+                            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                          >
+                            <Dumbbell className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  ) : canAssignRoutine && onAssignRoutine ? (
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => onAssignRoutine(user)}
+                          aria-label={`Crear rutina del miembro ${fullName}`}
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                        >
+                          <Dumbbell className="h-4 w-4" />
                         </button>
                       </div>
                     </td>

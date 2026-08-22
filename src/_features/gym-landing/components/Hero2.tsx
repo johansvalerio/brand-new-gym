@@ -6,6 +6,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Zap, Dumbbell, HeartPulse } from 'lucide-react';
+import { usePageTransition } from '@/_features/shared/hooks/usePageTransition';
+
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -20,6 +22,7 @@ const zones = [
 export function Hero2() {
   const containerRef = useRef<HTMLElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
+  const { navigate } = usePageTransition();
 
   const { contextSafe } = useGSAP(
     () => {
@@ -84,6 +87,7 @@ export function Hero2() {
       .querySelector('#membership')
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
+
 
   return (
     <section
@@ -152,7 +156,7 @@ export function Hero2() {
           <div className="hero2-cta mt-10 flex flex-col sm:flex-row gap-4">
             <Button
               size="lg"
-              onClick={scrollToMembership}
+              onClick={() => navigate('/auth/login')}
               className="bg-primary text-primary-foreground hover:bg-primary/95 font-heading tracking-wider uppercase text-base px-9 h-14 rounded-sm ring-2 ring-primary ring-offset-2 ring-offset-background focus-visible:ring-primary hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 cursor-pointer"
             >
               <span className="flex items-center gap-3">

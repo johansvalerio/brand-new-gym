@@ -31,12 +31,14 @@ type UserProfile = {
   email: string | null;
   avatar: string | null;
   isAdmin: boolean;
+  isCoach: boolean;
   profileId: string | null;
 };
 
 function getUserProfile(
   user: { user_metadata?: Record<string, unknown>; email?: string | null } | null,
   isAdmin: boolean,
+  isCoach: boolean,
   profileId: string | null,
 ): UserProfile | null {
   if (!user) return null;
@@ -59,16 +61,17 @@ function getUserProfile(
     email: user.email ?? null,
     avatar,
     isAdmin, // viene del hook → DB, no de user_metadata
+    isCoach,
     profileId,
   };
 }
 
 export function FloatingNav() {
   const [scrolled, setScrolled] = useState(false);
-  const { user, loading, isAdmin, profile } = useAuthSession();
+  const { user, loading, isAdmin, isCoach, profile } = useAuthSession();
   const userProfile = useMemo(
-    () => getUserProfile(user, isAdmin, profile?.id ?? null),
-    [user, isAdmin, profile],
+    () => getUserProfile(user, isAdmin, isCoach, profile?.id ?? null),
+    [user, isAdmin, isCoach, profile],
   );
   const { navigate } = usePageTransition();
 
@@ -190,7 +193,7 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
             </DropdownMenuItem>
           ) : null}
           {
-            user.isAdmin && (
+            (user.isAdmin || user.isCoach) && (
               <DropdownMenuItem onClick={() => navigate('/users')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
                 <UserPlus className="h-4 w-4 mr-1" />
                 Usuarios
@@ -201,7 +204,8 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
             <Package className="h-4 w-4 mr-1" />
             Productos
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+          <DropdownMenuItem onClick={() => navigate(`/users/profile/${user.profileId}/routine`)}
+            className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
             <Flame className="h-4 w-4 mr-1" />
             Rutinas
           </DropdownMenuItem>

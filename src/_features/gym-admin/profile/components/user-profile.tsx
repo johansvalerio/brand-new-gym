@@ -7,7 +7,9 @@ import {
   ArrowLeft,
   BadgeCheck,
   CalendarDays,
+  CalendarRange,
   Clock3,
+  Dumbbell,
   Loader2,
   Mail,
   MapPin,
@@ -27,6 +29,7 @@ import {
   useUser,
   type UserRow,
 } from "@/_features/gym-admin/users/hooks/useUsers"
+import { useCoaches, coachDisplayName } from "@/_features/gym-admin/users/hooks/useCoaches"
 import {
   UserFormDialog,
   type UserFormPayload,
@@ -78,6 +81,7 @@ function formatDate(value: string | null | undefined): string {
 export function UserProfile({ id }: { id: string }) {
   const { data: profile, isLoading: dataLoading, error } = useUser(id)
   const { user: sessionUser, isAdmin, loading: authLoading } = useAuthSession()
+  const { data: coaches = [] } = useCoaches()
   const { navigate } = usePageTransition()
 
   const [formOpen, setFormOpen] = useState(false)
@@ -131,6 +135,7 @@ export function UserProfile({ id }: { id: string }) {
         phone: payload.phone,
         avatar: payload.avatar,
         role: payload.role,
+        coach_id: payload.coach_id,
         membership_status: payload.membership_status,
         membership_plan: payload.membership_plan,
       },
@@ -273,6 +278,8 @@ export function UserProfile({ id }: { id: string }) {
                 </span>
               </div>
 
+              <AssignedCoach coachId={profile.coach_id} />
+
               <dl className="grid grid-cols-1 gap-x-8 gap-y-3 font-mono text-xs sm:grid-cols-2">
                 <Meta label="ID interno" value={`#${profile.id.slice(0, 8)}`} />
                 <Meta
@@ -283,30 +290,40 @@ export function UserProfile({ id }: { id: string }) {
                 <Meta label="Última visita" value={formatDate(profile.last_visit)} />
               </dl>
 
-              {isAdmin ? (
-                <div className="mt-2 flex flex-wrap items-center gap-3">
-                  <button
-                    onClick={() => setFormOpen(true)}
-                    disabled={updateUser.isPending}
-                    className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {updateUser.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Pencil className="h-4 w-4" />
-                    )}
-                    Editar miembro
-                  </button>
-                  <button
-                    onClick={() => setDeleting(profile)}
-                    disabled={deleteUser.isPending}
-                    className="flex cursor-pointer items-center gap-2 rounded-none border border-destructive/40 px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Eliminar
-                  </button>
-                </div>
-              ) : null}
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => navigate(`/users/profile/${profile.id}/routine`)}
+                  className="flex cursor-pointer items-center gap-2 rounded-none border border-primary/40 bg-primary/10 px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary transition-all hover:-translate-y-0.5 hover:bg-primary/20"
+                >
+                  <CalendarRange className="h-4 w-4" />
+                  Ver rutina
+                </button>
+
+                {isAdmin ? (
+                  <>
+                    <button
+                      onClick={() => setFormOpen(true)}
+                      disabled={updateUser.isPending}
+                      className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {updateUser.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Pencil className="h-4 w-4" />
+                      )}
+                      Editar miembro
+                    </button>
+                    <button
+                      onClick={() => setDeleting(profile)}
+                      disabled={deleteUser.isPending}
+                      className="flex cursor-pointer items-center gap-2 rounded-none border border-destructive/40 px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Eliminar
+                    </button>
+                  </>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
@@ -336,6 +353,7 @@ export function UserProfile({ id }: { id: string }) {
       <UserFormDialog
         open={formOpen}
         user={profile}
+        coaches={coaches}
         onClose={() => setFormOpen(false)}
         onSubmit={handleUpdate}
       />
@@ -406,6 +424,80 @@ function VerificationRow({ label, ok }: { label: string; ok: boolean }) {
       ) : (
         <X className="h-4 w-4 text-muted-foreground/50" aria-label="No verificado" />
       )}
+    </div>
+  )
+}
+
+function AssignedCoach({ coachId }: { coachId: string | null }) {
+  // Reutiliza el cache de useCoaches: 0 queries extra, mismo shape.
+  const { data: coaches = [], isLoading } = useCoaches()
+  const coach = coachId ? coaches.find((c) => c.id === coachId) ?? null : null
+
+  if (!coachId) {
+    return (
+      <div className="flex items-center gap-3 rounded-md border border-dashed border-border/60 bg-secondary/30 px-4 py-3">
+        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-muted/60 text-muted-foreground">
+          <Dumbbell className="h-4 w-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            Coach asignado
+          </p>
+          <p className="text-sm text-muted-foreground">Sin asignar</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-3 rounded-md border border-border/60 bg-secondary/30 px-4 py-3">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        <p className="font-mono text-xs text-muted-foreground">Cargando coach…</p>
+      </div>
+    )
+  }
+
+  if (!coach || coach.role !== "coach") {
+    return (
+      <div className="flex items-center gap-3 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3">
+        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-destructive/15 text-destructive">
+          <ShieldAlert className="h-4 w-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-destructive">
+            Coach no válido
+          </p>
+          <p className="text-sm text-foreground">
+            El usuario asignado no tiene rol de coach.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-3 rounded-md border border-primary/30 bg-primary/5 px-4 py-3">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-primary/30 bg-secondary">
+        {coach.avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={coach.avatar}
+            alt={coachDisplayName(coach)}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <Dumbbell className="h-4 w-4 text-primary" />
+        )}
+      </span>
+      <div className="min-w-0">
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+          Coach asignado
+        </p>
+        <p className="truncate text-sm font-semibold text-foreground">
+          {coachDisplayName(coach)}
+        </p>
+      </div>
     </div>
   )
 }

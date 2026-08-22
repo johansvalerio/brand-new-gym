@@ -1,30 +1,29 @@
 "use client"
 
 import { Dumbbell, Pencil, Trash2 } from "lucide-react"
-import type { Tables } from "@/types/database.types"
+import type { ProductRow } from "@/_features/gym-admin/products/hooks/useProducts"
 import { currency, stockBadgeClasses, stockLabel, stockLevel } from "./utils"
 
-type Product = Tables<"products">;
-
 interface ProductsTableProps {
-  products: Product[]
-  onEdit: (product: Product) => void
-  onDelete: (product: Product) => void
+  products: ProductRow[]
+  onEdit: (product: ProductRow) => void
+  onDelete: (product: ProductRow) => void
+  canManage?: boolean
 }
 
-export function ProductsTable({ products, onEdit, onDelete }: ProductsTableProps) {
+export function ProductsTable({ products, onEdit, onDelete, canManage = true }: ProductsTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left">
           <thead>
             <tr className="border-b border-border bg-secondary/50">
-              {["ID", "Producto", "Precio", "Stock", "Actualizado", ""].map((h, i) => (
+              {["ID", "Producto", "Precio", "Stock", "Categoría", "Actualizado", ""].map((h, i) => (
                 <th
                   key={i}
                   className={`px-4 py-3 font-sans text-[11px] font-bold uppercase tracking-wider text-muted-foreground ${
                     i === 2 || i === 3 ? "text-right" : ""
-                  } ${i === 5 ? "text-right" : ""}`}
+                  } ${i === 6 ? "text-right" : ""}`}
                 >
                   {h}
                 </th>
@@ -76,6 +75,17 @@ export function ProductsTable({ products, onEdit, onDelete }: ProductsTableProps
                       {stockLabel(product.product_stock)}
                     </span>
                   </td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    {product.category ? (
+                      <span className="inline-block rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-primary">
+                        {product.category.name}
+                      </span>
+                    ) : (
+                      <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground/50">
+                        —
+                      </span>
+                    )}
+                  </td>
                   <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">
                     {new Date(product.product_updated_at).toLocaleDateString("es-EC", {
                       year: "numeric",
@@ -83,24 +93,26 @@ export function ProductsTable({ products, onEdit, onDelete }: ProductsTableProps
                       day: "numeric",
                     })}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <button
-                        onClick={() => onEdit(product)}
-                        aria-label={`Editar ${product.product_name}`}
-                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => onDelete(product)}
-                        aria-label={`Eliminar ${product.product_name}`}
-                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
+                  {canManage ? (
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => onEdit(product)}
+                          aria-label={`Editar ${product.product_name}`}
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => onDelete(product)}
+                          aria-label={`Eliminar ${product.product_name}`}
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  ) : null}
                 </tr>
               )
             })}

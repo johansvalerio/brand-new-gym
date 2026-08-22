@@ -28,7 +28,7 @@ export function ConfirmDeleteDialog({ user, onCancel, onConfirm }: ConfirmDelete
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-24"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
       role="alertdialog"
       aria-modal="true"
       aria-labelledby="confirm-delete-title"

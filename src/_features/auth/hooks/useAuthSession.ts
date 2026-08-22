@@ -64,6 +64,7 @@ export function useAuthSession() {
         profile,
         role: profile?.role ?? null,
         isAdmin: profile?.role === "admin",
+        isCoach: profile?.role === "coach",
         loading,
     };
 }

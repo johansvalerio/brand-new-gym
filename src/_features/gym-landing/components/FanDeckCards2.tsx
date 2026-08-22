@@ -160,7 +160,7 @@ const CarouselStacked = () => {
   };
 
   return (
-    <section id="gallery" className="relative py-28 bg-background overflow-hidden select-none">
+    <section id="zonas" className="relative py-28 bg-background overflow-hidden select-none">
       {/* Background Layer System */}
       <div className="absolute inset-0 pointer-events-none z-0">
         {/* Ambient glows */}

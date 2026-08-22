@@ -6,11 +6,12 @@ import type { Tables } from "@/types/database.types"
 
 export type UserFormPayload = {
   first_name: string
-  last_name: string
+  last_name: string | null
   email: string
   phone: string | null
   avatar: string | null
   role: NonNullable<Tables<"users">["role"]>
+  coach_id: string | null
   membership_status: NonNullable<Tables<"users">["membership_status"]>
   membership_plan: NonNullable<Tables<"users">["membership_plan"]>
 }
@@ -18,6 +19,7 @@ export type UserFormPayload = {
 interface UserFormDialogProps {
   open: boolean
   user?: Tables<"users"> | null
+  coaches?: { id: string; first_name: string | null; last_name: string | null }[]
   onClose: () => void
   onSubmit: (dto: UserFormPayload) => Promise<void>
 }
@@ -28,6 +30,7 @@ type FormState = {
   email: string
   phone: string
   role: UserFormPayload["role"]
+  coach_id: string
   membership_status: UserFormPayload["membership_status"]
   membership_plan: UserFormPayload["membership_plan"]
   avatar: string
@@ -39,12 +42,13 @@ const emptyForm: FormState = {
   email: "",
   phone: "",
   role: "user",
+  coach_id: "",
   membership_status: "active",
   membership_plan: "basic",
   avatar: "",
 }
 
-export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialogProps) {
+export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: UserFormDialogProps) {
   const isEdit = Boolean(user)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -62,6 +66,7 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
         email: user.email ?? "",
         phone: user.phone ?? "",
         role: user.role ?? "user",
+        coach_id: user.coach_id ?? "",
         membership_status: user.membership_status ?? "active",
         membership_plan: user.membership_plan ?? "basic",
         avatar: user.avatar ?? "",
@@ -93,7 +98,6 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
     const next: Record<string, string> = {}
 
     if (!form.first_name.trim()) next.first_name = "El nombre es obligatorio."
-    if (!form.last_name.trim()) next.last_name = "El apellido es obligatorio."
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       next.email = "Ingresa un email válido."
     }
@@ -110,11 +114,12 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
     try {
       await onSubmit({
         first_name: form.first_name.trim(),
-        last_name: form.last_name.trim(),
+        last_name: form.last_name.trim() || null,
         email: form.email.trim(),
         phone: form.phone.trim() || null,
         avatar: form.avatar.trim() || null,
         role: form.role,
+        coach_id: form.coach_id || null,
         membership_status: form.membership_status as UserFormPayload["membership_status"],
         membership_plan: form.membership_plan as UserFormPayload["membership_plan"],
       })
@@ -125,7 +130,7 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-24"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="user-form-title"
@@ -179,7 +184,7 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
               />
             </Field>
 
-            <Field label="Apellido" htmlFor="last_name" error={errors.last_name}>
+            <Field label="Apellido (opcional)" htmlFor="last_name" error={errors.last_name}>
               <input
                 id="last_name"
                 value={form.last_name}
@@ -253,6 +258,25 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
               </select>
             </Field>
           </div>
+
+          <Field label="Coach asignado (opcional)" htmlFor="coach_id">
+            <select
+              id="coach_id"
+              value={form.coach_id}
+              onChange={(e) => set("coach_id", e.target.value)}
+              className={inputCls()}
+            >
+              <option value="">Sin coach</option>
+              {coaches.map((coach) => {
+                const name = `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim() || "Coach"
+                return (
+                  <option key={coach.id} value={coach.id}>
+                    {name}
+                  </option>
+                )
+              })}
+            </select>
+          </Field>
 
           <Field label="URL de avatar (opcional)" htmlFor="avatar">
             <input

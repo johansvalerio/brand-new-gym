@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { LayoutGrid, Table2, Plus, Search, PackageOpen, Loader2 } from "lucide-react"
+import { LayoutGrid, Table2, Plus, Search, PackageOpen, Loader2, Filter } from "lucide-react"
 import type { CreateProductDto, ProductRow } from "@/_features/gym-admin/products/hooks/useProducts"
 import {
   useProducts,
@@ -9,6 +9,8 @@ import {
   useUpdateProduct,
   useDeleteProduct,
 } from "@/_features/gym-admin/products/hooks/useProducts"
+import { useCategories } from "@/_features/gym-admin/products/hooks/useCategories"
+import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { ProductsCards } from "./products-card"
 import { ProductsTable } from "./products-table"
 import { ProductFormDialog } from "./product-form-dialog"
@@ -19,12 +21,15 @@ type ViewMode = "cards" | "table"
 
 export function Products() {
   const { data: products = [], isLoading } = useProducts()
+  const { data: categories = [] } = useCategories()
   const createProduct = useCreateProduct()
   const updateProduct = useUpdateProduct()
   const deleteProduct = useDeleteProduct()
+  const { isAdmin, loading: authLoading } = useAuthSession()
 
   const [view, setView] = useState<ViewMode>("cards")
   const [query, setQuery] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState<string>("")
 
   // Dialog state
   const [formOpen, setFormOpen] = useState(false)
@@ -32,14 +37,23 @@ export function Products() {
   const [deleting, setDeleting] = useState<ProductRow | null>(null)
 
   const filtered = useMemo(() => {
+    let result = products
+
+    if (categoryFilter) {
+      result = result.filter((p) => p.category?.slug === categoryFilter)
+    }
+
     const q = query.trim().toLowerCase()
-    if (!q) return products
-    return products.filter(
-      (p) =>
-        p.product_name.toLowerCase().includes(q) ||
-        (p.product_description ?? "").toLowerCase().includes(q),
-    )
-  }, [products, query])
+    if (q) {
+      result = result.filter(
+        (p) =>
+          p.product_name.toLowerCase().includes(q) ||
+          (p.product_description ?? "").toLowerCase().includes(q),
+      )
+    }
+
+    return result
+  }, [products, query, categoryFilter])
 
   const stats = useMemo(() => {
     const units = products.reduce((sum, p) => sum + p.product_stock, 0)
@@ -71,6 +85,15 @@ export function Products() {
     if (!deleting) return
     await deleteProduct.mutateAsync(deleting)
     setDeleting(null)
+  }
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Cargando acceso...
+      </div>
+    )
   }
 
   if (isLoading) {
@@ -107,10 +130,14 @@ export function Products() {
         </header>
 
         {/* Stats */}
-        <div className="mb-8 grid grid-cols-3 gap-3 sm:max-w-xl">
+        <div className={`mb-8 grid gap-3 sm:max-w-xl ${isAdmin ? "grid-cols-3" : "grid-cols-1"}`}>
           <Stat label="Productos" value={String(stats.count)} />
-          <Stat label="Unidades" value={String(stats.units)} />
-          <Stat label="Valor inv." value={currency(stats.value)} />
+          {isAdmin ? (
+            <>
+              <Stat label="Unidades" value={String(stats.units)} />
+              <Stat label="Valor inv." value={currency(stats.value)} />
+            </>
+          ) : null}
         </div>
 
         {/* Toolbar */}
@@ -127,6 +154,23 @@ export function Products() {
           </div>
 
           <div className="flex items-center gap-3">
+            <div className="relative w-full sm:w-auto sm:max-w-xs">
+              <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                aria-label="Filtrar por categoría"
+                className="w-full appearance-none rounded-md border border-border bg-card py-2.5 pl-9 pr-8 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30"
+              >
+                <option value="">Todas las categorías</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.slug}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* View toggle */}
             <div
               role="tablist"
@@ -141,13 +185,15 @@ export function Products() {
               </ToggleBtn>
             </div>
 
-            <button
-              onClick={openCreate}
-              className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-4 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Nuevo</span>
-            </button>
+            {isAdmin ? (
+              <button
+                onClick={openCreate}
+                className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-4 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Nuevo</span>
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -161,9 +207,9 @@ export function Products() {
             </p>
           </div>
         ) : view === "cards" ? (
-          <ProductsCards products={filtered} onEdit={openEdit} onDelete={setDeleting} />
+          <ProductsCards products={filtered} onEdit={openEdit} onDelete={setDeleting} canManage={isAdmin} />
         ) : (
-          <ProductsTable products={filtered} onEdit={openEdit} onDelete={setDeleting} />
+          <ProductsTable products={filtered} onEdit={openEdit} onDelete={setDeleting} canManage={isAdmin} />
         )}
       </div>
 
@@ -171,6 +217,7 @@ export function Products() {
       <ProductFormDialog
         open={formOpen}
         product={editing}
+        categories={categories}
         onClose={() => {
           setFormOpen(false)
           setEditing(null)

@@ -1,6 +1,6 @@
 "use client"
 
-import { User, Pencil, Trash2, Eye } from "lucide-react"
+import { User, Pencil, Trash2, Eye, Dumbbell } from "lucide-react"
 import type { Tables } from "@/types/database.types"
 import { membershipBadgeClasses, membershipLabel, statusBadgeClasses, statusLabel } from "./utils"
 
@@ -11,10 +11,12 @@ interface UsersCardsProps {
   onEdit: (user: UserRow) => void
   onDelete: (user: UserRow) => void
   onView: (user: UserRow) => void
+  onAssignRoutine?: (user: UserRow) => void
   canManage?: boolean
+  canAssignRoutine?: boolean
 }
 
-export function UsersCards({ users, onEdit, onDelete, onView, canManage = true }: UsersCardsProps) {
+export function UsersCards({ users, onEdit, onDelete, onView, onAssignRoutine, canManage = true, canAssignRoutine = false }: UsersCardsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {users.map((user) => {
@@ -95,6 +97,25 @@ export function UsersCards({ users, onEdit, onDelete, onView, canManage = true }
                       className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
+                    </button>
+                    {canAssignRoutine && onAssignRoutine && (
+                      <button
+                        onClick={() => onAssignRoutine(user)}
+                        aria-label={`Crear rutina del miembro ${fullName}`}
+                        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                      >
+                        <Dumbbell className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                ) : canAssignRoutine && onAssignRoutine ? (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => onAssignRoutine(user)}
+                      aria-label={`Crear rutina del miembro ${fullName}`}
+                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                    >
+                      <Dumbbell className="h-4 w-4" />
                     </button>
                   </div>
                 ) : null}

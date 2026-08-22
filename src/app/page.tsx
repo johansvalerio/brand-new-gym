@@ -6,10 +6,10 @@ import { MembershipSection } from "@/_features/gym-landing/components/Membership
 import { LocationHours } from "@/_features/gym-landing/components/LocationHours";
 import { FinalCTA } from "@/_features/gym-landing/components/FinalCTA";
 import { Footer } from "@/_features/gym-landing/components/Footer";
-import FanDeckCards2 from "@/_features/gym-landing/components/FanDeckCards2";
 import { Hero2 } from "@/_features/gym-landing/components/Hero2";
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import type { Metadata } from "next";
+import { Gallery } from "@/_features/gym-landing/components/Gallery";
 
 export const metadata: Metadata = {
   title: "Inicio",
@@ -99,9 +99,9 @@ export default function Home() {
       <main className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30">
         <Hero2 />
         <StoryText2 />
-        <DifferencesSection />
         <EquipmentCarousel />
-        <FanDeckCards2 />
+        <DifferencesSection />
+        <Gallery />
         <CoachesSection />
         <MembershipSection />
         <LocationHours />

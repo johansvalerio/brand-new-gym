@@ -69,11 +69,14 @@ export function DifferencesSection() {
         const timeline = gsap.timeline({
           scrollTrigger: {
             trigger: section,
-            start: "top top",
+            // Arranca cuando el FINAL de la sección entra al viewport:
+            // la card ya está 100% visible antes de que empiece la secuencia.
+            start: "bottom bottom",
             end: "+=3000", // More scroll distance for slower transitions
             scrub: 1,
             pin: true,
             pinSpacing: true,
+            anticipatePin: 1,
           },
         });
 

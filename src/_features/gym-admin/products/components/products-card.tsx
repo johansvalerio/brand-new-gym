@@ -8,9 +8,10 @@ interface ProductsCardsProps {
   products: ProductRow[]
   onEdit: (product: ProductRow) => void
   onDelete: (product: ProductRow) => void
+  canManage?: boolean
 }
 
-export function ProductsCards({ products, onEdit, onDelete }: ProductsCardsProps) {
+export function ProductsCards({ products, onEdit, onDelete, canManage = true }: ProductsCardsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {products.map((product) => {
@@ -42,6 +43,11 @@ export function ProductsCards({ products, onEdit, onDelete }: ProductsCardsProps
               >
                 {stockLabel(product.product_stock)}
               </span>
+              {product.category ? (
+                <span className="absolute right-3 top-3 max-w-[60%] truncate rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-primary">
+                  {product.category.name}
+                </span>
+              ) : null}
             </div>
 
             {/* body */}
@@ -60,22 +66,24 @@ export function ProductsCards({ products, onEdit, onDelete }: ProductsCardsProps
                 <span className="font-sans text-2xl font-black leading-none text-primary">
                   {currency(product.product_price)}
                 </span>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => onEdit(product)}
-                    aria-label={`Editar ${product.product_name}`}
-                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => onDelete(product)}
-                    aria-label={`Eliminar ${product.product_name}`}
-                    className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
+                {canManage ? (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => onEdit(product)}
+                      aria-label={`Editar ${product.product_name}`}
+                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(product)}
+                      aria-label={`Eliminar ${product.product_name}`}
+                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : null}
               </div>
             </div>
           </article>

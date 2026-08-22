@@ -45,20 +45,33 @@ src/
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `public.users` | `id`, `auth_id` (→ auth.users), `email`, `role` | Profile per auth user; `role` enum `user_role`: **`admin` \| `user` \| `coach`** (NOT "member") |
-| `public.products` | `product_id`, `product_name`, `product_price`, `product_stock` | All columns prefixed `product_` |
+| `public.users` | `id`, `auth_id` (→ auth.users), `email`, `role`, `coach_id` | Profile per auth user; `role` enum `user_role`: **`admin` \| `user` \| `coach`** (NOT "member"); `coach_id` self-FK (one active coach, trigger enforces role='coach') |
+| `public.products` | `product_id`, `product_name`, `product_price`, `product_stock`, `category_id` | All columns prefixed `product_`; `category_id` FK → `categories.id` (nullable) |
+| `public.categories` | `id`, `slug` unique, `name` | Product taxonomy; `slug` = URL-safe identifier (queries/filters), `name` = human label (renamable). Seeded with 6 categories (proteinas, creatina, pre-entreno, vitaminas, accesorios, ropa). |
+| `public.exercises` | `name` unique, `muscle_group`, `equipment` | Exercise catalog, seeded (~20) |
+| `public.routines` | `user_id` FK, `created_by` FK (author), `goal` enum `routine_goal`, `is_active` | **Badge provenance**: `created_by === user_id` → self-made ("Tu rutina"), else coach/admin-authored ("De tu coach") |
+| `public.routine_days` | `routine_id` FK, `day_index` 1-7, `focus` | unique(routine_id, day_index) |
+| `public.routine_exercises` | `day_id` FK, `exercise_id` FK, sets, reps, rest_seconds | Ordered by `order_index` |
 
 **Environment:** `.env.local` → `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Browser access via `createClient()` from `@/lib/supabase/client`.
 
-**RLS model (verified in DB — the real security layer):**
+**DB-level guards (triggers — verified 2026-08-22):**
+- `prevent_sensitive_changes`: users can't self-change `role`/`email` (is_admin bypass). Blocks even direct SQL without admin claims.
+- `validate_coach_role`: `coach_id` must reference a row with `role='coach'`.
+- Own-profile UPDATE policy additionally pins `role` AND `coach_id` (no self-escalation).
+
+**RLS model (verified in DB — simulation matrix passed with JWT claims):**
 
 | Table | Policy | Access |
 |---|---|---|
-| users | "Users can view/insert/update own profile" | `auth.uid() = auth_id`; **own-profile UPDATE cannot change `role`** (anti self-escalation, 2026-08-21) |
+| users | "Users can view/insert/update own profile" | `auth.uid() = auth_id`; role + coach_id pinned (no self-escalation) |
 | users | "Admins can view/update/insert/delete all users" | `is_admin()` |
 | users | "Coaches can view users" | `is_coach()` |
-| products | "Products viewable by everyone" | `SELECT` → `true` |
-| products | "Products editable by admin" | `ALL` → `is_admin()` |
+| products / exercises | viewable by everyone / editable by admin | SELECT `true` / ALL `is_admin()` |
+| categories | viewable by everyone / editable by admin | SELECT `true` / ALL `is_admin()` |
+| routines | viewable by owner, admin and coach | owner (by `auth_id`) OR `is_admin()` OR `is_coach()` |
+| routines | writable by admin, coach or self | admin/coach any; user only own `user_id` |
+| routine_days / routine_exercises | inherit routine visibility/writability | subquery through `routines` → owner/admin/coach |
 
 > **Golden rule:** the frontend guard (`isAdmin` hiding UI) is cosmetic. Real protection lives in these RLS policies. Any new table or privileged column must ship with its policy — not just a hidden button.
 
@@ -123,8 +136,8 @@ src/
 
 - **OAuth only** (Google / Facebook). No email+password.
 - **`src/proxy.ts`** (runs on document requests): `/users` + `/products` unauthenticated → redirect `/auth/login`; `/auth/login` while authenticated → redirect `/`.
-- **`useAuthSession()`** (`_features/auth/hooks/`): session + `isAdmin` — the role is read from the **DB (`users.role`)**, never from Google's `user_metadata`.
-- **Admin menu** in FloatingNav renders `Usuarios` / `Productos` items only when `isAdmin`.
+- **`useAuthSession()`** (`_features/auth/hooks/`): session + `isAdmin` / `isCoach` — the role is read from the **DB (`users.role`)**, never from Google's `user_metadata`.
+- **Admin menu** in FloatingNav renders `Usuarios` (visible for Admin + Coach) and `Productos` (visible for any authenticated user) items. On `/products`, the "Unidades" and "Valor inv." stats cards, the "Nuevo" button, and the per-row Pencil/Trash actions are admin-only; "Productos" count is visible to any authed viewer. The category filter dropdown is visible to all authed users (mirrors the search bar visibility); CRUD on products stays admin-only.
 - **Logout:** `supabase.auth.signOut()` then `navigate('/auth/login')`.
 
 ---
@@ -143,13 +156,13 @@ Every admin page (`/users`, `/products`, and future ones) follows:
 2. Ambient glows background + section header (chip + H2 with primary keyword).
 3. **Stats row** (3 stat cards) + search input + view toggle (cards/table) + primary "Nuevo" button.
 4. Data via feature hooks (TanStack). Loading / empty / error states each get a styled block.
-5. CRUD through two dialogs: `FormDialog` (create+edit, syncs from row on open) and `ConfirmDeleteDialog`.
+5. CRUD through two dialogs: `FormDialog` (create+edit, syncs from row on open) and `ConfirmDeleteDialog`. All dialogs use `fixed inset-0 z-[100] flex items-center justify-center p-4` (above FloatingNav's z-90) so the panel centers naturally without `pt-24`. See [[dialog-nav-clearance-convention]].
 
 ### Member Profile Page (`/users/profile/[id]`)
 
 Thin server page (`PageProps<"/users/profile/[id]">` + `await params`) rendering `_features/gym-admin/profile/components/user-profile.tsx` (client). Data via `useUser(id)` with `userKeys.detail(id)` — the `["users", id]` key invalidated automatically by `keys.all`.
 
-**Access rules:** own profile → always allowed (any role with session, RLS-backed). Admin → any profile + CRUD buttons (`UserFormDialog` + `ConfirmDeleteDialog` reused, not duplicated). Non-admin on someone else → "Acceso restringido" card. "Mi perfil" menu item in FloatingNav (needs `profile.id` from `useAuthSession`, which exposes the full own row).
+**Access rules:** own profile → always allowed (any role with session, RLS-backed). Admin → any profile + CRUD buttons (`UserFormDialog` + `ConfirmDeleteDialog` reused, not duplicated) + Routine action (Dumbbell icon). Coach → Routine action (Dumbbell icon) only. Non-admin/coach on someone else → "Acceso restringido" card. "Mi perfil" menu item in FloatingNav (needs `profile.id` from `useAuthSession`, which exposes the full own row).
 
 ---
 
@@ -375,6 +388,15 @@ Every section header follows this exact vertical stack (centered OR left-aligned
 | **Trust line** | Below grid: centered mono text with horizontal dashes as separators |
 
 ---
+
+### Equipment Section — 3D Coverflow Carousel
+
+The equipment showcase (`EquipmentCarousel.tsx`) uses the **CoverflowCarousel** primitive (`components/ui/coverflow-carousel.tsx`, adapted from 21st.dev): a 3D rake of cards (rotateY + translateZ with distance falloff), infinite loop without DOM cloning, drag with flick inertia, keyboard arrows, dots, and per-slide caption (title + subtitle).
+
+- **Exception (user decision 2026-08-22):** this section's header has **NO chip/pill** above the H2 — the heading speaks alone. All other sections keep the chip pattern.
+- **Active card styling** comes from the `data-active` attribute painted by the engine: non-active cards `grayscale` + neutral border; active card full color + `border-primary/60` + green glow. Reuse this convention for any future coverflow instance.
+- Cards: `rounded-xl`, width via `cardWidth="clamp(200px, 26vw, 320px)"` (responsive by clamp).
+- Layered background per the global rules (2 ambient glows + hairline); entrance via GSAP ScrollTrigger (`y:40, stagger 0.15, power3.out`), respects `prefers-reduced-motion`.
 
 ### Fan Deck Cards (Equipment / Gallery Layout)
 

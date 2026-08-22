@@ -5,7 +5,9 @@ import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/database.types"
 
-export type ProductRow = Tables<"products">
+export type ProductRow = Tables<"products"> & {
+  category: { id: string; slug: string; name: string } | null
+}
 export type CreateProductDto = TablesInsert<"products">
 export type UpdateProductDto = TablesUpdate<"products">
 
@@ -18,11 +20,11 @@ async function fetchProducts(): Promise<ProductRow[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from("products")
-    .select("*")
+    .select("*, category:categories(id, slug, name)")
     .order("product_id", { ascending: false })
 
   if (error) throw error
-  return data ?? []
+  return (data ?? []) as unknown as ProductRow[]
 }
 
 export function useProducts() {
@@ -41,11 +43,11 @@ export function useCreateProduct() {
       const { data, error } = await supabase
         .from("products")
         .insert(dto)
-        .select()
+        .select("*, category:categories(id, slug, name)")
         .single()
 
       if (error) throw error
-      return data
+      return data as unknown as ProductRow
     },
     onSuccess: (product) => {
       toast.success(`Producto "${product.product_name}" creado correctamente`)
@@ -75,11 +77,11 @@ export function useUpdateProduct() {
         .from("products")
         .update({ ...dto, product_updated_at: new Date().toISOString() })
         .eq("product_id", id)
-        .select()
+        .select("*, category:categories(id, slug, name)")
         .single()
 
       if (error) throw error
-      return data
+      return data as unknown as ProductRow
     },
     onSuccess: (product) => {
       toast.success(`Producto "${product.product_name}" actualizado correctamente`)

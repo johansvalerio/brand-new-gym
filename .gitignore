@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Cline_mcp_server
+cline_mcp_settings.json
+
 # vercel
 .vercel
 
