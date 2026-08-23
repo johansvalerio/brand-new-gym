@@ -243,7 +243,7 @@ export function UserProfile({ id }: { id: string }) {
         {/* Hero card */}
         <div
           data-profile-section
-          className="group relative overflow-hidden rounded-lg border border-border bg-card p-6 sm:p-8"
+          className="group relative overflow-hidden rounded-lg border border-border bg-card p-4 sm:p-8"
         >
           <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
 

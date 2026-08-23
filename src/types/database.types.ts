@@ -183,6 +183,7 @@ export type Database = {
           goal: Database["public"]["Enums"]["routine_goal"]
           id: number
           is_active: boolean
+          is_shared: boolean
           name: string
           notes: string | null
           updated_at: string
@@ -195,6 +196,7 @@ export type Database = {
           goal?: Database["public"]["Enums"]["routine_goal"]
           id?: never
           is_active?: boolean
+          is_shared?: boolean
           name: string
           notes?: string | null
           updated_at?: string
@@ -207,6 +209,7 @@ export type Database = {
           goal?: Database["public"]["Enums"]["routine_goal"]
           id?: never
           is_active?: boolean
+          is_shared?: boolean
           name?: string
           notes?: string | null
           updated_at?: string
@@ -222,6 +225,42 @@ export type Database = {
           },
           {
             foreignKeyName: "routines_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      routine_votes: {
+        Row: {
+          created_at: string
+          id: number
+          routine_id: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          routine_id: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          routine_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routine_votes_routine_id_fkey"
+            columns: ["routine_id"]
+            isOneToOne: false
+            referencedRelation: "routines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routine_votes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"

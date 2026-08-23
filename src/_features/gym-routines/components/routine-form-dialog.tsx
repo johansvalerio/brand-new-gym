@@ -245,14 +245,14 @@ export function RoutineFormDialog({
           <button
             onClick={onClose}
             aria-label="Cerrar"
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:h-8 sm:w-8"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div role="tablist" className="flex border-b border-border bg-secondary/30 px-6">
+        <div role="tablist" className="flex border-b border-border bg-secondary/30 px-3 sm:px-6">
           <TabButton active={tab === "metadata"} onClick={() => setTab("metadata")}>
             Datos básicos
           </TabButton>
@@ -265,7 +265,7 @@ export function RoutineFormDialog({
           onSubmit={handleSubmit}
           className="relative flex min-h-0 flex-1 flex-col"
         >
-          <div className="flex-1 overflow-y-auto px-6 py-5">
+          <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
             {tab === "metadata" ? (
               <MetadataTab
                 metadata={metadata}
@@ -282,7 +282,7 @@ export function RoutineFormDialog({
             )}
           </div>
 
-          <div className="flex items-center justify-between gap-3 border-t border-border bg-secondary/30 px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-border bg-secondary/30 px-4 py-3 sm:px-6 sm:py-4">
             <button
               type="button"
               onClick={onClose}
@@ -329,7 +329,7 @@ function TabButton({
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={`relative cursor-pointer border-b-2 px-4 py-3 font-sans text-xs font-bold uppercase tracking-wider transition-colors ${
+      className={`relative flex-1 cursor-pointer border-b-2 px-2 py-2.5 text-center font-sans text-[11px] font-bold uppercase tracking-wider transition-colors sm:flex-none sm:px-4 sm:py-3 sm:text-left sm:text-xs ${
         active
           ? "border-primary text-foreground"
           : "border-transparent text-muted-foreground hover:text-foreground"
@@ -367,7 +367,7 @@ function MetadataTab({
         />
       </Field>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Objetivo" htmlFor="goal">
           <select
             id="goal"
@@ -562,9 +562,9 @@ function DayEditor({
 
   return (
     <div className="overflow-hidden rounded-md border border-border bg-secondary/30">
-      <header className="flex items-center justify-between border-b border-border/60 bg-secondary/60 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border/60 bg-secondary/60 px-3 py-2.5 sm:px-4 sm:py-3">
+        <div className="flex min-w-0 flex-1 basis-full items-center gap-2 sm:basis-auto">
+          <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
             {dayLabel(day.day_index)}
           </span>
           <input
@@ -572,19 +572,19 @@ function DayEditor({
             value={day.focus}
             onChange={(e) => onUpdate({ ...day, focus: e.target.value })}
             placeholder="Push · Pull · Pierna · etc."
-            className={`w-48 rounded-md border bg-background px-3 py-1.5 font-sans text-sm font-semibold uppercase tracking-tight text-foreground outline-none transition-colors ${
+            className={`w-full min-w-0 rounded-md border bg-background px-3 py-1.5 font-sans text-sm font-semibold uppercase tracking-tight text-foreground outline-none transition-colors sm:w-48 ${
               error
                 ? "border-destructive focus:border-destructive"
                 : "border-border focus:border-primary"
             }`}
           />
         </div>
-        <div className="flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-1">
           <button
             type="button"
             onClick={onMoveUp}
             disabled={isFirst}
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-30"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-30 sm:h-7 sm:w-7"
             aria-label="Mover arriba"
           >
             <ChevronUp className="h-3.5 w-3.5" />
@@ -593,7 +593,7 @@ function DayEditor({
             type="button"
             onClick={onMoveDown}
             disabled={isLast}
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-30"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-30 sm:h-7 sm:w-7"
             aria-label="Mover abajo"
           >
             <ChevronDown className="h-3.5 w-3.5" />
@@ -601,7 +601,7 @@ function DayEditor({
           <button
             type="button"
             onClick={onRemove}
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive hover:text-destructive sm:h-7 sm:w-7"
             aria-label="Eliminar día"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -650,11 +650,12 @@ function ExerciseEditor({
   const { data: exercises = [] } = useExerciseCatalog()
 
   return (
-    <div className="grid grid-cols-12 items-center gap-2 rounded-md border border-border/60 bg-background/40 p-2">
+    <div className="grid grid-cols-4 items-center gap-2 rounded-md border border-border/60 bg-background/40 p-2 sm:grid-cols-12">
       <select
         value={exercise.exercise_id}
         onChange={(e) => onUpdate({ exercise_id: Number(e.target.value) })}
-        className="col-span-5 rounded-md border border-border bg-background px-2 py-1.5 font-mono text-xs text-foreground outline-none focus:border-primary"
+        aria-label="Ejercicio"
+        className="col-span-4 min-w-0 rounded-md border border-border bg-background px-2 py-2 font-mono text-xs text-foreground outline-none focus:border-primary sm:col-span-5 sm:py-1.5"
       >
         <option value={0}>Selecciona ejercicio…</option>
         {exercises.map((ex) => (
@@ -664,36 +665,63 @@ function ExerciseEditor({
         ))}
       </select>
 
-      <input
-        type="number"
-        min={1}
-        value={exercise.sets}
-        onChange={(e) => onUpdate({ sets: Number(e.target.value) })}
-        placeholder="Sets"
-        className="col-span-2 rounded-md border border-border bg-background px-2 py-1.5 text-center font-sans text-xs font-bold text-primary outline-none focus:border-primary"
-      />
+      <div className="col-span-1 flex flex-col gap-1 sm:col-span-2">
+        <label
+          htmlFor={`sets-${exercise.id}`}
+          className="text-center font-mono text-[9px] uppercase tracking-wider text-muted-foreground"
+        >
+          Series
+        </label>
+        <input
+          id={`sets-${exercise.id}`}
+          type="number"
+          min={1}
+          value={exercise.sets}
+          onChange={(e) => onUpdate({ sets: Number(e.target.value) })}
+          placeholder="3"
+          className="w-full min-w-0 rounded-md border border-border bg-background px-1 py-2 text-center font-sans text-xs font-bold text-primary outline-none focus:border-primary sm:px-2 sm:py-1.5"
+        />
+      </div>
 
-      <input
-        type="text"
-        value={exercise.reps}
-        onChange={(e) => onUpdate({ reps: e.target.value })}
-        placeholder="Reps"
-        className="col-span-2 rounded-md border border-border bg-background px-2 py-1.5 text-center font-mono text-xs text-foreground outline-none focus:border-primary"
-      />
+      <div className="col-span-1 flex flex-col gap-1 sm:col-span-2">
+        <label
+          htmlFor={`reps-${exercise.id}`}
+          className="text-center font-mono text-[9px] uppercase tracking-wider text-muted-foreground"
+        >
+          Reps
+        </label>
+        <input
+          id={`reps-${exercise.id}`}
+          type="text"
+          value={exercise.reps}
+          onChange={(e) => onUpdate({ reps: e.target.value })}
+          placeholder="8-12"
+          className="w-full min-w-0 rounded-md border border-border bg-background px-1 py-2 text-center font-mono text-xs text-foreground outline-none focus:border-primary sm:px-2 sm:py-1.5"
+        />
+      </div>
 
-      <input
-        type="number"
-        min={0}
-        value={exercise.rest_seconds}
-        onChange={(e) => onUpdate({ rest_seconds: Number(e.target.value) })}
-        placeholder="Descanso (s)"
-        className="col-span-2 rounded-md border border-border bg-background px-2 py-1.5 text-center font-mono text-xs text-muted-foreground outline-none focus:border-primary"
-      />
+      <div className="col-span-1 flex flex-col gap-1 sm:col-span-2">
+        <label
+          htmlFor={`rest-${exercise.id}`}
+          className="text-center font-mono text-[9px] uppercase tracking-wider text-muted-foreground"
+        >
+          Descanso (s)
+        </label>
+        <input
+          id={`rest-${exercise.id}`}
+          type="number"
+          min={0}
+          value={exercise.rest_seconds}
+          onChange={(e) => onUpdate({ rest_seconds: Number(e.target.value) })}
+          placeholder="90"
+          className="w-full min-w-0 rounded-md border border-border bg-background px-1 py-2 text-center font-mono text-xs text-muted-foreground outline-none focus:border-primary sm:px-2 sm:py-1.5"
+        />
+      </div>
 
       <button
         type="button"
         onClick={onRemove}
-        className="col-span-1 flex h-7 w-full cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+        className="col-span-1 flex h-[38px] w-full cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive sm:h-7"
         aria-label="Quitar ejercicio"
       >
         <Trash2 className="h-3.5 w-3.5" />

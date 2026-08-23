@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, Settings, LogOut, ShieldCheck, UserCircle } from 'lucide-react';
+import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, Settings, LogOut, ShieldCheck, UserCircle, Trophy } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { usePageTransition } from '@/_features/shared/hooks/usePageTransition';
 
@@ -208,6 +208,11 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
             className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
             <Flame className="h-4 w-4 mr-1" />
             Rutinas
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/routines')}
+            className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+            <Trophy className="h-4 w-4 mr-1" />
+            Ranking de rutinas
           </DropdownMenuItem>
           <DropdownMenuItem className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
             <ShieldCheck className="h-4 w-4 mr-1" />

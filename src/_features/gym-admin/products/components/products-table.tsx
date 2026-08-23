@@ -99,14 +99,14 @@ export function ProductsTable({ products, onEdit, onDelete, canManage = true }: 
                         <button
                           onClick={() => onEdit(product)}
                           aria-label={`Editar ${product.product_name}`}
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 transition-colors hover:border-primary hover:text-primary"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => onDelete(product)}
                           aria-label={`Eliminar ${product.product_name}`}
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
+                          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 transition-colors hover:border-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

@@ -11,7 +11,7 @@ import {
   MoreVertical,
   Pencil,
   Plus,
-  Power,
+  Share2,
   ShieldAlert,
   Sparkles,
   Target,
@@ -121,6 +121,7 @@ export function UserRoutines({ profile }: { profile: ProfileRow }) {
   const updateRoutine = useUpdateFullRoutine()
   const deleteRoutine = useDeleteRoutine()
   const toggleActive = useUpdateRoutine()
+  const toggleShared = useUpdateRoutine()
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<RoutineRow | null>(null)
@@ -237,6 +238,15 @@ export function UserRoutines({ profile }: { profile: ProfileRow }) {
     })
   }
 
+  const handleToggleShared = async (routine: RoutineRow) => {
+    // Solo el autor comparte (la RLS + trigger lo refuerzan a nivel DB).
+    if (routine.created_by !== viewer.id) return
+    await toggleShared.mutateAsync({
+      id: routine.id,
+      dto: { is_shared: !routine.is_shared },
+    })
+  }
+
   const handleDelete = async () => {
     if (!deleting) return
     if (!canEditRoutine(deleting, viewer)) return
@@ -296,7 +306,9 @@ export function UserRoutines({ profile }: { profile: ProfileRow }) {
             onEdit={() => openEdit(routine)}
             onDelete={() => setDeleting(routine)}
             onToggleActive={() => handleToggleActive(routine)}
-            togglePending={toggleActive.isPending}
+            toggleActivePending={toggleActive.isPending}
+            onToggleShared={() => handleToggleShared(routine)}
+            toggleSharedPending={toggleShared.isPending}
           />
         ))
       )}
@@ -367,7 +379,9 @@ function RoutineCard({
   onEdit,
   onDelete,
   onToggleActive,
-  togglePending,
+  toggleActivePending,
+  onToggleShared,
+  toggleSharedPending,
 }: {
   routine: UserRoutine
   viewerId: string | null | undefined
@@ -375,7 +389,9 @@ function RoutineCard({
   onEdit: () => void
   onDelete: () => void
   onToggleActive: () => void
-  togglePending: boolean
+  toggleActivePending: boolean
+  onToggleShared: () => void
+  toggleSharedPending: boolean
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -389,6 +405,11 @@ function RoutineCard({
     return () => window.removeEventListener("mousedown", onClick)
   }, [menuOpen])
 
+  // Solo el autor comparte (RLS + trigger lo refuerzan en DB).
+  const isAuthor = Boolean(viewerId) && routine.created_by === viewerId
+  // El menú aparece si puede editar O si es el autor (para el toggle de compartir).
+  const showMenu = canEdit || isAuthor
+
   const routineRow: RoutineRow = {
     id: routine.id,
     name: routine.name,
@@ -396,6 +417,7 @@ function RoutineCard({
     days_per_week: routine.days_per_week,
     notes: routine.notes,
     is_active: routine.is_active,
+    is_shared: routine.is_shared,
     created_at: routine.created_at,
     updated_at: routine.updated_at,
     created_by: routine.created_by,
@@ -413,7 +435,7 @@ function RoutineCard({
     >
       <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
 
-      <header className="relative flex flex-col gap-4 border-b border-border/60 p-6 sm:flex-row sm:items-start sm:justify-between">
+      <header className="relative flex flex-col gap-4 border-b border-border/60 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-6">
         <div className="flex min-w-0 flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <AuthorBadge routine={routine} viewerId={viewerId} />
@@ -428,6 +450,12 @@ function RoutineCard({
             {!routine.is_active ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-yellow-500/40 bg-yellow-500/10 px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-wider text-yellow-500">
                 Inactiva
+              </span>
+            ) : null}
+            {routine.is_shared ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-wider text-primary">
+                <Share2 className="h-3 w-3" />
+                Compartida
               </span>
             ) : null}
           </div>
@@ -451,13 +479,14 @@ function RoutineCard({
           ) : null}
         </div>
 
-        {canEdit ? (
+        {showMenu ? (
           <div className="relative" ref={menuRef}>
             <button
               type="button"
               onClick={() => setMenuOpen((o) => !o)}
-              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary sm:h-9 sm:w-9"
               aria-label="Acciones de rutina"
+              aria-expanded={menuOpen}
             >
               <MoreVertical className="h-4 w-4" />
             </button>
@@ -466,39 +495,53 @@ function RoutineCard({
                 role="menu"
                 className="absolute right-0 top-11 z-20 w-48 overflow-hidden rounded-md border border-border bg-card shadow-2xl"
               >
-                <MenuItem
-                  icon={<Pencil className="h-4 w-4" />}
-                  label="Editar"
-                  onClick={() => {
-                    setMenuOpen(false)
-                    onEdit()
-                  }}
-                />
-                <MenuItem
-                  icon={<Power className="h-4 w-4" />}
-                  label={routine.is_active ? "Desactivar" : "Activar"}
-                  disabled={togglePending}
-                  onClick={() => {
-                    setMenuOpen(false)
-                    onToggleActive()
-                  }}
-                />
-                <MenuItem
-                  icon={<Trash2 className="h-4 w-4" />}
-                  label="Eliminar"
-                  variant="destructive"
-                  onClick={() => {
-                    setMenuOpen(false)
-                    onDelete()
-                  }}
-                />
+                {canEdit ? (
+                  <MenuItem
+                    icon={<Pencil className="h-4 w-4" />}
+                    label="Editar"
+                    onClick={() => {
+                      setMenuOpen(false)
+                      onEdit()
+                    }}
+                  />
+                ) : null}
+                {canEdit ? (
+                  <ToggleRow
+                    label="Activa"
+                    checked={routine.is_active}
+                    disabled={toggleActivePending}
+                    onToggle={onToggleActive}
+                  />
+                ) : null}
+                {isAuthor ? (
+                  <ToggleRow
+                    label="Compartida"
+                    checked={routine.is_shared}
+                    disabled={toggleSharedPending}
+                    onToggle={onToggleShared}
+                  />
+                ) : null}
+                {canEdit ? (
+                  <>
+                    <div role="separator" className="my-1 h-px bg-border" />
+                    <MenuItem
+                      icon={<Trash2 className="h-4 w-4" />}
+                      label="Eliminar"
+                      variant="destructive"
+                      onClick={() => {
+                        setMenuOpen(false)
+                        onDelete()
+                      }}
+                    />
+                  </>
+                ) : null}
               </div>
             ) : null}
           </div>
         ) : null}
       </header>
 
-      <div className="relative grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
+      <div className="relative grid grid-cols-1 gap-4 p-4 md:grid-cols-2 sm:p-6">
         {routine.routine_days.map((day) => (
           <DayPanel key={day.id} day={day} />
         ))}
@@ -533,6 +576,50 @@ function MenuItem({
       }`}
     >
       {icon}
+      {label}
+    </button>
+  )
+}
+
+/**
+ * Fila toggle para flags booleanos dentro del menú: switch a la izquierda,
+ * label a la derecha. El menú NO se cierra al togglear (solo con click
+ * afuera) para que el estado se vea cambiar en vivo.
+ */
+function ToggleRow({
+  label,
+  checked,
+  disabled,
+  onToggle,
+}: {
+  label: string
+  checked: boolean
+  disabled?: boolean
+  onToggle: () => void
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitemcheckbox"
+      aria-checked={checked}
+      onClick={onToggle}
+      disabled={disabled}
+      className="flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 font-sans text-sm font-medium text-foreground transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      <span
+        aria-hidden="true"
+        className={`relative inline-flex h-4 w-8 shrink-0 items-center rounded-full border transition-colors duration-200 ${
+          checked ? "border-primary bg-primary" : "border-border bg-secondary"
+        }`}
+      >
+        <span
+          className={`absolute h-3 w-3 rounded-full shadow transition-all duration-200 ${
+            checked
+              ? "translate-x-[17px] bg-primary-foreground"
+              : "translate-x-[2px] bg-muted-foreground"
+          }`}
+        />
+      </span>
       {label}
     </button>
   )

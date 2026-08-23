@@ -43,6 +43,7 @@ export type UserRoutine = {
   days_per_week: number
   notes: string | null
   is_active: boolean
+  is_shared: boolean
   created_at: string
   updated_at: string
   created_by: string
@@ -67,6 +68,7 @@ async function fetchUserRoutines(userId: string): Promise<UserRoutine[]> {
         days_per_week,
         notes,
         is_active,
+        is_shared,
         created_at,
         updated_at,
         created_by,

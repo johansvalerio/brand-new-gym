@@ -159,7 +159,7 @@ export function Users() {
           </p>
         </header>
 
-        <div className="mb-8 grid grid-cols-3 gap-3 sm:max-w-xl">
+        <div className="mb-8 grid grid-cols-1 gap-3 sm:max-w-xl sm:grid-cols-3">
           <Stat label="Total" value={String(stats.total)} />
           <Stat label="Activos" value={String(stats.active)} />
           <Stat label="Premium" value={String(stats.premium)} />
@@ -177,11 +177,11 @@ export function Users() {
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-end gap-3">
             <div
               role="tablist"
               aria-label="Cambiar vista"
-              className="flex items-center gap-1 rounded-md border border-border bg-card p-1"
+              className="hidden items-center gap-1 rounded-md border border-border bg-card p-1 sm:flex"
             >
               <ToggleBtn active={view === "cards"} onClick={() => setView("cards")} label="Tarjetas">
                 <LayoutGrid className="h-4 w-4" />
@@ -193,6 +193,7 @@ export function Users() {
 
             <button
               onClick={openCreate}
+              aria-label="Nuevo miembro"
               className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-4 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
             >
               <Plus className="h-4 w-4" />
@@ -220,26 +221,34 @@ export function Users() {
               {query ? "Prueba con otro término de búsqueda." : "Agrega tu primer miembro."}
             </p>
           </div>
-        ) : view === "cards" ? (
-          <UsersCards 
-            users={filtered} 
-            onEdit={openEdit} 
-            onDelete={setDeleting} 
-            onView={(u) => navigate(`/users/profile/${u.id}`)} 
-            onAssignRoutine={(u) => navigate(`/users/profile/${u.id}/routine`)}
-            canManage={canManageUsers} 
-            canAssignRoutine={canAssignRoutine}
-          />
         ) : (
-          <UsersTable 
-            users={filtered} 
-            onEdit={openEdit} 
-            onDelete={setDeleting} 
-            onView={(u) => navigate(`/users/profile/${u.id}`)} 
-            onAssignRoutine={(u) => navigate(`/users/profile/${u.id}/routine`)}
-            canManage={canManageUsers} 
-            canAssignRoutine={canAssignRoutine}
-          />
+          <>
+            {/* Mobile: siempre tarjetas; la tabla solo existe ≥sm */}
+            <div className={view === "table" ? "sm:hidden" : undefined}>
+              <UsersCards
+                users={filtered}
+                onEdit={openEdit}
+                onDelete={setDeleting}
+                onView={(u) => navigate(`/users/profile/${u.id}`)}
+                onAssignRoutine={(u) => navigate(`/users/profile/${u.id}/routine`)}
+                canManage={canManageUsers}
+                canAssignRoutine={canAssignRoutine}
+              />
+            </div>
+            {view === "table" && (
+              <div className="hidden sm:block">
+                <UsersTable
+                  users={filtered}
+                  onEdit={openEdit}
+                  onDelete={setDeleting}
+                  onView={(u) => navigate(`/users/profile/${u.id}`)}
+                  onAssignRoutine={(u) => navigate(`/users/profile/${u.id}/routine`)}
+                  canManage={canManageUsers}
+                  canAssignRoutine={canAssignRoutine}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -289,7 +298,7 @@ function ToggleBtn({
       aria-selected={active}
       onClick={onClick}
       title={label}
-      className={`flex cursor-pointer items-center gap-2 rounded px-3 py-1.5 font-sans text-xs font-semibold uppercase tracking-wider transition-colors ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+      className={`flex cursor-pointer items-center gap-2 rounded p-2.5 font-sans text-xs font-semibold uppercase tracking-wider transition-colors sm:px-3 sm:py-1.5 ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
         }`}
     >
       {children}

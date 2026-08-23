@@ -1,4 +1,5 @@
 import { UserRoutines } from "@/_features/gym-routines/components/user-routines"
+import ConstellationBackground from "@/_features/shared/components/ConstellationBackground"
 import { createClient } from "@/lib/supabase/server"
 
 export default async function UserRoutinesPage({
@@ -24,6 +25,7 @@ export default async function UserRoutinesPage({
 
   return (
     <main className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30 py-24">
+      <ConstellationBackground />
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <header className="mb-10">
           <h1 className="font-sans text-4xl font-black uppercase leading-[0.95] tracking-tighter text-foreground text-balance md:text-6xl">

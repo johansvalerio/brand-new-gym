@@ -49,9 +49,10 @@ src/
 | `public.products` | `product_id`, `product_name`, `product_price`, `product_stock`, `category_id` | All columns prefixed `product_`; `category_id` FK → `categories.id` (nullable) |
 | `public.categories` | `id`, `slug` unique, `name` | Product taxonomy; `slug` = URL-safe identifier (queries/filters), `name` = human label (renamable). Seeded with 6 categories (proteinas, creatina, pre-entreno, vitaminas, accesorios, ropa). |
 | `public.exercises` | `name` unique, `muscle_group`, `equipment` | Exercise catalog, seeded (~20) |
-| `public.routines` | `user_id` FK, `created_by` FK (author), `goal` enum `routine_goal`, `is_active` | **Badge provenance**: `created_by === user_id` → self-made ("Tu rutina"), else coach/admin-authored ("De tu coach") |
+| `public.routines` | `user_id` FK, `created_by` FK (author), `goal` enum `routine_goal`, `is_active`, `is_shared` | **Badge provenance**: `created_by === user_id` → self-made ("Tu rutina"), else coach/admin-authored ("De tu coach"). `is_shared=true` publica la rutina en `/routines`; solo el autor (o admin) puede compartirla (trigger `prevent_unauthorized_share`) |
 | `public.routine_days` | `routine_id` FK, `day_index` 1-7, `focus` | unique(routine_id, day_index) |
 | `public.routine_exercises` | `day_id` FK, `exercise_id` FK, sets, reps, rest_seconds | Ordered by `order_index` |
+| `public.routine_votes` | `routine_id` FK, `user_id` FK, unique(routine_id, user_id) | Like-style voting; 1 voto por usuario por rutina; autor no puede votarse a sí mismo (RLS) |
 
 **Environment:** `.env.local` → `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Browser access via `createClient()` from `@/lib/supabase/client`.
 
@@ -70,8 +71,12 @@ src/
 | products / exercises | viewable by everyone / editable by admin | SELECT `true` / ALL `is_admin()` |
 | categories | viewable by everyone / editable by admin | SELECT `true` / ALL `is_admin()` |
 | routines | viewable by owner, admin and coach | owner (by `auth_id`) OR `is_admin()` OR `is_coach()` |
+| routines | shared viewable by everyone | `is_shared = true` |
 | routines | writable by admin, coach or self | admin/coach any; user only own `user_id` |
+| routine_votes | viewable by everyone / votable rules | SELECT `true`; INSERT solo voto propio sobre rutina compartida ajena; DELETE solo voto propio |
 | routine_days / routine_exercises | inherit routine visibility/writability | subquery through `routines` → owner/admin/coach |
+
+**DB-level guards for sharing/voting:** trigger `prevent_unauthorized_share` (only author or admin can set `is_shared=true`); vote INSERT policy pins `user_id` to the caller's profile and blocks self-votes.
 
 > **Golden rule:** the frontend guard (`isAdmin` hiding UI) is cosmetic. Real protection lives in these RLS policies. Any new table or privileged column must ship with its policy — not just a hidden button.
 
@@ -164,7 +169,30 @@ Thin server page (`PageProps<"/users/profile/[id]">` + `await params`) rendering
 
 **Access rules:** own profile → always allowed (any role with session, RLS-backed). Admin → any profile + CRUD buttons (`UserFormDialog` + `ConfirmDeleteDialog` reused, not duplicated) + Routine action (Dumbbell icon). Coach → Routine action (Dumbbell icon) only. Non-admin/coach on someone else → "Acceso restringido" card. "Mi perfil" menu item in FloatingNav (needs `profile.id` from `useAuthSession`, which exposes the full own row).
 
+### Shared Routines Page (`/routines`, public)
+
+Thin server page rendering `_features/gym-routines/components/shared-routines.tsx` (client). Data via `useSharedRoutines()` (`sharedKeys.all`) — fetches `is_shared = true` with author join + embedded votes; ranking sorted client-side by vote count desc (ties → newest first). **Like-style voting** (`useToggleVote`, optimistic snapshot→update→rollback): Flame icon filled `fill-primary text-primary` when voted, outline gray otherwise; own routine or no session → non-clickable with explanatory title; NO success toast on votes (social-style silence), error toast only. Empty state: "Aún no hay rutinas compartidas". Entry point: "Ranking de rutinas" (Trophy) in FloatingNav dropdown.
+
+**Routine card menu toggles:** boolean flags use `ToggleRow` (mini switch LEFT, label RIGHT; ON = `bg-primary`, OFF = `bg-secondary`; menu stays open while toggling). `Activa` visible when `canEditRoutine`; `Compartida` visible only to the routine's author (`created_by === viewer.id`). Sharing also shows a "Compartida" badge on the card.
+
 ---
+
+## Mobile Conventions (2026-08-22 — applies to admin + routines features)
+
+Desktop is frozen: base classes = mobile (375px baseline), every current desktop size is RESTORED with `sm:`/`md:` variants. Never change what `sm:` and up renders.
+
+1. **Dialogs with forms** (user/product form): panel = `flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden`; body/form = `min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5`; action row = **sticky footer** (`sticky bottom-0 -mx-4 ... border-t bg-card sm:-mx-6`) so submit is always reachable on phones. Routine dialog already used header/fixed-footer pattern.
+2. **Confirm-delete dialogs**: `max-h-[85vh] overflow-y-auto p-4 sm:p-6` guard on the panel.
+3. **Dialog chrome paddings**: header/footer `px-4 py-3 sm:px-6 sm:py-4`; close button `h-9 w-9 sm:h-8 sm:w-8`.
+4. **Tap targets ≥40px on mobile only**: table actions `h-10 w-10 sm:h-8 sm:w-8`, card actions `h-10 w-10 sm:h-9 sm:w-9`, day-editor/menu buttons `h-9 w-9 sm:h-7 sm:w-7`, ToggleBtn `p-2.5 sm:px-3 sm:py-1.5`.
+5. **Tables → cards below `sm:`**: Users + Products always render the cards grid on mobile; the table view exists only ≥sm (`<div className={view === "table" ? "sm:hidden" : ""}>` for cards + `<div className="hidden sm:block">` around the table). The cards/table toggle is `hidden sm:flex`.
+6. **Stats strips**: `grid-cols-1 sm:grid-cols-3` (never hard grid-cols-3).
+7. **Form field grids collapse at base**: pairs → `grid-cols-1 sm:grid-cols-2`; triples → `grid-cols-1 sm:grid-cols-3`. ExerciseEditor uses one grid that reflows: `grid-cols-4 sm:grid-cols-12` (select spans all 4 on mobile; desktop col-spans unchanged).
+8. **Icon-only buttons carry aria-labels** ("Nuevo miembro", "Nuevo producto", exercise inputs) since their text labels are hidden below sm.
+9. Long strings get mobile-safe truncation: emails `truncate`; routine names on shared ranking `line-clamp-2 sm:truncate`.
+10. **Primary toolbar action ("Nuevo") right-aligned at EVERY breakpoint** (`justify-end` on the actions container). Rationale: thumb zone on mobile (FAB convention) + it already sits right beside the view toggle on desktop. Never left-align it on one page and right-align it on another — cross-page consistency wins.
+11. **Dense numeric inputs get visible micro-labels** (pattern: ExerciseEditor in the routine dialog): `font-mono text-[9px] uppercase tracking-wider text-muted-foreground` label ABOVE each input via `htmlFor`/`id` pair; placeholders show EXAMPLE VALUES ("3", "8-12", "90"), never repeat the label text. Applies wherever fields are too narrow for inline labels (sets/reps/rest-style rows).
+
 
 ## Development Environment
 

@@ -130,7 +130,7 @@ export function Products() {
         </header>
 
         {/* Stats */}
-        <div className={`mb-8 grid gap-3 sm:max-w-xl ${isAdmin ? "grid-cols-3" : "grid-cols-1"}`}>
+        <div className={`mb-8 grid gap-3 sm:max-w-xl ${isAdmin ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1"}`}>
           <Stat label="Productos" value={String(stats.count)} />
           {isAdmin ? (
             <>
@@ -153,7 +153,7 @@ export function Products() {
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
             <div className="relative w-full sm:w-auto sm:max-w-xs">
               <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <select
@@ -175,7 +175,7 @@ export function Products() {
             <div
               role="tablist"
               aria-label="Cambiar vista"
-              className="flex items-center gap-1 rounded-md border border-border bg-card p-1"
+              className="hidden items-center gap-1 rounded-md border border-border bg-card p-1 sm:flex"
             >
               <ToggleBtn active={view === "cards"} onClick={() => setView("cards")} label="Tarjetas">
                 <LayoutGrid className="h-4 w-4" />
@@ -188,6 +188,7 @@ export function Products() {
             {isAdmin ? (
               <button
                 onClick={openCreate}
+                aria-label="Nuevo producto"
                 className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-4 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
               >
                 <Plus className="h-4 w-4" />
@@ -206,10 +207,18 @@ export function Products() {
               {query ? "Prueba con otro término de búsqueda." : "Agrega tu primer producto."}
             </p>
           </div>
-        ) : view === "cards" ? (
-          <ProductsCards products={filtered} onEdit={openEdit} onDelete={setDeleting} canManage={isAdmin} />
         ) : (
-          <ProductsTable products={filtered} onEdit={openEdit} onDelete={setDeleting} canManage={isAdmin} />
+          <>
+            {/* Mobile: siempre tarjetas; la tabla solo existe ≥sm */}
+            <div className={view === "table" ? "sm:hidden" : undefined}>
+              <ProductsCards products={filtered} onEdit={openEdit} onDelete={setDeleting} canManage={isAdmin} />
+            </div>
+            {view === "table" && (
+              <div className="hidden sm:block">
+                <ProductsTable products={filtered} onEdit={openEdit} onDelete={setDeleting} canManage={isAdmin} />
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -255,7 +264,7 @@ function ToggleBtn({
       aria-selected={active}
       onClick={onClick}
       title={label}
-      className={`flex cursor-pointer items-center gap-2 rounded px-3 py-1.5 font-sans text-xs font-semibold uppercase tracking-wider transition-colors ${
+      className={`flex cursor-pointer items-center gap-2 rounded p-2.5 font-sans text-xs font-semibold uppercase tracking-wider transition-colors sm:px-3 sm:py-1.5 ${
         active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
       }`}
     >

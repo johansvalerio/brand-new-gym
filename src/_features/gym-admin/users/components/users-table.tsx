@@ -100,21 +100,21 @@ export function UsersTable({ users, onEdit, onDelete, onView, onAssignRoutine, c
                         <button
                           onClick={() => onView(user)}
                           aria-label={`Ver perfil de ${fullName}`}
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 transition-colors hover:border-primary hover:text-primary"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => onEdit(user)}
                           aria-label={`Editar ${fullName}`}
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 transition-colors hover:border-primary hover:text-primary"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => onDelete(user)}
                           aria-label={`Eliminar ${fullName}`}
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
+                          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 transition-colors hover:border-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -122,7 +122,7 @@ export function UsersTable({ users, onEdit, onDelete, onView, onAssignRoutine, c
                           <button
                             onClick={() => onAssignRoutine(user)}
                             aria-label={`Crear rutina del miembro ${fullName}`}
-                            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 transition-colors hover:border-primary hover:text-primary"
                           >
                             <Dumbbell className="h-4 w-4" />
                           </button>
@@ -135,7 +135,7 @@ export function UsersTable({ users, onEdit, onDelete, onView, onAssignRoutine, c
                         <button
                           onClick={() => onAssignRoutine(user)}
                           aria-label={`Crear rutina del miembro ${fullName}`}
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 transition-colors hover:border-primary hover:text-primary"
                         >
                           <Dumbbell className="h-4 w-4" />
                         </button>

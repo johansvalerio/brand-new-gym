@@ -143,13 +143,13 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
       />
 
       {/* Panel */}
-      <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
+      <div className="relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
         {/* accent glow */}
         <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
 
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/15 text-primary">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary">
               <User className="h-5 w-5" />
             </span>
             <div>
@@ -165,14 +165,14 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
           <button
             onClick={onClose}
             aria-label="Cerrar"
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:h-8 sm:w-8"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="relative flex flex-col gap-4 px-6 py-5">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Nombre" htmlFor="first_name" error={errors.first_name}>
               <input
                 ref={firstFieldRef}
@@ -216,7 +216,7 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Field label="Rol" htmlFor="role">
               <select
                 id="role"
@@ -288,7 +288,7 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
             />
           </Field>
 
-          <div className="mt-2 flex items-center justify-end gap-3">
+          <div className="sticky bottom-0 -mx-4 mt-2 flex items-center justify-end gap-3 border-t border-border bg-card px-4 py-3 sm:-mx-6 sm:px-6">
             <button
               type="button"
               onClick={onClose}

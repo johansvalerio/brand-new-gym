@@ -32,7 +32,7 @@ export function ConfirmDeleteDialog({ product, onCancel, onConfirm }: ConfirmDel
       aria-labelledby="confirm-delete-title"
     >
       <button aria-label="Cancelar" onClick={onCancel} className="absolute inset-0 cursor-pointer bg-black/70 backdrop-blur-sm" />
-      <div className="relative z-10 w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-2xl">
+      <div className="relative z-10 max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-lg border border-border bg-card p-4 shadow-2xl sm:p-6">
         <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-md bg-destructive/15 text-destructive">
           <AlertTriangle className="h-6 w-6" />
         </div>
