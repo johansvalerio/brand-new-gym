@@ -24,7 +24,7 @@ export default async function UserRoutinesPage({
     : "Miembro"
 
   return (
-    <main className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30 py-24">
+    <main className="relative min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30 py-24">
       <ConstellationBackground />
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <header className="mb-10">

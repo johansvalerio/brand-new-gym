@@ -1,44 +1,30 @@
-## Plan: Mobile-first pass en gym-admin + gym-routines (desktop intacto)
+## Fix: scroll horizontal por ConstellationBackground (navbar desplazado)
 
-Estrategia global: estilos base = mobile (375px), y cada tamaño actual de desktop se restaura con `sm:`/`md:` para que la web quede EXACTAMENTE igual. Principios de `mobile-app-ui-design`: grid de 8pt, tap targets ≥40px en mobile, jerarquía simple. Se activarán `ui-ux-pro-max` + `impeccable` durante la ejecución (detector antes/después) y Context7 si hace falta verificar utilidades de Tailwind v4.
+### Causa raíz (confirmada en código)
+1. `ConstellationBackground.tsx` dimensiona el canvas con `window.innerWidth` — que INCLUYE el scrollbar vertical (~17px desktop) → documento más ancho que el contenido.
+2. Los `<main>` de las páginas no tienen `relative` → el canvas (`absolute inset-0`) se ancla al body, escapando del `overflow-x-hidden` de cada página → nada lo recorta → scroll horizontal a nivel documento → el navbar fijo se percibe desplazado a la derecha.
 
-### Fase 1 — CRÍTICOS (lo roto)
+### Cambios
 
-1. **`routine-form-dialog.tsx` — ExerciseEditor** (el peor): base apilado — select de ejercicio a ancho completo, debajo fila `grid-cols-3` con Sets/Reps/Descanso, botón eliminar posicionado sin colapsar; `sm:` restaura el `grid-cols-12` actual exacto.
-2. **`user-form-dialog.tsx` + `product-form-dialog.tsx`** — paneles sin scroll: adoptar el patrón que routine-form-dialog ya usa bien → panel `flex max-h-[85vh] flex-col overflow-hidden`, cuerpo del form `overflow-y-auto`, footer pegado abajo. El submit vuelve a ser alcanzable en phones.
-3. **DayEditor header** (routine dialog): `flex-wrap`, focus input `w-full sm:w-48 min-w-0`.
-4. **Tab bar** (routine dialog): `px-3` + `text-[11px]` en base para que ambas tabs quepan en ~293px.
-5. **Stats grids**: `Products.tsx` (admin) y `Users.tsx` → `grid-cols-1 sm:grid-cols-3`.
+**1. `src/_features/shared/components/ConstellationBackground.tsx`**
+- En `resize()`: usar `document.documentElement.clientWidth / clientHeight` (viewport SIN scrollbar) para el estilo y el bitmap del canvas, en lugar de `window.innerWidth/innerHeight`.
+- En inicialización de partículas (L117) y en `draw()` (L131): usar esas mismas dimensiones medidas (cacheadas en el resize) para los límites de rebote.
 
-### Fase 2 — CRAMPED
+**2. Anclar el canvas dentro de cada página — agregar `relative` a los `<main>`:**
+- `src/app/users/page.tsx`: agregar `relative`
+- `src/app/products/page.tsx`: agregar `relative`
+- `src/app/routines/page.tsx`: agregar `relative` Y `overflow-x-hidden` (es la única de las tres que no lo tiene)
+- `src/app/users/profile/[id]/routine/page.tsx`: agregar `relative`
 
-6. Paddings de los 6 dialogs: header/footer `px-4 py-3 sm:px-6 sm:py-4`, cuerpo `px-4 py-4 sm:px-6 sm:py-5`.
-7. `MetadataTab` objetivo/días: `grid-cols-1 sm:grid-cols-2`.
-8. Form usuario: nombres `grid-cols-1 sm:grid-cols-2`; selects `grid-cols-1 sm:grid-cols-3`. Form producto: precio/stock `grid-cols-1 sm:grid-cols-2`.
-9. Toolbar productos: fila de filtros con `flex-wrap`, select de categoría full-width en base.
-10. `RoutineCard` `p-4 sm:p-6`; hero card del perfil `p-4 sm:p-8`; footer del routine dialog con `flex-wrap`.
+**3. Revisar los otros 2 usos del componente:**
+- `src/_features/auth/components/Login.tsx` — verificar si su contenedor es `relative`; si no, agregarlo.
+- `src/_features/gym-landing/components/StoryText2.tsx` — según spec tiene contenedor propio `h-screen relative`; solo confirmar.
 
-### Fase 3 — MINOR sistémicos
+### Por qué esto resuelve ambos síntomas
+- Desktop: el canvas ya no mide 17px de más → desaparece el scroll horizontal.
+- Mobile/web: el canvas queda dentro del contexto de clipping de cada página (`relative` + `overflow-x-hidden`) → ningún elemento puede ensanchar el documento → el navbar fijo deja de "moverse".
 
-11. **Tap targets** (más grandes SOLO en mobile, desktop igual): botones de acción en tablas `h-10 w-10 sm:h-8 sm:w-8`; en cards `h-10 w-10 sm:h-9 sm:w-9`; day editor y close buttons `h-9 w-9 sm:h-7/sm:h-8`; ToggleBtn con área táctil mayor en base.
-12. `aria-label` en "Nuevo" icon-only (Users + Products) y ToggleBtns.
-13. Email en users-card con `truncate`; nombre de rutina en shared-routines `line-clamp-2 sm:truncate`.
-14. Confirm-deletes (3): guard `max-h-[85vh] overflow-y-auto`.
-15. Página `/rutinas`: `py-16 sm:py-24`.
-
-### Fase 4 — Tablas → tarjetas en mobile (tu decisión)
-
-16. **`Users.tsx` + `Products.tsx`**: bajo `sm:` SIEMPRE se muestran las cards; la tabla solo existe ≥sm. CSS-only sin doble lógica:
-    - Cards: `<div className={view === "table" ? "sm:hidden" : ""}>`
-    - Tabla: `view === "table"` envuelta en `<div className="hidden sm:block">`
-17. El toggle Tarjetas/Tabla se oculta bajo `sm:` (`hidden sm:flex`) porque en mobile la decisión no aplica.
-
-### Fase 5 — Verificación y documentación
-
-- `npx tsc --noEmit` limpio.
-- Detector de `impeccable` (--json) antes y después.
-- MASTER.md: nueva sección "Mobile conventions" (patrón dialog con max-h+scroll interno, regla de tap targets con restauración sm:, tablas→cards bajo sm, paddings base).
-- Memoria actualizada.
-- Verificación visual final en tu navegador (OAuth bloquea testing del agent en rutas admin); `/rutinas` sí es pública.
-
-**Archivos tocados (~15):** routine-form-dialog, user-routines, shared-routines, confirm-delete-routine-dialog, Users, users-card, users-table, user-form-dialog, confirm-delete (users), Products, products-card, products-table, product-form-dialog, confirm-delete (products), user-profile, app/rutinas/page. Desktop queda pixel-idéntico al usar breakpoints de restauración.
+### Verificación
+- `npx tsc --noEmit` + detector impeccable limpio.
+- Tu navegador: en /users, /products, /routines, /users/profile/[id]/routine y login — ya no debe existir pan lateral ni en mobile ni en web; las partículas siguen cubriendo toda la altura de la página (el canvas estira con el alto real del main).
+- Landing (StoryText2) sin cambios visuales.

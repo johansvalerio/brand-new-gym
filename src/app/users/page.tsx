@@ -3,7 +3,7 @@ import ConstellationBackground from "@/_features/shared/components/Constellation
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30 py-16">
+    <main className="relative min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30 py-16">
       <ConstellationBackground />
       <Users />
     </main>

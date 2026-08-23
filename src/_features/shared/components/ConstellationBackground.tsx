@@ -83,12 +83,20 @@ export default function ConstellationBackground() {
     const hsla = (a: number) =>
       `hsla(${primaryHSL.h}, ${primaryHSL.s}%, ${primaryHSL.l}%, ${a})`;
 
+    // documentElement.clientWidth/Height excluyen el scrollbar vertical
+    // (window.innerWidth lo incluye) → el canvas nunca es más ancho que el
+    // contenido real del documento y no genera scroll horizontal.
+    let viewW = document.documentElement.clientWidth;
+    let viewH = document.documentElement.clientHeight;
+
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      canvas.style.width = window.innerWidth + "px";
-      canvas.style.height = window.innerHeight + "px";
+      viewW = document.documentElement.clientWidth;
+      viewH = document.documentElement.clientHeight;
+      canvas.width = viewW * dpr;
+      canvas.height = viewH * dpr;
+      canvas.style.width = viewW + "px";
+      canvas.style.height = viewH + "px";
       ctx.scale(dpr, dpr);
     };
     resize();
@@ -114,8 +122,8 @@ export default function ConstellationBackground() {
       }
 
       particles.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
+        x: Math.random() * viewW,
+        y: Math.random() * viewH,
         vx: (Math.random() - 0.5) * 0.25,
         vy: (Math.random() - 0.5) * 0.25,
         size: 0.8 + Math.random() * 2.2,
@@ -128,8 +136,8 @@ export default function ConstellationBackground() {
     particlesRef.current = particles;
 
     const draw = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      const w = viewW;
+      const h = viewH;
       timeRef.current += 0.016;
 
       ctx.clearRect(0, 0, w, h);
