@@ -6,7 +6,7 @@ import { MembershipSection } from "@/_features/gym-landing/components/Membership
 import { LocationHours } from "@/_features/gym-landing/components/LocationHours";
 import { FinalCTA } from "@/_features/gym-landing/components/FinalCTA";
 import { Footer } from "@/_features/gym-landing/components/Footer";
-import { Hero2 } from "@/_features/gym-landing/components/Hero2";
+import { Hero5 } from "@/_features/gym-landing/components/Hero5";
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import type { Metadata } from "next";
 import { Gallery } from "@/_features/gym-landing/components/Gallery";
@@ -17,10 +17,10 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Gymulate - Centro de Entrenamiento Táctico de Fitness",
     description: "Únete a Gymulate - el centro de entrenamiento táctico de fitness con equipamiento de élite, seguimiento con datos, acceso 24/7 y una comunidad que exige excelencia.",
-    url: "https://gymulate.com",
+    url: "https://gymulate.vercel.app",
     images: [
       {
-        url: "https://gymulate.com/og-image.jpg",
+        url: "https://gymulate.vercel.app/og-image.jpg",
         width: 1200,
         height: 630,
         alt: "Gymulate - Centro de Entrenamiento Táctico de Fitness",
@@ -86,7 +86,7 @@ const jsonLd = {
 
 export default function Home() {
   const breadcrumbItems = [
-    { name: "Inicio", item: "https://gymulate.com" },
+    { name: "Inicio", item: "https://gymulate.vercel.app" },
   ];
 
   return (
@@ -96,17 +96,29 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <BreadcrumbSchema items={breadcrumbItems} />
-      <main className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30">
-        <Hero2 />
-        <StoryText2 />
-        <EquipmentCarousel />
-        <DifferencesSection />
-        <Gallery />
-        <CoachesSection />
-        <MembershipSection />
-        <LocationHours />
-        <FinalCTA />
-        <Footer />
+      <main className="min-h-screen bg-background text-foreground overflow-x-clip selection:bg-primary/30">
+        <Hero5 />
+
+        {/* Cortina: el contenido sube tapando el hero sticky */}
+        <div className="relative z-10 rounded-t-[2.5rem] border-t border-border/60 bg-background">
+          <StoryText2 />
+          <EquipmentCarousel />
+          <DifferencesSection />
+          <Gallery />
+          <CoachesSection />
+          <MembershipSection />
+          <LocationHours />
+
+          {/* Pausa antes de la cortina: el mapa sticky se queda fijo mientras
+              el usuario recorre este tramo extra */}
+          <div aria-hidden="true" className="hidden lg:block h-[28vh]" />
+
+          {/* Cortina final: el CTA de cierre sube tapando el mapa sticky */}
+          <div className="relative z-10 rounded-t-[2.5rem] border-t border-border/60 bg-background shadow-[0_-24px_60px_rgba(0,0,0,0.55)]">
+            <FinalCTA />
+            <Footer />
+          </div>
+        </div>
       </main>
     </>
   );

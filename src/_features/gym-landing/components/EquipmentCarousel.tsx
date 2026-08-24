@@ -50,22 +50,39 @@ export function EquipmentCarousel() {
     const section = sectionRef.current;
     if (!section) return;
 
-    const items = section.querySelectorAll('[data-eq-reveal]');
+    const head = section.querySelector("[data-eq-head]");
+    const sub = section.querySelector("[data-eq-sub]");
+    const carousel = section.querySelector("[data-eq-carousel]");
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      gsap.set(items, { clearProps: 'all' });
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      gsap.set([head, sub, carousel], { clearProps: "all" });
       return;
     }
 
+    /* Cortina en el título → descripción → el carrusel sube y se asienta */
     const timeline = gsap.timeline({
-      scrollTrigger: { trigger: section, start: 'top 78%' },
+      scrollTrigger: { trigger: section, start: "top 75%" },
+      defaults: { ease: "power4.out" },
     });
 
-    timeline.fromTo(
-      items,
-      { y: 40, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, stagger: 0.15, ease: 'power3.out' },
-    );
+    timeline
+      .fromTo(
+        head,
+        { clipPath: "inset(0% 0% 100% 0%)", y: 34 },
+        { clipPath: "inset(0% 0% -12% 0%)", y: 0, duration: 0.95 },
+      )
+      .fromTo(
+        sub,
+        { y: 22, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.7 },
+        "-=0.55",
+      )
+      .fromTo(
+        carousel,
+        { y: 64, opacity: 0, scale: 0.96 },
+        { y: 0, opacity: 1, scale: 1, duration: 1.05, ease: "power3.out" },
+        "-=0.4",
+      );
 
     return () => {
       timeline.scrollTrigger?.kill();
@@ -88,8 +105,11 @@ export function EquipmentCarousel() {
 
       <div className="relative z-10 container mx-auto max-w-6xl">
         {/* Header — sin chip/pill, centrado con subrayado SVG (patrón FanDeck) */}
-        <div data-eq-reveal className="mb-20 text-center">
-          <h2 className="mb-6 font-heading text-4xl font-black uppercase leading-[0.95] text-foreground md:text-6xl">
+        <div className="mb-20 text-center">
+          <h2
+            data-eq-head
+            className="mb-6 font-heading text-4xl font-black uppercase leading-[0.95] text-foreground md:text-6xl"
+          >
             Arsenal{" "}
             <span className="text-primary relative inline-block">
               de Élite
@@ -109,13 +129,16 @@ export function EquipmentCarousel() {
               </svg>
             </span>
           </h2>
-          <p className="mx-auto max-w-2xl font-mono text-lg leading-relaxed text-muted-foreground">
+          <p
+            data-eq-sub
+            className="mx-auto max-w-2xl font-mono text-lg leading-relaxed text-muted-foreground"
+          >
             Desliza por nuestro equipo seleccionado de clase mundial, diseñado
             para máxima tensión mecánica y progreso fisiológico.
           </p>
         </div>
 
-        <div data-eq-reveal className="relative">
+        <div data-eq-carousel className="relative">
           <CoverflowCarousel
             slides={machines}
             cardWidth="clamp(260px, 32vw, 400px)"

@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, Settings, LogOut, ShieldCheck, UserCircle, Trophy, Bell, Banknote, LayoutDashboard } from 'lucide-react';
+import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, Settings, LogOut, UserCircle, Trophy, Bell, Banknote, LayoutDashboard } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { usePageTransition } from '@/_features/shared/hooks/usePageTransition';
 import {
@@ -22,7 +22,7 @@ import {
 } from '@/_features/shared/hooks/useNotifications';
 
 const links = [
-  { name: 'Inicio', href: '/#home', icon: Home },
+  { name: 'Inicio', href: '/', icon: Home },
   { name: 'Equipamiento', href: '/#equipment', icon: Dumbbell },
   { name: 'Galería', href: '/#gallery', icon: Camera },
   { name: 'Entrenadores', href: '/#coaches', icon: Users },
@@ -340,16 +340,14 @@ function NotificationBell() {
                 onClick={() =>
                   handleItemClick(notification.id, notification.read, notification.link)
                 }
-                className={`flex w-full cursor-pointer items-start gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors ${
-                  notification.read
-                    ? 'opacity-60 hover:bg-secondary'
-                    : 'bg-primary/5 hover:bg-primary/15'
-                }`}
+                className={`flex w-full cursor-pointer items-start gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors ${notification.read
+                  ? 'opacity-60 hover:bg-secondary'
+                  : 'bg-primary/5 hover:bg-primary/15'
+                  }`}
               >
                 <span
-                  className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                    notification.read ? 'bg-transparent' : 'bg-primary shadow-[0_0_6px_rgba(150,217,6,0.8)]'
-                  }`}
+                  className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read ? 'bg-transparent' : 'bg-primary shadow-[0_0_6px_rgba(150,217,6,0.8)]'
+                    }`}
                 />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline justify-between gap-2">

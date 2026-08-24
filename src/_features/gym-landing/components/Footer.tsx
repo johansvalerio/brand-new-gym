@@ -10,8 +10,8 @@ import {
 
 const footerLinks = {
   brand: {
-    name: "GYM ULATE",
-    tagline: "Forja Tu Legado",
+    name: "Nuestras",
+    tagline: "redes",
   },
   navigation: [
     { label: "Inicio", href: "#home" },
@@ -67,9 +67,9 @@ export function Footer() {
           </div> */}
 
           <h2 className="font-heading font-black uppercase leading-[0.85] tracking-[-0.03em] text-[clamp(2.75rem,7vw,5.5rem)] text-foreground">
-            Forja Tu
+            Gym
             <br />
-            <span className="text-primary">Legado.</span>
+            <span className="text-primary">Ulate.</span>
           </h2>
 
           <p className="font-mono text-muted-foreground text-sm md:text-base mt-4 max-w-xl leading-relaxed">

@@ -143,7 +143,7 @@ export function LocationHours() {
     <section
       id="location"
       ref={sectionRef}
-      className="relative py-28 bg-background px-6 overflow-hidden border-t border-border/60"
+      className="relative z-0 py-28 bg-background px-6 overflow-hidden border-t border-border/60 lg:sticky lg:top-0 lg:min-h-[100svh] lg:flex lg:flex-col lg:justify-center lg:py-14"
     >
       {/* ░░ Background — a soft "beacon" spotlight, no grid ░░ */}
       <div className="absolute inset-0 pointer-events-none">
@@ -158,10 +158,10 @@ export function LocationHours() {
 
       <div className="container mx-auto max-w-7xl relative z-10">
         {/* ░░ Section header (site pattern: chip + H2 + SVG underline + desc) ░░ */}
-        <div className="text-center mb-20">
+        <div className="text-center mb-20 lg:mb-10">
 
           <h2 className="font-heading text-4xl md:text-6xl font-black uppercase text-foreground mb-6 leading-[0.95]">
-            Encuéntranos
+            Encuéntranos{" "}
             <span className="text-primary relative inline-block">
               Aquí
               <svg
@@ -186,7 +186,7 @@ export function LocationHours() {
           </p>
         </div>
 
-        <div className="relative w-full h-[70vh] rounded-2xl overflow-hidden bg-card border border-border">
+        <div className="relative w-full h-[70vh] lg:h-[52vh] rounded-2xl overflow-hidden bg-card border border-border">
           {/* Map/Visual with animated route - full section */}
           <div
             ref={mapContainerRef}

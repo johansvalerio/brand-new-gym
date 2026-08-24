@@ -105,6 +105,7 @@ export function CoachesSection() {
                 }}
                 onHoverStart={() => setActiveIdx(idx)}
                 onHoverEnd={() => setActiveIdx(null)}
+                whileHover={reduceMotion ? undefined : { y: -6 }}
                 className="group relative overflow-hidden rounded-2xl bg-background border border-border hover:border-primary/50 transition-colors duration-500 cursor-pointer"
               >
                 {/* Hover glow */}
@@ -113,8 +114,14 @@ export function CoachesSection() {
                     }`}
                 />
 
-                {/* Image */}
-                <div className="aspect-[3/4] overflow-hidden relative">
+                {/* Image — cortina: la foto se revela de abajo hacia arriba */}
+                <motion.div
+                  initial={reduceMotion ? false : { clipPath: 'inset(100% 0% 0% 0%)' }}
+                  whileInView={{ clipPath: 'inset(0% 0% 0% 0%)' }}
+                  viewport={{ once: true, margin: '-60px' }}
+                  transition={{ duration: 0.9, delay: idx * 0.12 + 0.15, ease: [0.22, 1, 0.36, 1] }}
+                  className="aspect-[3/4] overflow-hidden relative"
+                >
                   <img
                     src={coach.image}
                     alt={coach.name}
@@ -150,7 +157,7 @@ export function CoachesSection() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Hover reveal bar - bottom */}
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-secondary scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500" />

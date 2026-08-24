@@ -4,7 +4,6 @@ import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Dumbbell, Activity, Users, Flame } from "lucide-react";
 
 // Register Plugin once
 if (typeof window !== "undefined") {
@@ -17,7 +16,8 @@ const features = [
     title: "Equipamiento de Élite",
     description:
       "No escatimamos en gastos. Experimenta las mejores máquinas biomecánicamente diseñadas de todo el mundo.",
-    icon: Dumbbell,
+    image:
+      "https://images.unsplash.com/photo-1596357395104-14a5ae9cdade?q=80&w=1200&auto=format&fit=crop",
     stat: "120+",
     statLabel: "Máquinas Premium",
   },
@@ -26,7 +26,8 @@ const features = [
     title: "Seguimiento con Datos",
     description:
       "Nuestra app propietaria se sincroniza con nuestro equipo para rastrear cada repetición, serie y récord personal.",
-    icon: Activity,
+    image:
+      "https://images.unsplash.com/photo-1576678927484-cc907957088c?q=80&w=1200&auto=format&fit=crop",
     stat: "100%",
     statLabel: "Precisión de Sincronización",
   },
@@ -35,7 +36,8 @@ const features = [
     title: "Comunidad Táctica",
     description:
       "Rodéate de personas que exigen más de sí mismas y de ti.",
-    icon: Users,
+    image:
+      "https://images.unsplash.com/photo-1534367507873-d2d7e24c7f07?q=80&w=1200&auto=format&fit=crop",
     stat: "24/7",
     statLabel: "Miembros Activos",
   },
@@ -44,7 +46,8 @@ const features = [
     title: "Acceso 24/7",
     description:
       "El entrenamiento nunca se detiene. Entrena a las 2 AM con nuestro sistema de entrada seguro biométrico.",
-    icon: Flame,
+    image:
+      "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop",
     stat: "365",
     statLabel: "Días Abierto",
   },
@@ -64,6 +67,25 @@ export function DifferencesSection() {
 
         const items = gsap.utils.toArray<HTMLElement>(".difference-item");
         if (items.length === 0) return;
+
+        /* Entrada del header — cortina en el h2 + descripción, con trigger
+           propio para que termine antes de que arranque el pin */
+        gsap
+          .timeline({
+            scrollTrigger: { trigger: section, start: "top 78%" },
+            defaults: { ease: "power4.out" },
+          })
+          .fromTo(
+            ".diff-head",
+            { clipPath: "inset(0% 0% 100% 0%)", y: 34 },
+            { clipPath: "inset(0% 0% -12% 0%)", y: 0, duration: 0.95 },
+          )
+          .fromTo(
+            ".diff-sub",
+            { y: 20, autoAlpha: 0 },
+            { y: 0, autoAlpha: 1, duration: 0.7 },
+            "-=0.55",
+          );
 
         // Create a timeline for sequential item changes
         const timeline = gsap.timeline({
@@ -201,6 +223,16 @@ export function DifferencesSection() {
             ease: "power2.out",
           }, (index - 1) * 1.5 + 1.0);
         });
+
+        /* Segmentos de progreso: cada uno se llena durante su ventana */
+        const segments = gsap.utils.toArray<HTMLElement>(".diff-seg-fill");
+        segments.forEach((segment, i) => {
+          timeline.fromTo(segment, { scaleX: 0 }, {
+            scaleX: 1,
+            duration: 1.5,
+            ease: "none",
+          }, i * 1.5);
+        });
       });
 
       return () => mm.revert();
@@ -225,11 +257,12 @@ export function DifferencesSection() {
       <div className="container mx-auto max-w-6xl relative z-10">
         {/* ===== Section Header ===== */}
         <div className="text-center mb-16 md:mb-20">
-         
-          <h2 className="font-heading text-4xl md:text-6xl font-black uppercase text-foreground mb-6 leading-[0.95]">
-            Why We Are{" "}
+          <h2
+            className="diff-head font-heading text-4xl md:text-6xl font-black uppercase text-foreground mb-6 leading-[0.95]"
+          >
+            Por Qué Somos{" "}
             <span className="text-primary relative inline-block">
-              Different
+              Diferentes
               <svg
                 className="absolute -bottom-2 left-0 w-full h-3 text-primary/40"
                 viewBox="0 0 200 12"
@@ -246,16 +279,15 @@ export function DifferencesSection() {
               </svg>
             </span>
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto font-mono text-lg leading-relaxed">
-            This isn&#39;t a social club. This is a facility built for results,
-            tracking, and absolute progression.
+          <p className="diff-sub text-muted-foreground max-w-2xl mx-auto font-mono text-lg leading-relaxed">
+            Esto no es un club social. Es una instalación construida para
+            resultados, seguimiento y progresión absoluta.
           </p>
         </div>
 
         {/* ===== Sequential Feature Display - Aggressive Split Layout ===== */}
         <div className="relative h-[60vh] flex items-center justify-center">
           {features.map((feature, idx) => {
-            const Icon = feature.icon;
             const gradients = [
               "from-primary/30 via-transparent to-transparent",
               "from-blue-500/30 via-transparent to-transparent",
@@ -270,66 +302,75 @@ export function DifferencesSection() {
                   idx === 0 ? "opacity-100" : "opacity-0"
                 }`}
               >
-                {/* Dynamic background gradient */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${gradients[idx]} opacity-30`} />
+                {/* Tarjeta — superficie card (no negro plano), borde y sombra con offset */}
+                <div className="relative w-full max-w-5xl rounded-3xl border border-border/60 bg-card/80 overflow-hidden shadow-[0_28px_80px_rgba(0,0,0,0.55)]">
+                  <div className={`absolute inset-0 bg-gradient-to-br ${gradients[idx]} opacity-40 pointer-events-none`} />
 
-                <div className="relative grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center max-w-6xl w-full px-6">
-                  {/* Left side - Content */}
-                  <div className="space-y-6 md:space-y-8">
-                    {/* Icon with glow */}
-                    <div className="relative inline-block">
-                      <div className="absolute inset-0 bg-primary/40 blur-2xl rounded-full animate-pulse" />
-                      <div className="relative h-20 w-20 md:h-24 md:w-24 rounded-2xl bg-primary/20 border-2 border-primary/50 flex items-center justify-center icon-glow">
-                        <Icon
-                          className="w-10 h-10 md:w-12 md:h-12 text-primary"
-                          aria-hidden="true"
-                        />
+                  <div className="relative grid grid-cols-1 md:grid-cols-[1.05fr_0.95fr]">
+                    {/* Left — contenido editorial */}
+                    <div className="p-8 md:p-12 flex flex-col justify-center gap-5 md:gap-6">
+                      {/* Medallón tipográfico — el numeral manda, sin íconos genéricos */}
+                      <div className="icon-glow relative inline-flex h-16 w-16 md:h-20 md:w-20 items-center justify-center rounded-2xl bg-primary/15 border border-primary/40">
+                        <span className="font-heading font-black text-2xl md:text-3xl text-primary leading-none">
+                          {feature.index}
+                        </span>
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="feature-title font-heading text-3xl md:text-5xl font-black uppercase tracking-tight text-foreground leading-[0.95]">
+                        {feature.title}
+                      </h3>
+
+                      {/* Description */}
+                      <p className="feature-desc text-muted-foreground font-mono text-sm md:text-base leading-relaxed max-w-md">
+                        {feature.description}
+                      </p>
+
+                      {/* Feature indicator */}
+                      <div className="flex items-center gap-2">
+                        <div className="h-px w-12 bg-primary/50" />
+                        <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-primary/80">
+                          {feature.index} / 04
+                        </span>
                       </div>
                     </div>
 
-                    {/* Title */}
-                    <h3 className="feature-title font-heading text-3xl md:text-5xl font-black uppercase tracking-tight text-foreground leading-tight">
-                      {feature.title}
-                    </h3>
+                    {/* Right — foto duotono con el stat montado */}
+                    <div className="relative min-h-[260px] md:min-h-[440px]">
+                      <div
+                        className="absolute inset-0 bg-cover bg-center grayscale"
+                        style={{ backgroundImage: `url(${feature.image})` }}
+                      />
+                      <div className="absolute inset-0 bg-primary/25 mix-blend-multiply" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-card via-card/30 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
 
-                    {/* Description */}
-                    <p className="feature-desc text-muted-foreground font-mono text-sm md:text-base leading-relaxed max-w-md">
-                      {feature.description}
-                    </p>
-
-                    {/* Feature indicator */}
-                    <div className="flex items-center gap-2">
-                      <div className="h-px w-12 bg-primary/50" />
-                      <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-primary/80">
-                        Feature {feature.index}
-                      </span>
+                      <div className="absolute bottom-6 right-6 text-right">
+                        <span className="feature-stat block font-heading font-black text-6xl md:text-7xl text-primary leading-none [text-shadow:0_4px_24px_rgba(0,0,0,0.85)]">
+                          {feature.stat}
+                        </span>
+                        <span className="feature-label block font-mono text-xs uppercase tracking-widest text-foreground/90 mt-2">
+                          {feature.statLabel}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Right side - Giant Stat */}
-                  <div className="flex flex-col items-center justify-center relative">
-                    {/* Background decorative number */}
-                    <div className="absolute -top-10 -right-10 font-heading font-black text-[150px] md:text-[200px] text-border/10 select-none pointer-events-none">
-                      {feature.index}
-                    </div>
-
-                    {/* Giant stat display */}
-                    <div className="relative text-center">
-                      <span className="feature-stat font-heading font-black text-7xl md:text-9xl text-primary leading-none block stat-counter">
-                        {feature.stat}
-                      </span>
-                      <span className="feature-label font-mono text-xs md:text-sm uppercase tracking-wider text-muted-foreground block mt-2">
-                        {feature.statLabel}
-                      </span>
-                    </div>
-
-                    {/* Decorative elements */}
-                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
                   </div>
                 </div>
               </div>
             );
           })}
+        </div>
+
+        {/* Progreso de la secuencia: 4 segmentos que se llenan con el scroll */}
+        <div className="mt-12 flex items-center justify-center gap-3">
+          {features.map((feature) => (
+            <div
+              key={feature.index}
+              className="h-[3px] w-14 md:w-20 overflow-hidden rounded-full bg-border/40"
+            >
+              <div className="diff-seg-fill h-full w-full origin-left scale-x-0 bg-primary" />
+            </div>
+          ))}
         </div>
       </div>
     </section>

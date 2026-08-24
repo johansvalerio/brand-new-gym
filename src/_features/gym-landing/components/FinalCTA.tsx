@@ -94,7 +94,7 @@ export function FinalCTA() {
   return (
     <section
       ref={containerRef}
-      className="relative py-36 bg-background overflow-hidden flex items-center justify-center border-t border-border/60 mt-12"
+      className="relative py-36 bg-background overflow-hidden flex items-center justify-center"
     >
       <div
         className="absolute inset-0 pointer-events-none opacity-60 transition-transform duration-1000 ease-out"

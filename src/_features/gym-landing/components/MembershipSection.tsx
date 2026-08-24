@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { Check, Zap, Crown, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,6 +68,7 @@ const CARD_VISUALS = [
 
 export function MembershipSection() {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const reduceMotion = useReducedMotion();
   const { profile, loading: authLoading } = useAuthSession();
   const { data: plans = [], isLoading: plansLoading } = usePlans();
   const createRequest = useCreatePaymentRequest();
@@ -115,13 +117,25 @@ export function MembershipSection() {
 
       <div className="container mx-auto max-w-7xl relative z-10">
         <div className="text-center mb-20">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 mb-6">
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 mb-6"
+          >
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-primary">
               Precios
             </span>
-          </div>
-          <h2 className="font-heading text-4xl md:text-6xl font-black uppercase text-foreground mb-6 leading-[0.95]">
+          </motion.div>
+          <motion.h2
+            initial={reduceMotion ? false : { opacity: 0, y: 28 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.65, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+            className="font-heading text-4xl md:text-6xl font-black uppercase text-foreground mb-6 leading-[0.95]"
+          >
             Niveles de{" "}
             <span className="text-primary relative inline-block">
               Membresía
@@ -139,10 +153,16 @@ export function MembershipSection() {
                 />
               </svg>
             </span>
-          </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto font-mono text-lg leading-relaxed">
+          </motion.h2>
+          <motion.p
+            initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.6, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            className="text-muted-foreground max-w-2xl mx-auto font-mono text-lg leading-relaxed"
+          >
             Elige tu plan, paga por SINPE o en caja y entrena. Sin tarifas ocultas.
-          </p>
+          </motion.p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
@@ -164,8 +184,19 @@ export function MembershipSection() {
               const ctaLabel = profile ? "Elegir este plan" : "Comenzar";
 
               return (
-                <Card
+                <motion.div
                   key={plan.id}
+                  initial={reduceMotion ? false : { opacity: 0, y: 48, scale: 0.96 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{
+                    duration: 0.65,
+                    delay: idx * 0.13,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  className="h-full"
+                >
+                <Card
                   onMouseEnter={() => setHoveredIdx(idx)}
                   onMouseLeave={() => setHoveredIdx(null)}
                   className={`pricing-card relative group overflow-hidden cursor-pointer transition-all duration-500 ease-out !gap-0 !py-0 flex flex-col
@@ -302,18 +333,25 @@ export function MembershipSection() {
                     </CardFooter>
                   </div>
                 </Card>
+                </motion.div>
               );
             })
           )}
         </div>
 
-        <div className="mt-16 text-center">
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.25, ease: "easeOut" }}
+          className="mt-16 text-center"
+        >
           <p className="font-mono text-sm text-muted-foreground inline-flex items-center gap-2">
             <span className="w-8 h-px bg-border" />
             Pagas por SINPE o en caja. El administrador confirma y entrenas.
             <span className="w-8 h-px bg-border" />
           </p>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

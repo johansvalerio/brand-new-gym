@@ -146,11 +146,14 @@ export function StoryText2() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#000_75%)]" />
         </div>
 
-        <div className="relative w-full max-w-[92vw] px-4 sm:px-8 overflow-visible z-20">
+        {/* Franja a altura completa: cada frase centra su bloque (1..N líneas)
+            en el medio real de la pantalla — antes el wrapper medía 0px de alto
+            y las frases multilínea se apilaban hacia abajo del centro. */}
+        <div className="pointer-events-none absolute inset-0 z-20 px-4 sm:px-8">
           {PHRASES.map((phrase, i) => (
             <div
               key={i}
-              className="phrase absolute inset-0 flex flex-wrap items-center justify-center text-center"
+              className="phrase absolute inset-0 flex flex-wrap items-center justify-center content-center text-center"
               aria-label={phrase}
               style={{ opacity: i === 0 ? 1 : 0 }}
             >
