@@ -12,9 +12,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, Settings, LogOut, ShieldCheck, UserCircle, Trophy } from 'lucide-react';
+import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, Settings, LogOut, ShieldCheck, UserCircle, Trophy, Bell, Banknote, LayoutDashboard } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { usePageTransition } from '@/_features/shared/hooks/usePageTransition';
+import {
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotifications,
+} from '@/_features/shared/hooks/useNotifications';
 
 const links = [
   { name: 'Inicio', href: '/#home', icon: Home },
@@ -102,7 +107,10 @@ export function FloatingNav() {
 
           if (link.name === 'Ingresar') {
             return userProfile ? (
-              <AvatarDropdown key={link.name} user={userProfile} />
+              <div key={link.name} className="flex items-center gap-1">
+                <NotificationBell />
+                <AvatarDropdown user={userProfile} />
+              </div>
             ) : (
               <button
                 key={index}
@@ -186,6 +194,13 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
         <DropdownMenuSeparator className="my-2" />
 
         <DropdownMenuGroup>
+          {user.isAdmin && (
+            <DropdownMenuItem onClick={() => navigate('/dashboard')}
+              className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+              <LayoutDashboard className="h-4 w-4 mr-1" />
+              Dashboard
+            </DropdownMenuItem>
+          )}
           {user.profileId ? (
             <DropdownMenuItem onClick={() => navigate(`/users/profile/${user.profileId}`)} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
               <UserCircle className="h-4 w-4 mr-1" />
@@ -207,17 +222,25 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
           <DropdownMenuItem onClick={() => navigate(`/users/profile/${user.profileId}/routine`)}
             className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
             <Flame className="h-4 w-4 mr-1" />
-            Rutinas
+            Mis Rutinas
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate('/routines')}
             className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
             <Trophy className="h-4 w-4 mr-1" />
             Ranking de rutinas
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
-            <ShieldCheck className="h-4 w-4 mr-1" />
-            Membresías
+          <DropdownMenuItem onClick={() => navigate('/membership')}
+            className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+            <CreditCard className="h-4 w-4 mr-1" />
+            Mi membresía
           </DropdownMenuItem>
+          {user.isAdmin && (
+            <DropdownMenuItem onClick={() => navigate('/payments')}
+              className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+              <Banknote className="h-4 w-4 mr-1" />
+              Pagos
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primar">
             <Settings className="h-4 w-4 mr-1" />
             Configuración
@@ -236,6 +259,117 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
             Cerrar sesión
           </DropdownMenuItem>
         </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 1) return 'ahora';
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  return new Date(iso).toLocaleDateString('es-CR', { day: 'numeric', month: 'short' });
+}
+
+function NotificationBell() {
+  const { data: notifications = [] } = useNotifications(true);
+  const markRead = useMarkNotificationRead();
+  const markAll = useMarkAllNotificationsRead();
+  const { navigate } = usePageTransition();
+
+  const unread = notifications.filter((n) => !n.read).length;
+
+  const handleItemClick = (
+    id: number,
+    read: boolean,
+    link: string | null,
+  ) => {
+    if (!read) markRead.mutate(id);
+    if (link) navigate(link);
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label={`Notificaciones${unread > 0 ? ` (${unread} sin leer)` : ''}`}
+        className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-primary/25 bg-background/80 shadow-[0_0_18px_rgba(150,217,6,0.12)] transition-all duration-300 hover:border-primary/50 hover:bg-primary/10 hover:shadow-[0_0_24px_rgba(150,217,6,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        <Bell className="h-4 w-4 text-muted-foreground transition-colors duration-300 hover:text-primary" />
+        {unread > 0 ? (
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-black leading-none text-white">
+            {unread > 9 ? '9+' : unread}
+          </span>
+        ) : null}
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent
+        align="end"
+        side="bottom"
+        className="w-80 rounded-2xl border border-border/80 bg-card/95 p-2 shadow-[0_20px_45px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+      >
+        <div className="flex items-center justify-between px-2 py-1">
+          <p className="font-sans text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Notificaciones
+          </p>
+          {unread > 0 ? (
+            <button
+              onClick={() => markAll.mutate()}
+              className="cursor-pointer font-mono text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-primary"
+            >
+              Marcar todas
+            </button>
+          ) : null}
+        </div>
+
+        <DropdownMenuSeparator className="my-1" />
+
+        <div className="max-h-96 overflow-y-auto">
+          {notifications.length === 0 ? (
+            <p className="px-3 py-8 text-center text-sm text-muted-foreground">
+              Sin notificaciones por ahora.
+            </p>
+          ) : (
+            notifications.map((notification) => (
+              <button
+                key={notification.id}
+                onClick={() =>
+                  handleItemClick(notification.id, notification.read, notification.link)
+                }
+                className={`flex w-full cursor-pointer items-start gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                  notification.read
+                    ? 'opacity-60 hover:bg-secondary'
+                    : 'bg-primary/5 hover:bg-primary/15'
+                }`}
+              >
+                <span
+                  className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                    notification.read ? 'bg-transparent' : 'bg-primary shadow-[0_0_6px_rgba(150,217,6,0.8)]'
+                  }`}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="truncate font-sans text-sm font-semibold text-foreground">
+                      {notification.title}
+                    </span>
+                    <span className="shrink-0 font-mono text-[9px] uppercase text-muted-foreground">
+                      {timeAgo(notification.created_at)}
+                    </span>
+                  </span>
+                  {notification.body ? (
+                    <span className="mt-0.5 block truncate font-mono text-xs text-muted-foreground">
+                      {notification.body}
+                    </span>
+                  ) : null}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

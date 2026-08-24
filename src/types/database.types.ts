@@ -9,6 +9,47 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: number
+          link: string | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: never
+          link?: string | null
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: never
+          link?: string | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -54,6 +95,36 @@ export type Database = {
         }
         Relationships: []
       }
+      plans: {
+        Row: {
+          created_at: string
+          duration_days: number
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          duration_days: number
+          id?: string
+          is_active?: boolean
+          name: string
+          price?: number
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          duration_days?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          slug?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category_id: string | null
@@ -94,6 +165,67 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          method: Database["public"]["Enums"]["payment_method"]
+          note: string | null
+          plan_id: string
+          requested_at: string
+          status: Database["public"]["Enums"]["payment_status"]
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          note?: string | null
+          plan_id: string
+          requested_at?: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          note?: string | null
+          plan_id?: string
+          requested_at?: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -283,13 +415,13 @@ export type Database = {
           last_name: string | null
           last_visit: string | null
           membership_end: string | null
-          membership_plan: Database["public"]["Enums"]["membership_plan"] | null
           membership_start: string | null
           membership_status:
             | Database["public"]["Enums"]["membership_status"]
             | null
           phone: string | null
           phone_verified: boolean | null
+          plan_id: string | null
           provider: string | null
           provider_id: string | null
           role: Database["public"]["Enums"]["user_role"] | null
@@ -309,15 +441,13 @@ export type Database = {
           last_name?: string | null
           last_visit?: string | null
           membership_end?: string | null
-          membership_plan?:
-            | Database["public"]["Enums"]["membership_plan"]
-            | null
           membership_start?: string | null
           membership_status?:
             | Database["public"]["Enums"]["membership_status"]
             | null
           phone?: string | null
           phone_verified?: boolean | null
+          plan_id?: string | null
           provider?: string | null
           provider_id?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
@@ -337,15 +467,13 @@ export type Database = {
           last_name?: string | null
           last_visit?: string | null
           membership_end?: string | null
-          membership_plan?:
-            | Database["public"]["Enums"]["membership_plan"]
-            | null
           membership_start?: string | null
           membership_status?:
             | Database["public"]["Enums"]["membership_status"]
             | null
           phone?: string | null
           phone_verified?: boolean | null
+          plan_id?: string | null
           provider?: string | null
           provider_id?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
@@ -359,6 +487,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "users_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -368,10 +503,12 @@ export type Database = {
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean }
       is_coach: { Args: Record<string, never>; Returns: boolean }
+      expire_stale_memberships: { Args: Record<string, never>; Returns: undefined }
     }
     Enums: {
-      membership_plan: "basic" | "premium" | "elite" | "day-pass"
       membership_status: "active" | "inactive" | "pending" | "expired"
+      payment_method: "sinpe" | "efectivo"
+      payment_status: "pending" | "approved" | "rejected"
       routine_goal:
         | "fuerza"
         | "hipertrofia"
@@ -410,8 +547,9 @@ export type Enums<
 export const Constants = {
   public: {
     Enums: {
-      membership_plan: ["basic", "premium", "elite", "day-pass"],
       membership_status: ["active", "inactive", "pending", "expired"],
+      payment_method: ["sinpe", "efectivo"],
+      payment_status: ["pending", "approved", "rejected"],
       routine_goal: [
         "fuerza",
         "hipertrofia",

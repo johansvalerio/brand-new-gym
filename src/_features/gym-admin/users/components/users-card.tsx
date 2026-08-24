@@ -1,10 +1,9 @@
 "use client"
 
 import { User, Pencil, Trash2, Eye, Dumbbell } from "lucide-react"
-import type { Tables } from "@/types/database.types"
+import type { UserRow } from "../hooks/useUsers"
+import { MembershipChip } from "./MembershipCountdown"
 import { membershipBadgeClasses, membershipLabel, statusBadgeClasses, statusLabel } from "./utils"
-
-type UserRow = Tables<"users">
 
 interface UsersCardsProps {
   users: UserRow[]
@@ -21,13 +20,17 @@ export function UsersCards({ users, onEdit, onDelete, onView, onAssignRoutine, c
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {users.map((user) => {
         const statusBadge = statusBadgeClasses(user.membership_status ?? "pending")
-        const planBadge = membershipBadgeClasses(user.membership_plan ?? "basic")
+        const planBadge = membershipBadgeClasses(user.plan)
         const fullName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || "Miembro"
 
         return (
           <article
             key={user.id}
-            className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/50"
+            className={`group relative flex flex-col overflow-hidden rounded-lg border bg-card transition-all duration-300 hover:-translate-y-1 ${
+              user.membership_status === "active"
+                ? "border-primary/40 hover:border-primary"
+                : "border-border hover:border-primary/50"
+            }`}
           >
             {/* hover glow */}
             <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
@@ -66,10 +69,11 @@ export function UsersCards({ users, onEdit, onDelete, onView, onAssignRoutine, c
               <div className="mt-4 flex items-end justify-between">
                 <div className="flex flex-col gap-1">
                   <span
-                    className={`inline-block rounded-full border px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-wider ${planBadge}`}
+                    className={`inline-block w-fit rounded-full border px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-wider ${planBadge}`}
                   >
-                    {membershipLabel(user.membership_plan ?? "basic")}
+                    {membershipLabel(user.plan)}
                   </span>
+                  <MembershipChip start={user.membership_start} end={user.membership_end} />
                   <span className="font-mono text-[10px] text-muted-foreground">
                     {user.phone ?? "Sin teléfono"}
                   </span>

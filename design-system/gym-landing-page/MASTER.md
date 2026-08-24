@@ -34,6 +34,7 @@ src/
 
 **Rules:**
 - New feature → new folder under `_features/<name>/` with `components/` and `hooks/`. `shared/` only for cross-feature code.
+- **Component granularity (2026-08-23, applies to ALL new code):** one concern per file. A page/feature composes SEPARATE component files — never pile multiple sections/widgets into a single `.tsx`. Canonical example: `dashboard/components/` → `Dashboard.tsx` (orchestrator: guard + hooks + data derivation) composing `dashboard-stats.tsx`, `expiring-members.tsx`, `pending-payments.tsx`. Parent fetches via hooks and passes props down; children stay presentational (or own their small mutations). `payments/` and `membership/` already follow this split (stats / card / history files). Legacy monoliths still pending: Users.tsx, Products.tsx.
 - Page files in `app/` stay thin: they render the feature component.
 - Never hand-edit `database.types.ts`; regenerate it from the DB and derive row/DTO types from `Tables` / `TablesInsert` / `TablesUpdate`.
 
@@ -45,11 +46,14 @@ src/
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `public.users` | `id`, `auth_id` (→ auth.users), `email`, `role`, `coach_id` | Profile per auth user; `role` enum `user_role`: **`admin` \| `user` \| `coach`** (NOT "member"); `coach_id` self-FK (one active coach, trigger enforces role='coach') |
+| `public.users` | `id`, `auth_id` (→ auth.users), `email`, `role`, `coach_id`, `plan_id`, `membership_status/start/end` | Profile per auth user; `role` enum `user_role`: **`admin` \| `user` \| `coach`** (NOT "member"); `coach_id` self-FK (one active coach, trigger enforces role='coach'); `plan_id` FK → `plans`; `membership_status` enum active/inactive/pending/expired; start/end = cached current period (fills the profile countdown). The old `membership_plan` enum is DROPPED (2026-08-22). |
+| `public.plans` | `id`, `slug` unique, `name`, `duration_days`, `price` (colones CRC), `is_active` | Membership plans seeded: diario ₡2.500 (1d) / semanal ₡10.000 (7d) / mensual ₡15.000 (30d). Editable via SQL by admin (no CRUD UI yet). `handle_new_user()` recreated without the dropped column. |
 | `public.products` | `product_id`, `product_name`, `product_price`, `product_stock`, `category_id` | All columns prefixed `product_`; `category_id` FK → `categories.id` (nullable) |
 | `public.categories` | `id`, `slug` unique, `name` | Product taxonomy; `slug` = URL-safe identifier (queries/filters), `name` = human label (renamable). Seeded with 6 categories (proteinas, creatina, pre-entreno, vitaminas, accesorios, ropa). |
 | `public.exercises` | `name` unique, `muscle_group`, `equipment` | Exercise catalog, seeded (~20) |
 | `public.routines` | `user_id` FK, `created_by` FK (author), `goal` enum `routine_goal`, `is_active`, `is_shared` | **Badge provenance**: `created_by === user_id` → self-made ("Tu rutina"), else coach/admin-authored ("De tu coach"). `is_shared=true` publica la rutina en `/routines`; solo el autor (o admin) puede compartirla (trigger `prevent_unauthorized_share`) |
+| `public.payments` | `user_id`, `plan_id`, `amount` (snapshot CRC), `method` sinpe/efectivo, `status` pending/approved/rejected, `requested_at/decided_at/decided_by`, `note` | Solicitudes sin pasarela: el usuario crea la solicitud (una pendiente máx — índice parcial único), el admin aprueba/rechaza desde `/payments`. Trigger de aprobación llama `activate_membership()` (acumula sobre vigencia activa) y sella decided_at/by. **Delegación (2026-08-24): los forms de usuario YA NO asignan planes** — todo plan se asigna vía pagos; el admin registra walk-ins con "Registrar pago" en /payments (dialog miembro+plan+método+nota → INSERT directo approved → activación instantánea; RLS insert permite admin para cualquier usuario) |
+| `public.notifications` | `user_id`, `type`, `title`, `body`, `link`, `read` | Solo las escriben triggers security-definer (`notify()`): pago solicitado→admins, decisión→solicitante, coach asignado↔miembro, vencimiento próximo→usuario (cron). Realtime via publication + RLS propia por usuario. Bell en FloatingNav con badge |
 | `public.routine_days` | `routine_id` FK, `day_index` 1-7, `focus` | unique(routine_id, day_index) |
 | `public.routine_exercises` | `day_id` FK, `exercise_id` FK, sets, reps, rest_seconds | Ordered by `order_index` |
 | `public.routine_votes` | `routine_id` FK, `user_id` FK, unique(routine_id, user_id) | Like-style voting; 1 voto por usuario por rutina; autor no puede votarse a sí mismo (RLS) |
@@ -70,6 +74,9 @@ src/
 | users | "Coaches can view users" | `is_coach()` |
 | products / exercises | viewable by everyone / editable by admin | SELECT `true` / ALL `is_admin()` |
 | categories | viewable by everyone / editable by admin | SELECT `true` / ALL `is_admin()` |
+| plans | viewable by everyone / editable by admin | SELECT `true` / ALL `is_admin()` |
+| payments | dueño ve las suyas / admin todo; INSERT forzado a propio; DELETE propio-pending | UPDATE status solo admin → trigger activa membresía |
+| notifications | solo propias (SELECT/UPDATE read) | INSERT exclusivo de triggers security-definer |
 | routines | viewable by owner, admin and coach | owner (by `auth_id`) OR `is_admin()` OR `is_coach()` |
 | routines | shared viewable by everyone | `is_shared = true` |
 | routines | writable by admin, coach or self | admin/coach any; user only own `user_id` |

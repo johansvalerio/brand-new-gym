@@ -1,30 +1,30 @@
-## Fix: scroll horizontal por ConstellationBackground (navbar desplazado)
+## Plan: Edición de pagos pendientes desde /payments
 
-### Causa raíz (confirmada en código)
-1. `ConstellationBackground.tsx` dimensiona el canvas con `window.innerWidth` — que INCLUYE el scrollbar vertical (~17px desktop) → documento más ancho que el contenido.
-2. Los `<main>` de las páginas no tienen `relative` → el canvas (`absolute inset-0`) se ancla al body, escapando del `overflow-x-hidden` de cada página → nada lo recorta → scroll horizontal a nivel documento → el navbar fijo se percibe desplazado a la derecha.
+### Regla de negocio
+Solo los pagos **pending** son editables (plan/método/nota). Los approved/rejected quedan congelados — integridad de auditoría y consistencia con la membresía ya activada.
 
-### Cambios
+### Fase A — DB (migración)
+En `handle_payment_decision()` (BEFORE UPDATE), re-snapshot del monto cuando cambia el plan:
+```sql
+if tg_op = 'UPDATE' and new.plan_id is distinct from old.plan_id then
+  select price into new.amount from public.plans where id = new.plan_id;
+end if;
+```
+(mismo principio anti-manipulación del INSERT: la DB fija el precio).
 
-**1. `src/_features/shared/components/ConstellationBackground.tsx`**
-- En `resize()`: usar `document.documentElement.clientWidth / clientHeight` (viewport SIN scrollbar) para el estilo y el bitmap del canvas, en lugar de `window.innerWidth/innerHeight`.
-- En inicialización de partículas (L117) y en `draw()` (L131): usar esas mismas dimensiones medidas (cacheadas en el resize) para los límites de rebote.
+### Fase B — Frontend
 
-**2. Anclar el canvas dentro de cada página — agregar `relative` a los `<main>`:**
-- `src/app/users/page.tsx`: agregar `relative`
-- `src/app/products/page.tsx`: agregar `relative`
-- `src/app/routines/page.tsx`: agregar `relative` Y `overflow-x-hidden` (es la única de las tres que no lo tiene)
-- `src/app/users/profile/[id]/routine/page.tsx`: agregar `relative`
-
-**3. Revisar los otros 2 usos del componente:**
-- `src/_features/auth/components/Login.tsx` — verificar si su contenedor es `relative`; si no, agregarlo.
-- `src/_features/gym-landing/components/StoryText2.tsx` — según spec tiene contenedor propio `h-screen relative`; solo confirmar.
-
-### Por qué esto resuelve ambos síntomas
-- Desktop: el canvas ya no mide 17px de más → desaparece el scroll horizontal.
-- Mobile/web: el canvas queda dentro del contexto de clipping de cada página (`relative` + `overflow-x-hidden`) → ningún elemento puede ensanchar el documento → el navbar fijo deja de "moverse".
+1. **`usePayments.ts`**: nueva mutación `useUpdatePayment({ id, planId, method, note })` → UPDATE eq id (RLS ya limita a admin) → toast + invalida payments.
+2. **`walk-in-payment-dialog.tsx`**: soporta doble modo vía prop opcional `payment?: PaymentRow | null`:
+   - **Sin payment** (actual): crea solicitud/pago nuevo, miembro elegible por buscador+select, submit = insert pending... *no* — este dialog en create-mode registra walk-ins aprobados (comportamiento actual intacto).
+   - **Con payment** (modo edición): título "Editar pago", miembro bloqueado (solo lectura, mostrado como texto), plan/método/nota prefijados desde la fila, submit → `useUpdatePayment`. Botón "Guardar cambios".
+   - Internamente usa ambas mutaciones según modo; Realtime refresca las listas solo.
+3. **`pending-payment-card.tsx`**: nuevo botón lápiz (`onEdit?`) junto a Rechazar/Aprobar.
+4. **`Payments.tsx`**: estado `editing: PaymentRow | null`; el lápiz de cada card hace `setEditing(payment)` + abre el dialog; al cerrar se limpia.
 
 ### Verificación
-- `npx tsc --noEmit` + detector impeccable limpio.
-- Tu navegador: en /users, /products, /routines, /users/profile/[id]/routine y login — ya no debe existir pan lateral ni en mobile ni en web; las partículas siguen cubriendo toda la altura de la página (el canvas estira con el alto real del main).
-- Landing (StoryText2) sin cambios visuales.
+- SQL: UPDATE de plan en un pending re-snapshottea amount; admin edita método/plan/note ✓; no-admin blocked (RLS update ya admin-only).
+- `npx tsc --noEmit` + detector.
+- Navegador: registrar pago walk-in → editarlo (cambiar plan) → monto y fila actualizados solos (Realtime); aprobados sin botón editar.
+
+~5 archivos: 1 migración, usePayments, walk-in-payment-dialog, pending-payment-card, Payments.tsx (+MASTER.md nota breve).

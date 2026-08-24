@@ -13,7 +13,6 @@ export type UserFormPayload = {
   role: NonNullable<Tables<"users">["role"]>
   coach_id: string | null
   membership_status: NonNullable<Tables<"users">["membership_status"]>
-  membership_plan: NonNullable<Tables<"users">["membership_plan"]>
 }
 
 interface UserFormDialogProps {
@@ -32,7 +31,6 @@ type FormState = {
   role: UserFormPayload["role"]
   coach_id: string
   membership_status: UserFormPayload["membership_status"]
-  membership_plan: UserFormPayload["membership_plan"]
   avatar: string
 }
 
@@ -44,7 +42,6 @@ const emptyForm: FormState = {
   role: "user",
   coach_id: "",
   membership_status: "active",
-  membership_plan: "basic",
   avatar: "",
 }
 
@@ -68,7 +65,6 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
         role: user.role ?? "user",
         coach_id: user.coach_id ?? "",
         membership_status: user.membership_status ?? "active",
-        membership_plan: user.membership_plan ?? "basic",
         avatar: user.avatar ?? "",
       })
     } else {
@@ -121,7 +117,6 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
         role: form.role,
         coach_id: form.coach_id || null,
         membership_status: form.membership_status as UserFormPayload["membership_status"],
-        membership_plan: form.membership_plan as UserFormPayload["membership_plan"],
       })
     } finally {
       setIsSubmitting(false)
@@ -241,20 +236,6 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
                 <option value="inactive">Inactivo</option>
                 <option value="pending">Pendiente</option>
                 <option value="expired">Expirado</option>
-              </select>
-            </Field>
-
-            <Field label="Plan" htmlFor="membership_plan">
-              <select
-                id="membership_plan"
-                value={form.membership_plan}
-                onChange={(e) => set("membership_plan", e.target.value as UserFormPayload["membership_plan"])}
-                className={inputCls()}
-              >
-                <option value="basic">Básico</option>
-                <option value="premium">Premium</option>
-                <option value="elite">Elite</option>
-                <option value="day-pass">Day Pass</option>
               </select>
             </Field>
           </div>

@@ -1,10 +1,9 @@
 "use client"
 
 import { User, Pencil, Trash2, Eye, Dumbbell } from "lucide-react"
-import type { Tables } from "@/types/database.types"
+import type { UserRow } from "../hooks/useUsers"
+import { MembershipChip } from "./MembershipCountdown"
 import { membershipBadgeClasses, membershipLabel, statusBadgeClasses, statusLabel } from "./utils"
-
-type UserRow = Tables<"users">
 
 interface UsersTableProps {
   users: UserRow[]
@@ -38,7 +37,7 @@ export function UsersTable({ users, onEdit, onDelete, onView, onAssignRoutine, c
           <tbody>
             {users.map((user) => {
               const statusBadge = statusBadgeClasses(user.membership_status ?? "pending")
-              const planBadge = membershipBadgeClasses(user.membership_plan ?? "basic")
+              const planBadge = membershipBadgeClasses(user.plan)
               const fullName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || "Miembro"
               const lastVisit = user.last_visit ?? user.join_date ?? "2024-01-01T00:00:00.000Z"
 
@@ -71,11 +70,14 @@ export function UsersTable({ users, onEdit, onDelete, onView, onAssignRoutine, c
                   <td className="px-4 py-3 text-sm text-muted-foreground">{user.email}</td>
 
                   <td className="whitespace-nowrap px-4 py-3">
-                    <span
-                      className={`inline-block rounded-full border px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-wider ${planBadge}`}
-                    >
-                      {membershipLabel(user.membership_plan ?? "basic")}
-                    </span>
+                    <div className="flex flex-col items-start gap-1.5">
+                      <span
+                        className={`inline-block rounded-full border px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-wider ${planBadge}`}
+                      >
+                        {membershipLabel(user.plan)}
+                      </span>
+                      <MembershipChip start={user.membership_start} end={user.membership_end} />
+                    </div>
                   </td>
 
                   <td className="whitespace-nowrap px-4 py-3">

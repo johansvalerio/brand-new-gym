@@ -30,6 +30,8 @@ import {
   type UserRow,
 } from "@/_features/gym-admin/users/hooks/useUsers"
 import { useCoaches, coachDisplayName } from "@/_features/gym-admin/users/hooks/useCoaches"
+import { usePlans } from "@/_features/gym-admin/users/hooks/usePlans"
+import { MembershipCountdown } from "@/_features/gym-admin/users/components/MembershipCountdown"
 import {
   UserFormDialog,
   type UserFormPayload,
@@ -82,6 +84,7 @@ export function UserProfile({ id }: { id: string }) {
   const { data: profile, isLoading: dataLoading, error } = useUser(id)
   const { user: sessionUser, isAdmin, loading: authLoading } = useAuthSession()
   const { data: coaches = [] } = useCoaches()
+  const { data: plans = [] } = usePlans()
   const { navigate } = usePageTransition()
 
   const [formOpen, setFormOpen] = useState(false)
@@ -137,7 +140,6 @@ export function UserProfile({ id }: { id: string }) {
         role: payload.role,
         coach_id: payload.coach_id,
         membership_status: payload.membership_status,
-        membership_plan: payload.membership_plan,
       },
     })
     setFormOpen(false)
@@ -272,9 +274,9 @@ export function UserProfile({ id }: { id: string }) {
                   {statusLabel(profile.membership_status ?? "pending")}
                 </span>
                 <span
-                  className={`${membershipBadgeClasses(profile.membership_plan ?? "basic")} ${badgeBase}`}
+                  className={`${membershipBadgeClasses(profile.plan)} ${badgeBase}`}
                 >
-                  {membershipLabel(profile.membership_plan ?? "basic")}
+                  {membershipLabel(profile.plan)}
                 </span>
               </div>
 
@@ -337,9 +339,13 @@ export function UserProfile({ id }: { id: string }) {
           </DataCard>
 
           <DataCard title="Membresía" icon={<BadgeCheck className="h-4 w-4" />}>
-            <Meta large label="Plan" value={membershipLabel(profile.membership_plan ?? "basic")} />
+            <Meta large label="Plan" value={membershipLabel(profile.plan)} />
             <Meta large label="Estado" value={statusLabel(profile.membership_status ?? "pending")} />
             <Meta large label="Ingreso" value={formatDate(profile.join_date)} />
+            <MembershipCountdown
+              start={profile.membership_start}
+              end={profile.membership_end}
+            />
           </DataCard>
 
           <DataCard title="Actividad" icon={<Clock3 className="h-4 w-4" />}>

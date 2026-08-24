@@ -5,7 +5,9 @@ import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/database.types"
 
-export type UserRow = Tables<"users">
+export type UserRow = Tables<"users"> & {
+  plan: { id: string; slug: string; name: string } | null
+}
 export type CreateUserDto = TablesInsert<"users">
 export type UpdateUserDto = TablesUpdate<"users">
 
@@ -22,11 +24,11 @@ async function fetchUsers(): Promise<UserRow[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from("users")
-    .select("*")
+    .select("*, plan:plans(id, slug, name)")
     .order("created_at", { ascending: false })
 
   if (error) throw error
-  return data ?? []
+  return (data ?? []) as unknown as UserRow[]
 }
 
 export function useUsers() {
@@ -40,12 +42,12 @@ async function fetchUser(id: string): Promise<UserRow | null> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from("users")
-    .select("*")
+    .select("*, plan:plans(id, slug, name)")
     .eq("id", id)
     .maybeSingle()
 
   if (error) throw error
-  return data
+  return (data ?? null) as unknown as UserRow | null
 }
 
 export function useUser(id: string) {
@@ -65,11 +67,11 @@ export function useCreateUser() {
       const { data, error } = await supabase
         .from("users")
         .insert(dto)
-        .select()
+        .select("*, plan:plans(id, slug, name)")
         .single()
 
       if (error) throw error
-      return data
+      return data as unknown as UserRow
     },
     onSuccess: (user) => {
       toast.success(`Usuario "${userDisplayName(user)}" creado correctamente`)
@@ -99,11 +101,11 @@ export function useUpdateUser() {
         .from("users")
         .update({ ...dto, updated_at: new Date().toISOString() })
         .eq("id", id)
-        .select()
+        .select("*, plan:plans(id, slug, name)")
         .single()
 
       if (error) throw error
-      return data
+      return data as unknown as UserRow
     },
     onSuccess: (user) => {
       toast.success(`Usuario "${userDisplayName(user)}" actualizado correctamente`)

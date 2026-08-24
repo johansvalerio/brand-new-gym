@@ -1,7 +1,9 @@
 import type { Tables } from "@/types/database.types"
 
 type MembershipStatus = NonNullable<Tables<"users">["membership_status"]>
-type MembershipPlan = NonNullable<Tables<"users">["membership_plan"]>
+
+/** Referencia mínima al plan embebido en las queries de usuarios. */
+export type PlanRef = { id: string; slug: string; name: string }
 
 export function statusBadgeClasses(status: MembershipStatus): string {
   const base = "rounded-full border px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-wider"
@@ -34,32 +36,20 @@ export function statusLabel(status: MembershipStatus): string {
   }
 }
 
-export function membershipBadgeClasses(plan: MembershipPlan): string {
+export function membershipBadgeClasses(plan: PlanRef | null | undefined): string {
   const base = "rounded-full border px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-wider"
-  switch (plan) {
-    case "elite":
-    case "premium":
+  switch (plan?.slug) {
+    case "mensual":
       return `${base} border-primary/30 bg-primary/10 text-primary`
-    case "basic":
-      return `${base} border-muted-foreground/30 bg-muted/10 text-muted-foreground`
-    case "day-pass":
+    case "semanal":
       return `${base} border-yellow-500/30 bg-yellow-500/10 text-yellow-500`
+    case "diario":
+      return `${base} border-muted-foreground/30 bg-muted/10 text-muted-foreground`
     default:
       return `${base} border-border bg-card text-muted-foreground`
   }
 }
 
-export function membershipLabel(plan: MembershipPlan): string {
-  switch (plan) {
-    case "elite":
-      return "Elite"
-    case "premium":
-      return "Premium"
-    case "basic":
-      return "Básico"
-    case "day-pass":
-      return "Day Pass"
-    default:
-      return plan
-  }
+export function membershipLabel(plan: PlanRef | null | undefined): string {
+  return plan?.name ?? "Sin plan"
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { LayoutGrid, Table2, Plus, Search, User as UserIcon, Loader2 } from "lucide-react"
+import { LayoutGrid, Table2, Plus, Search, User as UserIcon, Loader2, CalendarClock } from "lucide-react"
 import {
   useUsers,
   useCreateUser,
@@ -11,13 +11,18 @@ import {
 import type { UserRow } from "@/_features/gym-admin/users/hooks/useUsers"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { useCoaches } from "@/_features/gym-admin/users/hooks/useCoaches"
+import { usePlans } from "@/_features/gym-admin/users/hooks/usePlans"
 import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
+import { FilterPill } from "@/_features/shared/components/filter-pill"
 import { UsersCards } from "./users-card"
 import { UsersTable } from "./users-table"
 import { UserFormDialog, type UserFormPayload } from "./user-form-dialog"
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog"
 
 type ViewMode = "cards" | "table"
+type MembershipFilter = "all" | "active" | "expiring" | "expired" | "none"
+
+const DAY_MS = 86_400_000
 
 export function Users() {
   const { data: users = [], isLoading, error } = useUsers()
@@ -26,22 +31,64 @@ export function Users() {
   const deleteUser = useDeleteUser()
   const { isAdmin, isCoach, loading: authLoading } = useAuthSession()
   const { data: coaches = [] } = useCoaches()
+  const { data: plans = [] } = usePlans()
   const { navigate } = usePageTransition()
   const [view, setView] = useState<ViewMode>("cards")
   const [query, setQuery] = useState("")
+  const [membershipFilter, setMembershipFilter] = useState<MembershipFilter>("all")
+  const [planSlugFilter, setPlanSlugFilter] = useState<string>("all")
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<UserRow | null>(null)
   const [deleting, setDeleting] = useState<UserRow | null>(null)
-  
+
   const canViewUsers = isAdmin || isCoach
   const canManageUsers = isAdmin
   const canAssignRoutine = isAdmin || isCoach
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return users
+    let result = users
 
-    return users.filter((user) => {
+    if (membershipFilter !== "all") {
+      const now = Date.now()
+      result = result.filter((user) => {
+        const end = user.membership_end ? new Date(user.membership_end).getTime() : null
+        switch (membershipFilter) {
+          case "active":
+            return user.membership_status === "active"
+          case "expiring":
+            return (
+              user.membership_status === "active" &&
+              end !== null &&
+              end > now &&
+              end - now <= 7 * DAY_MS
+            )
+          case "expired":
+            return user.membership_status === "expired" || (end !== null && end <= now)
+          case "none":
+            return !user.plan_id
+          default:
+            return true
+        }
+      })
+
+      // Urgencia primero: los más próximos a vencer arriba.
+      if (membershipFilter === "expiring" || membershipFilter === "expired") {
+        result = [...result].sort((a, b) => {
+          const ae = a.membership_end ? new Date(a.membership_end).getTime() : Infinity
+          const be = b.membership_end ? new Date(b.membership_end).getTime() : Infinity
+          return ae - be
+        })
+      }
+    }
+
+    if (planSlugFilter !== "all") {
+      result = result.filter((user) => user.plan?.slug === planSlugFilter)
+    }
+
+    const q = query.trim().toLowerCase()
+    if (!q) return result
+
+    return result.filter((user) => {
       const fullName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim().toLowerCase()
       return (
         fullName.includes(q) ||
@@ -49,15 +96,13 @@ export function Users() {
         (user.phone ?? "").toLowerCase().includes(q)
       )
     })
-  }, [users, query])
+  }, [users, query, membershipFilter, planSlugFilter])
 
   const stats = useMemo(() => {
     const active = users.filter((u) => u.membership_status === "active").length
-    const premium = users.filter(
-      (u) => u.membership_plan === "premium" || u.membership_plan === "elite",
-    ).length
+    const expired = users.filter((u) => u.membership_status === "expired").length
 
-    return { total: users.length, active, premium }
+    return { total: users.length, active, expired }
   }, [users])
 
   const openCreate = () => {
@@ -86,7 +131,6 @@ export function Users() {
           role: payload.role,
           coach_id: payload.coach_id,
           membership_status: payload.membership_status,
-          membership_plan: payload.membership_plan,
         },
       })
     } else {
@@ -99,7 +143,6 @@ export function Users() {
         role: payload.role,
         coach_id: payload.coach_id,
         membership_status: payload.membership_status,
-        membership_plan: payload.membership_plan,
         join_date: new Date().toISOString(),
         last_visit: new Date().toISOString(),
       })
@@ -162,11 +205,13 @@ export function Users() {
         <div className="mb-8 grid grid-cols-1 gap-3 sm:max-w-xl sm:grid-cols-3">
           <Stat label="Total" value={String(stats.total)} />
           <Stat label="Activos" value={String(stats.active)} />
-          <Stat label="Premium" value={String(stats.premium)} />
+          <Stat label="Vencidos" value={String(stats.expired)} />
         </div>
 
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative w-full sm:max-w-xs">
+        {/* Filtros: search + select en fila, pills siempre debajo */}
+        <div className="mb-5 flex w-full flex-col gap-y-5">
+          <div className="flex flex-col gap-x-3 gap-y-5 sm:flex-row sm:items-center">
+            <div className="relative w-full sm:w-auto sm:flex-1 sm:min-w-56 sm:max-w-xs">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={query}
@@ -177,7 +222,47 @@ export function Users() {
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3">
+          <div className="relative w-full sm:w-auto">
+            <CalendarClock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <select
+              value={membershipFilter}
+              onChange={(e) => setMembershipFilter(e.target.value as MembershipFilter)}
+              aria-label="Filtrar por membresía"
+              className="w-full cursor-pointer appearance-none rounded-md border border-border bg-card px-4 py-3 pl-10 pr-8 text-sm font-medium text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="all">Toda membresía</option>
+              <option value="active">Activos</option>
+              <option value="expiring">Por vencer (≤7 días)</option>
+              <option value="expired">Vencidos</option>
+              <option value="none">Sin plan</option>
+            </select>
+          </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            Plan
+          </span>
+          <FilterPill
+            active={planSlugFilter === "all"}
+            onClick={() => setPlanSlugFilter("all")}
+          >
+            Todos
+          </FilterPill>
+          {plans.map((plan) => (
+            <FilterPill
+              key={plan.id}
+              active={planSlugFilter === plan.slug}
+              onClick={() => setPlanSlugFilter(plan.slug)}
+            >
+              {plan.name}
+            </FilterPill>
+          ))}
+          </div>
+        </div>
+
+        {/* Acciones: siempre debajo de los filtros, alineadas a la derecha */}
+        <div className="mb-6 flex items-center justify-end gap-3">
             <div
               role="tablist"
               aria-label="Cambiar vista"
@@ -199,7 +284,6 @@ export function Users() {
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Nuevo</span>
             </button>
-          </div>
         </div>
 
         {error ? (
