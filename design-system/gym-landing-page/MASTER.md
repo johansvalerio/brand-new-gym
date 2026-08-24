@@ -35,6 +35,7 @@ src/
 **Rules:**
 - New feature → new folder under `_features/<name>/` with `components/` and `hooks/`. `shared/` only for cross-feature code.
 - **Component granularity (2026-08-23, applies to ALL new code):** one concern per file. A page/feature composes SEPARATE component files — never pile multiple sections/widgets into a single `.tsx`. Canonical example: `dashboard/components/` → `Dashboard.tsx` (orchestrator: guard + hooks + data derivation) composing `dashboard-stats.tsx`, `expiring-members.tsx`, `pending-payments.tsx`. Parent fetches via hooks and passes props down; children stay presentational (or own their small mutations). `payments/` and `membership/` already follow this split (stats / card / history files). Legacy monoliths still pending: Users.tsx, Products.tsx.
+- **Body scroll lock en diálogos:** todo dialog llama `useBodyScrollLock(open)` (`shared/hooks/`) — congela el scroll del fondo mientras está abierto y lo restaura al cerrar. Los confirm-deletes lo llaman con `Boolean(entity)`.
 - Page files in `app/` stay thin: they render the feature component.
 - Never hand-edit `database.types.ts`; regenerate it from the DB and derive row/DTO types from `Tables` / `TablesInsert` / `TablesUpdate`.
 

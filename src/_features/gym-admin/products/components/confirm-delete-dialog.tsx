@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { AlertTriangle } from "lucide-react"
 import type { ProductRow } from "@/_features/gym-admin/products/hooks/useProducts"
+import { useBodyScrollLock } from "@/_features/shared/hooks/useBodyScrollLock"
 
 interface ConfirmDeleteDialogProps {
   product: ProductRow | null
@@ -21,6 +22,8 @@ export function ConfirmDeleteDialog({ product, onCancel, onConfirm }: ConfirmDel
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [product, onCancel])
+
+  useBodyScrollLock(Boolean(product))
 
   if (!product) return null
 

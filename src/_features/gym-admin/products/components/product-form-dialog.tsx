@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { X, Package } from "lucide-react"
+import { useBodyScrollLock } from "@/_features/shared/hooks/useBodyScrollLock"
 import type { CreateProductDto, ProductRow } from "@/_features/gym-admin/products/hooks/useProducts"
 import type { CategoryRow } from "@/_features/gym-admin/products/hooks/useCategories"
 
@@ -33,6 +34,7 @@ const emptyForm: FormState = {
 }
 
 export function ProductFormDialog({ open, product, categories, onClose, onSubmit }: ProductFormDialogProps) {
+  useBodyScrollLock(open)
   const isEdit = Boolean(product)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [errors, setErrors] = useState<Record<string, string>>({})

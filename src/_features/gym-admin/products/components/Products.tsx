@@ -1,21 +1,22 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { LayoutGrid, Table2, Plus, Search, PackageOpen, Loader2, Filter } from "lucide-react"
-import type { CreateProductDto, ProductRow } from "@/_features/gym-admin/products/hooks/useProducts"
+import { useEffect, useMemo, useState } from "react"
+import { PackageOpen, Loader2 } from "lucide-react"
+import type { CreateProductDto, ProductRow } from "../hooks/useProducts"
 import {
   useProducts,
   useCreateProduct,
   useUpdateProduct,
   useDeleteProduct,
-} from "@/_features/gym-admin/products/hooks/useProducts"
-import { useCategories } from "@/_features/gym-admin/products/hooks/useCategories"
+} from "../hooks/useProducts"
+import { useCategories } from "../hooks/useCategories"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { ProductsCards } from "./products-card"
 import { ProductsTable } from "./products-table"
 import { ProductFormDialog } from "./product-form-dialog"
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog"
-import { currency } from "./utils"
+import { ProductsStats } from "./products-stats"
+import { ProductsToolbar } from "./products-toolbar"
 
 type ViewMode = "cards" | "table"
 
@@ -57,16 +58,18 @@ export function Products() {
 
   const stats = useMemo(() => {
     const units = products.reduce((sum, p) => sum + p.product_stock, 0)
-    const value = products.reduce((sum, p) => sum + p.product_price * p.product_stock, 0)
-    return { count: products.length, units, value }
+    const revenue = products.reduce((sum, p) => sum + p.product_price * p.product_stock, 0)
+    return { count: products.length, units, revenue }
   }, [products])
 
   // ─── CRUD ───
   const openCreate = () => {
+    if (!isAdmin) return
     setEditing(null)
     setFormOpen(true)
   }
   const openEdit = (product: ProductRow) => {
+    if (!isAdmin) return
     setEditing(product)
     setFormOpen(true)
   }
@@ -82,7 +85,7 @@ export function Products() {
   }
 
   const confirmDelete = async () => {
-    if (!deleting) return
+    if (!deleting || !isAdmin) return
     await deleteProduct.mutateAsync(deleting)
     setDeleting(null)
   }
@@ -92,15 +95,6 @@ export function Products() {
       <div className="flex min-h-screen items-center justify-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
         Cargando acceso...
-      </div>
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Cargando productos...
       </div>
     )
   }
@@ -130,73 +124,20 @@ export function Products() {
         </header>
 
         {/* Stats */}
-        <div className={`mb-8 grid gap-3 sm:max-w-xl ${isAdmin ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1"}`}>
-          <Stat label="Productos" value={String(stats.count)} />
-          {isAdmin ? (
-            <>
-              <Stat label="Unidades" value={String(stats.units)} />
-              <Stat label="Valor inv." value={currency(stats.value)} />
-            </>
-          ) : null}
-        </div>
+        <ProductsStats isAdmin={isAdmin} count={stats.count} units={stats.units} revenue={stats.revenue} />
 
         {/* Toolbar */}
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative w-full sm:max-w-xs">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar producto..."
-              aria-label="Buscar producto"
-              className="w-full rounded-md border border-border bg-card py-2.5 pl-9 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-            <div className="relative w-full sm:w-auto sm:max-w-xs">
-              <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                aria-label="Filtrar por categoría"
-                className="w-full appearance-none rounded-md border border-border bg-card py-2.5 pl-9 pr-8 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="">Todas las categorías</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.slug}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* View toggle */}
-            <div
-              role="tablist"
-              aria-label="Cambiar vista"
-              className="hidden items-center gap-1 rounded-md border border-border bg-card p-1 sm:flex"
-            >
-              <ToggleBtn active={view === "cards"} onClick={() => setView("cards")} label="Tarjetas">
-                <LayoutGrid className="h-4 w-4" />
-              </ToggleBtn>
-              <ToggleBtn active={view === "table"} onClick={() => setView("table")} label="Tabla">
-                <Table2 className="h-4 w-4" />
-              </ToggleBtn>
-            </div>
-
-            {isAdmin ? (
-              <button
-                onClick={openCreate}
-                aria-label="Nuevo producto"
-                className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-4 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
-              >
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Nuevo</span>
-              </button>
-            ) : null}
-          </div>
-        </div>
+        <ProductsToolbar
+          query={query}
+          onQueryChange={setQuery}
+          categoryFilter={categoryFilter}
+          onCategoryFilterChange={setCategoryFilter}
+          categories={categories}
+          view={view}
+          onViewChange={setView}
+          canCreate={isAdmin}
+          onCreate={openCreate}
+        />
 
         {/* Content */}
         {filtered.length === 0 ? (
@@ -235,41 +176,5 @@ export function Products() {
       />
       <ConfirmDeleteDialog product={deleting} onCancel={() => setDeleting(null)} onConfirm={confirmDelete} />
     </section>
-  )
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-card px-4 py-3">
-      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
-      <p className="mt-1 font-sans text-xl font-black text-foreground">{value}</p>
-    </div>
-  )
-}
-
-function ToggleBtn({
-  active,
-  onClick,
-  label,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  label: string
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      title={label}
-      className={`flex cursor-pointer items-center gap-2 rounded p-2.5 font-sans text-xs font-semibold uppercase tracking-wider transition-colors sm:px-3 sm:py-1.5 ${
-        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-      }`}
-    >
-      {children}
-      <span className="hidden md:inline">{label}</span>
-    </button>
   )
 }

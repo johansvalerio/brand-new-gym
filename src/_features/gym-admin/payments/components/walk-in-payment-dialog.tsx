@@ -5,6 +5,7 @@ import { Banknote, Loader2, Search, Smartphone, X } from "lucide-react"
 import { useUsers } from "@/_features/gym-admin/users/hooks/useUsers"
 import { usePlans } from "@/_features/gym-admin/users/hooks/usePlans"
 import { currency } from "@/_features/gym-admin/products/components/utils"
+import { useBodyScrollLock } from "@/_features/shared/hooks/useBodyScrollLock"
 import {
   useCreateWalkInPayment,
   useUpdatePayment,
@@ -25,6 +26,7 @@ export function WalkInPaymentDialog({
   payment?: PaymentRow | null
 }) {
   const isEdit = Boolean(payment)
+  useBodyScrollLock(open)
   const { data: users = [] } = useUsers()
   const { data: plans = [] } = usePlans()
   const createWalkIn = useCreateWalkInPayment()

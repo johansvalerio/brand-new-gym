@@ -1,26 +1,25 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { LayoutGrid, Table2, Plus, Search, User as UserIcon, Loader2, CalendarClock } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { User as UserIcon, Loader2 } from "lucide-react"
 import {
   useUsers,
   useCreateUser,
   useUpdateUser,
   useDeleteUser,
-} from "@/_features/gym-admin/users/hooks/useUsers"
-import type { UserRow } from "@/_features/gym-admin/users/hooks/useUsers"
+  type UserRow,
+} from "../hooks/useUsers"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
-import { useCoaches } from "@/_features/gym-admin/users/hooks/useCoaches"
-import { usePlans } from "@/_features/gym-admin/users/hooks/usePlans"
+import { useCoaches } from "../hooks/useCoaches"
+import { usePlans } from "../hooks/usePlans"
 import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
-import { FilterPill } from "@/_features/shared/components/filter-pill"
+import { ViewToggle, type ViewMode } from "@/_features/shared/components/view-toggle"
 import { UsersCards } from "./users-card"
 import { UsersTable } from "./users-table"
+import { UsersToolbar, type MembershipFilter } from "./users-toolbar"
+import { UsersStats } from "./users-stats"
 import { UserFormDialog, type UserFormPayload } from "./user-form-dialog"
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog"
-
-type ViewMode = "cards" | "table"
-type MembershipFilter = "all" | "active" | "expiring" | "expired" | "none"
 
 const DAY_MS = 86_400_000
 
@@ -33,6 +32,7 @@ export function Users() {
   const { data: coaches = [] } = useCoaches()
   const { data: plans = [] } = usePlans()
   const { navigate } = usePageTransition()
+
   const [view, setView] = useState<ViewMode>("cards")
   const [query, setQuery] = useState("")
   const [membershipFilter, setMembershipFilter] = useState<MembershipFilter>("all")
@@ -202,89 +202,21 @@ export function Users() {
           </p>
         </header>
 
-        <div className="mb-8 grid grid-cols-1 gap-3 sm:max-w-xl sm:grid-cols-3">
-          <Stat label="Total" value={String(stats.total)} />
-          <Stat label="Activos" value={String(stats.active)} />
-          <Stat label="Vencidos" value={String(stats.expired)} />
-        </div>
+        <UsersStats total={stats.total} active={stats.active} expired={stats.expired} />
 
-        {/* Filtros: search + select en fila, pills siempre debajo */}
-        <div className="mb-5 flex w-full flex-col gap-y-5">
-          <div className="flex flex-col gap-x-3 gap-y-5 sm:flex-row sm:items-center">
-            <div className="relative w-full sm:w-auto sm:flex-1 sm:min-w-56 sm:max-w-xs">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar miembro..."
-              aria-label="Buscar miembro"
-              className="w-full rounded-md border border-border bg-card py-2.5 pl-9 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
-
-          <div className="relative w-full sm:w-auto">
-            <CalendarClock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <select
-              value={membershipFilter}
-              onChange={(e) => setMembershipFilter(e.target.value as MembershipFilter)}
-              aria-label="Filtrar por membresía"
-              className="w-full cursor-pointer appearance-none rounded-md border border-border bg-card px-4 py-3 pl-10 pr-8 text-sm font-medium text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30"
-            >
-              <option value="all">Toda membresía</option>
-              <option value="active">Activos</option>
-              <option value="expiring">Por vencer (≤7 días)</option>
-              <option value="expired">Vencidos</option>
-              <option value="none">Sin plan</option>
-            </select>
-          </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            Plan
-          </span>
-          <FilterPill
-            active={planSlugFilter === "all"}
-            onClick={() => setPlanSlugFilter("all")}
-          >
-            Todos
-          </FilterPill>
-          {plans.map((plan) => (
-            <FilterPill
-              key={plan.id}
-              active={planSlugFilter === plan.slug}
-              onClick={() => setPlanSlugFilter(plan.slug)}
-            >
-              {plan.name}
-            </FilterPill>
-          ))}
-          </div>
-        </div>
-
-        {/* Acciones: siempre debajo de los filtros, alineadas a la derecha */}
-        <div className="mb-6 flex items-center justify-end gap-3">
-            <div
-              role="tablist"
-              aria-label="Cambiar vista"
-              className="hidden items-center gap-1 rounded-md border border-border bg-card p-1 sm:flex"
-            >
-              <ToggleBtn active={view === "cards"} onClick={() => setView("cards")} label="Tarjetas">
-                <LayoutGrid className="h-4 w-4" />
-              </ToggleBtn>
-              <ToggleBtn active={view === "table"} onClick={() => setView("table")} label="Tabla">
-                <Table2 className="h-4 w-4" />
-              </ToggleBtn>
-            </div>
-
-            <button
-              onClick={openCreate}
-              aria-label="Nuevo miembro"
-              className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-4 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Nuevo</span>
-            </button>
-        </div>
+        <UsersToolbar
+          query={query}
+          onQueryChange={setQuery}
+          membershipFilter={membershipFilter}
+          onMembershipFilterChange={setMembershipFilter}
+          planSlugFilter={planSlugFilter}
+          onPlanSlugFilterChange={setPlanSlugFilter}
+          plans={plans}
+          view={view}
+          onViewChange={setView}
+          canCreate={canManageUsers}
+          onCreate={openCreate}
+        />
 
         {error ? (
           <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
@@ -353,40 +285,5 @@ export function Users() {
         onConfirm={confirmDelete}
       />
     </section>
-  )
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-card px-4 py-3">
-      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
-      <p className="mt-1 font-sans text-xl font-black text-foreground">{value}</p>
-    </div>
-  )
-}
-
-function ToggleBtn({
-  active,
-  onClick,
-  label,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  label: string
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      title={label}
-      className={`flex cursor-pointer items-center gap-2 rounded p-2.5 font-sans text-xs font-semibold uppercase tracking-wider transition-colors sm:px-3 sm:py-1.5 ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-        }`}
-    >
-      {children}
-      <span className="hidden md:inline">{label}</span>
-    </button>
   )
 }

@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useQuery } from "@tanstack/react-query"
+import { useBodyScrollLock } from "@/_features/shared/hooks/useBodyScrollLock"
 import type { Tables } from "@/types/database.types"
 import {
   ROUTINE_GOALS,
@@ -104,6 +105,7 @@ export function RoutineFormDialog({
   onSubmit,
 }: RoutineFormDialogProps) {
   const isEdit = Boolean(routine)
+  useBodyScrollLock(open)
   const [tab, setTab] = useState<Tab>("metadata")
   const [metadata, setMetadata] = useState<RoutineFormPayload>({
     name: "",

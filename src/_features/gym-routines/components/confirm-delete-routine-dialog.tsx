@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { AlertTriangle, Loader2 } from "lucide-react"
 import type { RoutineRow } from "../hooks/routine-helpers"
+import { useBodyScrollLock } from "@/_features/shared/hooks/useBodyScrollLock"
 
 interface ConfirmDeleteRoutineDialogProps {
   routine: RoutineRow | null
@@ -25,6 +26,8 @@ export function ConfirmDeleteRoutineDialog({
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [routine, onCancel])
+
+  useBodyScrollLock(Boolean(routine))
 
   if (!routine) return null
 

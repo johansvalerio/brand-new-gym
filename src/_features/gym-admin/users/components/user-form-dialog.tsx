@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { X, User } from "lucide-react"
+import { useBodyScrollLock } from "@/_features/shared/hooks/useBodyScrollLock"
 import type { Tables } from "@/types/database.types"
 
 export type UserFormPayload = {
@@ -46,6 +47,7 @@ const emptyForm: FormState = {
 }
 
 export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: UserFormDialogProps) {
+  useBodyScrollLock(open)
   const isEdit = Boolean(user)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [errors, setErrors] = useState<Record<string, string>>({})
