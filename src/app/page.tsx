@@ -1,6 +1,6 @@
 import { StoryText2 } from "@/_features/gym-landing/components/StoryText2";
 import { DifferencesSection } from "@/_features/gym-landing/components/DifferencesSection";
-import { EquipmentCarousel } from "@/_features/gym-landing/components/EquipmentCarousel";
+import FanDeckCards2 from "@/_features/gym-landing/components/FanDeckCards2";
 import { CoachesSection } from "@/_features/gym-landing/components/CoachesSection";
 import { MembershipSection } from "@/_features/gym-landing/components/MembershipSection";
 import { LocationHours } from "@/_features/gym-landing/components/LocationHours";
@@ -102,8 +102,12 @@ export default function Home() {
         {/* Cortina: el contenido sube tapando el hero sticky */}
         <div className="relative z-10 rounded-t-[2.5rem] border-t border-border/60 bg-background">
           <StoryText2 />
-          <EquipmentCarousel />
+          <FanDeckCards2 />
           <DifferencesSection />
+
+          {/* Aire después de la secuencia pineada (no afecta la geometría del pin) */}
+          <div aria-hidden="true" className="h-16 md:h-24" />
+
           <Gallery />
           <CoachesSection />
           <MembershipSection />
@@ -113,8 +117,10 @@ export default function Home() {
               el usuario recorre este tramo extra */}
           <div aria-hidden="true" className="hidden lg:block h-[28vh]" />
 
-          {/* Cortina final: el CTA de cierre sube tapando el mapa sticky */}
-          <div className="relative z-10 rounded-t-[2.5rem] border-t border-border/60 bg-background shadow-[0_-24px_60px_rgba(0,0,0,0.55)]">
+          {/* Cortina final: el muro verde del CTA sube tapando el mapa sticky.
+              Sin bg en el wrapper para que las esquinas del rounded-t
+              (pintadas por FinalCTA) dejen ver el mapa detrás. */}
+          <div className="relative z-10 shadow-[0_-24px_60px_rgba(0,0,0,0.55)]">
             <FinalCTA />
             <Footer />
           </div>

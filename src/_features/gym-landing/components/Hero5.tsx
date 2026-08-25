@@ -12,7 +12,7 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-const BAND_PHRASE = 'Fuerza // Hierros // Light Weight // Sudor // Coaching // Energía // Resultados // Sin Excusas //';
+const BAND_PHRASE = 'Fuerza // Fierros // Light Weight // Sudor // Coaching // Energía // Resultados // Sin Excusas // No Pain No Gain //';
 
 function BandTrack() {
   return (

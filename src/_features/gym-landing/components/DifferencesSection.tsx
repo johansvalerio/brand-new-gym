@@ -13,43 +13,43 @@ if (typeof window !== "undefined") {
 const features = [
   {
     index: "01",
-    title: "Equipamiento de Élite",
+    title: "Rutinas de tu coach",
     description:
-      "No escatimamos en gastos. Experimenta las mejores máquinas biomecánicamente diseñadas de todo el mundo.",
+      "Tu coach arma tu entrenamiento día por día — ejercicios, series, reps y descanso — y tú lo sigues desde la app en cada sesión.",
     image:
-      "https://images.unsplash.com/photo-1596357395104-14a5ae9cdade?q=80&w=1200&auto=format&fit=crop",
-    stat: "120+",
-    statLabel: "Máquinas Premium",
+      "/landing/routines.jpg",
+    stat: "7",
+    statLabel: "Días planificados por semana",
   },
   {
     index: "02",
-    title: "Seguimiento con Datos",
+    title: "Ranking comunitario",
     description:
-      "Nuestra app propietaria se sincroniza con nuestro equipo para rastrear cada repetición, serie y récord personal.",
+      "Comparte tus rutinas, recibe votos de la comunidad y escala en el ranking público. Un voto por persona — sin autofavoritismo.",
     image:
-      "https://images.unsplash.com/photo-1576678927484-cc907957088c?q=80&w=1200&auto=format&fit=crop",
-    stat: "100%",
-    statLabel: "Precisión de Sincronización",
+      "/landing/ranking.jpg",
+    stat: "#1",
+    statLabel: "Te espera en el ranking",
   },
   {
     index: "03",
-    title: "Comunidad Táctica",
+    title: "Membresía en vivo",
     description:
-      "Rodéate de personas que exigen más de sí mismas y de ti.",
+      "Paga por SINPE o en caja; al confirmarse, tu vigencia se activa sola y tu perfil cuenta atrás días, horas y minutos.",
     image:
-      "https://images.unsplash.com/photo-1534367507873-d2d7e24c7f07?q=80&w=1200&auto=format&fit=crop",
-    stat: "24/7",
-    statLabel: "Miembros Activos",
+      "/landing/historial.jpg",
+    stat: "d/h/m",
+    statLabel: "Cuenta regresiva en tu perfil",
   },
   {
     index: "04",
-    title: "Acceso 24/7",
+    title: "SINPE o Efectivo",
     description:
-      "El entrenamiento nunca se detiene. Entrena a las 2 AM con nuestro sistema de entrada seguro biométrico.",
+      "Sin pasarelas ni tarjetas: envías tu SINPE o paga en el gym, el administrador lo confirma y tu campanita suena al instante.",
     image:
-      "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop",
-    stat: "365",
-    statLabel: "Días Abierto",
+      "/landing/membresia.jpg",
+    stat: "SINPE",
+    statLabel: "Pago directo, verificado",
   },
 ];
 
@@ -68,11 +68,28 @@ export function DifferencesSection() {
         const items = gsap.utils.toArray<HTMLElement>(".difference-item");
         if (items.length === 0) return;
 
+        /* Zoom de entrada: el card aparece reducido y crece con el scroll
+           hasta su tamaño exacto cuando arranca la secuencia pineada */
+        gsap.fromTo(
+          ".diff-zoom",
+          { scale: 0.75 },
+          {
+            scale: 1,
+            ease: "none",
+            scrollTrigger: {
+              trigger: section,
+              start: "top 95%",
+              end: "bottom bottom",
+              scrub: true,
+            },
+          },
+        );
+
         /* Entrada del header — cortina en el h2 + descripción, con trigger
            propio para que termine antes de que arranque el pin */
         gsap
           .timeline({
-            scrollTrigger: { trigger: section, start: "top 78%" },
+            scrollTrigger: { trigger: section, start: "top 70%" },
             defaults: { ease: "power4.out" },
           })
           .fromTo(
@@ -118,7 +135,7 @@ export function DifferencesSection() {
 
         // Set other items' elements hidden
         items.slice(1).forEach((item) => {
-          gsap.set(item.querySelector(".icon-glow"), { scale: 0, rotation: -45 });
+          gsap.set(item.querySelector(".icon-glow"), { scale: 0.92, rotation: -6 });
           gsap.set(item.querySelector(".feature-title"), { opacity: 0, y: -30 });
           gsap.set(item.querySelector(".feature-desc"), { opacity: 0, y: -20 });
           gsap.set(item.querySelector(".feature-stat"), { opacity: 0, scale: 0.5, y: 50 });
@@ -133,8 +150,8 @@ export function DifferencesSection() {
 
           // Fade out previous item elements - aggressive exit downward
           timeline.to(prevItem.querySelector(".icon-glow"), {
-            scale: 0,
-            rotation: 45,
+            scale: 0.92,
+            rotation: -6,
             duration: 0.5,
             ease: "power2.in",
           }, (index - 1) * 1.5);
@@ -191,7 +208,7 @@ export function DifferencesSection() {
             scale: 1,
             rotation: 0,
             duration: 0.8,
-            ease: "back.out(1.5)",
+            ease: "back.out(1.4)",
           }, (index - 1) * 1.5 + 0.6);
 
           timeline.to(item.querySelector(".feature-title"), {
@@ -224,14 +241,40 @@ export function DifferencesSection() {
           }, (index - 1) * 1.5 + 1.0);
         });
 
-        /* Segmentos de progreso: cada uno se llena durante su ventana */
-        const segments = gsap.utils.toArray<HTMLElement>(".diff-seg-fill");
-        segments.forEach((segment, i) => {
-          timeline.fromTo(segment, { scaleX: 0 }, {
-            scaleX: 1,
-            duration: 1.5,
-            ease: "none",
-          }, i * 1.5);
+        /* Tabs: el subrayado de cada uno se llena durante su ventana y el
+           texto del activo brilla mientras los demás quedan apagados */
+        const tabs = gsap.utils.toArray<HTMLElement>(".diff-tab");
+        tabs.forEach((tab, i) => {
+          timeline.fromTo(
+            tab.querySelector(".diff-seg-fill"),
+            { scaleX: 0 },
+            { scaleX: 1, duration: 1.5, ease: "none" },
+            i * 1.5,
+          );
+          /* GSAP no puede interpolar hsl(var(--x)) — se usan los hex de los
+             tokens (--foreground #F8FAFC, --muted-foreground #A1A1AA). */
+          timeline.to(tab, { color: "#F8FAFC", duration: 0.3 }, i * 1.5);
+          if (i > 0) {
+            timeline.to(tabs[i - 1], { color: "#A1A1AA", duration: 0.3 }, i * 1.5);
+          }
+        });
+
+        /* Glitch RGB ambiental en cada stat — corre siempre, con o sin scroll.
+           Solo la card visible lo muestra (las demás están apiladas debajo);
+           delays escalonados evitan que destellen sincronizados. */
+        items.forEach((item, i) => {
+          const glitchA = item.querySelector(".diff-stat-glitch-a");
+          const glitchB = item.querySelector(".diff-stat-glitch-b");
+          if (!glitchA || !glitchB) return;
+
+          gsap
+            .timeline({ repeat: -1, repeatDelay: 2.4, delay: 1 + i * 0.6 })
+            .to(glitchA, { autoAlpha: 1, x: -6, duration: 0.06 })
+            .to(glitchB, { autoAlpha: 1, x: 6, duration: 0.06 }, "<")
+            .to([glitchA, glitchB], { autoAlpha: 0, x: 0, duration: 0.05 }, "+=0.08")
+            .to(glitchA, { autoAlpha: 1, x: 4, duration: 0.05 }, "+=0.12")
+            .to(glitchB, { autoAlpha: 1, x: -4, duration: 0.05 }, "<")
+            .to([glitchA, glitchB], { autoAlpha: 0, x: 0, duration: 0.06 });
         });
       });
 
@@ -244,7 +287,7 @@ export function DifferencesSection() {
     <section
       id="difference"
       ref={containerRef}
-      className="relative py-24 md:py-28 bg-background px-6 overflow-hidden"
+      className="relative pt-24 pb-10 bg-background px-6 overflow-hidden md:pt-28 md:pb-12"
     >
       {/* ===== Background Layer System ===== */}
       {/* Ambient glows — primary + accent */}
@@ -286,7 +329,11 @@ export function DifferencesSection() {
         </div>
 
         {/* ===== Sequential Feature Display - Aggressive Split Layout ===== */}
-        <div className="relative h-[60vh] flex items-center justify-center">
+        {/* El stage mide exactamente lo que el card: al pinear, el header
+            cortado arriba hace de colchón y el nav nunca tapa el título */}
+        <div className="relative h-[440px] sm:h-[500px] flex items-center justify-center">
+          {/* Wrapper del zoom: crece con el scroll hasta el inicio del pin */}
+          <div className="diff-zoom relative flex h-full w-full items-center justify-center will-change-transform">
           {features.map((feature, idx) => {
             const gradients = [
               "from-primary/30 via-transparent to-transparent",
@@ -302,54 +349,52 @@ export function DifferencesSection() {
                   idx === 0 ? "opacity-100" : "opacity-0"
                 }`}
               >
-                {/* Tarjeta — superficie card (no negro plano), borde y sombra con offset */}
-                <div className="relative w-full max-w-5xl rounded-3xl border border-border/60 bg-card/80 overflow-hidden shadow-[0_28px_80px_rgba(0,0,0,0.55)]">
-                  <div className={`absolute inset-0 bg-gradient-to-br ${gradients[idx]} opacity-40 pointer-events-none`} />
+                {/* Card estilo showcase: título centrado con halo, la imagen
+                    llena la parte inferior y se recorta con el card */}
+                <div className="relative flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-border/60 bg-card/80 shadow-[0_28px_80px_rgba(0,0,0,0.55)]">
+                  <div className={`absolute inset-0 bg-gradient-to-b ${gradients[idx]} opacity-30 pointer-events-none`} />
 
-                  <div className="relative grid grid-cols-1 md:grid-cols-[1.05fr_0.95fr]">
-                    {/* Left — contenido editorial */}
-                    <div className="p-8 md:p-12 flex flex-col justify-center gap-5 md:gap-6">
-                      {/* Medallón tipográfico — el numeral manda, sin íconos genéricos */}
-                      <div className="icon-glow relative inline-flex h-16 w-16 md:h-20 md:w-20 items-center justify-center rounded-2xl bg-primary/15 border border-primary/40">
-                        <span className="font-heading font-black text-2xl md:text-3xl text-primary leading-none">
-                          {feature.index}
-                        </span>
-                      </div>
+                  <div className="relative z-10 px-6 pt-6 text-center sm:px-12">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-primary/80">
+                      {feature.index} / 04
+                    </p>
+                    <h3 className="feature-title mt-2 font-heading text-4xl font-black uppercase tracking-tight text-foreground leading-[0.95] sm:text-5xl md:text-6xl">
+                      {feature.title}
+                    </h3>
+                    <p className="feature-desc mx-auto mt-3 max-w-2xl font-mono text-sm leading-relaxed text-muted-foreground sm:text-base">
+                      {feature.description}
+                    </p>
+                  </div>
 
-                      {/* Title */}
-                      <h3 className="feature-title font-heading text-3xl md:text-5xl font-black uppercase tracking-tight text-foreground leading-[0.95]">
-                        {feature.title}
-                      </h3>
-
-                      {/* Description */}
-                      <p className="feature-desc text-muted-foreground font-mono text-sm md:text-base leading-relaxed max-w-md">
-                        {feature.description}
-                      </p>
-
-                      {/* Feature indicator */}
-                      <div className="flex items-center gap-2">
-                        <div className="h-px w-12 bg-primary/50" />
-                        <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-primary/80">
-                          {feature.index} / 04
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Right — foto duotono con el stat montado */}
-                    <div className="relative min-h-[260px] md:min-h-[440px]">
+                  {/* Imagen — la protagonista: borde limpio, filtros mínimos */}
+                  <div className="icon-glow relative mt-4 min-h-0 flex-1 border-t border-border/40 sm:mt-5">
+                    <div className="absolute inset-0">
                       <div
-                        className="absolute inset-0 bg-cover bg-center grayscale"
+                        className="absolute inset-0 bg-cover bg-center grayscale contrast-105"
                         style={{ backgroundImage: `url(${feature.image})` }}
                       />
-                      <div className="absolute inset-0 bg-primary/25 mix-blend-multiply" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-card via-card/30 to-transparent" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
+                      <div className="absolute inset-0 bg-primary/10 mix-blend-multiply" />
+                      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background/60 to-transparent" />
 
-                      <div className="absolute bottom-6 right-6 text-right">
-                        <span className="feature-stat block font-heading font-black text-6xl md:text-7xl text-primary leading-none [text-shadow:0_4px_24px_rgba(0,0,0,0.85)]">
-                          {feature.stat}
+                      <div className="absolute bottom-4 right-5 text-right">
+                        <span className="feature-stat block font-heading font-black text-6xl text-primary leading-none [text-shadow:0_4px_24px_rgba(0,0,0,0.85)] md:text-7xl">
+                          <span className="relative inline-block">
+                            <span className="inline-block">{feature.stat}</span>
+                            <span
+                              aria-hidden="true"
+                              className="diff-stat-glitch-a absolute inset-0 text-foreground opacity-0"
+                            >
+                              {feature.stat}
+                            </span>
+                            <span
+                              aria-hidden="true"
+                              className="diff-stat-glitch-b absolute inset-0 text-black/40 opacity-0"
+                            >
+                              {feature.stat}
+                            </span>
+                          </span>
                         </span>
-                        <span className="feature-label block font-mono text-xs uppercase tracking-widest text-foreground/90 mt-2">
+                        <span className="feature-label mt-2 block font-mono text-[11px] uppercase tracking-widest text-foreground/90">
                           {feature.statLabel}
                         </span>
                       </div>
@@ -359,16 +404,26 @@ export function DifferencesSection() {
               </div>
             );
           })}
+          </div>
         </div>
 
-        {/* Progreso de la secuencia: 4 segmentos que se llenan con el scroll */}
-        <div className="mt-12 flex items-center justify-center gap-3">
+        {/* Tabs de la secuencia: en móvil solo los indicadores (sin texto);
+            en desktop, activo brillante + subrayado que se llena */}
+        <div className="mt-8 grid grid-cols-4 gap-x-6 md:mt-10 lg:gap-x-8">
           {features.map((feature) => (
             <div
               key={feature.index}
-              className="h-[3px] w-14 md:w-20 overflow-hidden rounded-full bg-border/40"
+              className="diff-tab relative pb-3 text-muted-foreground/50"
             >
-              <div className="diff-seg-fill h-full w-full origin-left scale-x-0 bg-primary" />
+              <p className="hidden font-sans text-sm font-black uppercase tracking-tight lg:block">
+                {feature.title}
+              </p>
+              <p className="mt-1 hidden font-mono text-[11px] leading-snug lg:block">
+                {feature.statLabel}
+              </p>
+              <span className="absolute inset-x-0 bottom-0 h-[2px] overflow-hidden rounded-full bg-border/40">
+                <span className="diff-seg-fill block h-full w-full origin-left scale-x-0 bg-primary" />
+              </span>
             </div>
           ))}
         </div>

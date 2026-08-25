@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { Check, Zap, Crown, Shield } from "lucide-react";
+import { Check, Zap, Crown, Shield, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,10 +20,24 @@ import {
 import { usePageTransition } from "@/_features/shared/hooks/usePageTransition";
 import { currency } from "@/_features/gym-admin/products/components/utils";
 
-/** Capa de marketing por posición: los datos reales vienen de la tabla plans. */
-const CARD_VISUALS = [
-  {
-    icon: Shield,
+/**
+ * Capa de marketing por PLAN (no por posición): mapeada por duration_days
+ * para que "Más Popular" siga al plan mensual aunque cambie el orden del
+ * query o se agreguen planes. Los datos reales vienen de la tabla plans.
+ */
+type CardVisual = {
+  icon: LucideIcon;
+  period: string;
+  description: string;
+  features: string[];
+  accent: string;
+  glowClass: string;
+  highlighted: boolean;
+};
+
+const CARD_VISUALS: Record<number, CardVisual> = {
+  1: {
+    icon: Zap,
     period: "/día",
     description: "Acceso completo por un día. Ideal para probar o visitar.",
     features: [
@@ -36,8 +50,8 @@ const CARD_VISUALS = [
     glowClass: "bg-muted-foreground/30",
     highlighted: false,
   },
-  {
-    icon: Zap,
+  7: {
+    icon: Shield,
     period: "/semana",
     description: "Una semana completa de entrenamiento sin límites.",
     features: [
@@ -46,11 +60,11 @@ const CARD_VISUALS = [
       "Vestidores y duchas",
       "Perfecto para visitantes",
     ],
-    accent: "from-primary/30 via-primary/15 to-transparent",
+    accent: "from-primary/25 via-primary/10 to-transparent",
     glowClass: "bg-primary/50",
-    highlighted: true,
+    highlighted: false,
   },
-  {
+  30: {
     icon: Crown,
     period: "/mes",
     description: "El mejor valor para hacer del gimnasio tu rutina.",
@@ -62,9 +76,19 @@ const CARD_VISUALS = [
     ],
     accent: "from-secondary/50 via-secondary/20 to-transparent",
     glowClass: "bg-secondary/40",
-    highlighted: false,
+    highlighted: true,
   },
-];
+};
+
+const fallbackVisual = (days: number): CardVisual => ({
+  icon: Zap,
+  period: `/${days} días`,
+  description: "",
+  features: [],
+  accent: "from-muted/70 to-muted/20",
+  glowClass: "bg-muted-foreground/30",
+  highlighted: false,
+});
 
 export function MembershipSection() {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
@@ -79,7 +103,11 @@ export function MembershipSection() {
       plans
         .filter((plan) => plan.is_active)
         .slice(0, 3)
-        .map((plan, i) => ({ ...plan, ...(CARD_VISUALS[i % CARD_VISUALS.length] ?? {}) })),
+        .map((plan) => ({
+          ...plan,
+          ...(CARD_VISUALS[plan.duration_days] ?? fallbackVisual(plan.duration_days)),
+        }))
+        .sort((a, b) => a.duration_days - b.duration_days),
     [plans],
   );
 
@@ -108,7 +136,7 @@ export function MembershipSection() {
   return (
     <section
       id="membership"
-      className="relative py-28 bg-background px-6 overflow-hidden"
+      className="relative py-28 bg-card px-6 overflow-hidden"
     >
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full" />
@@ -194,8 +222,20 @@ export function MembershipSection() {
                     delay: idx * 0.13,
                     ease: [0.22, 1, 0.36, 1],
                   }}
-                  className="h-full"
+                  className="relative h-full"
                 >
+                  {/* Badge fuera del Card: el overflow-hidden del card lo recortaba en móvil */}
+                  {plan.highlighted && (
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-30">
+                      <span className="relative inline-flex items-center rounded-full bg-primary px-4 py-1.5 font-heading text-[10px] font-black uppercase tracking-[0.2em] text-primary-foreground shadow-lg shadow-primary/40">
+                        <span
+                          aria-hidden="true"
+                          className="absolute inset-0 rounded-full bg-primary/60 blur-md animate-pulse"
+                        />
+                        <span className="relative">Más Popular</span>
+                      </span>
+                    </div>
+                  )}
                 <Card
                   onMouseEnter={() => setHoveredIdx(idx)}
                   onMouseLeave={() => setHoveredIdx(null)}
@@ -215,17 +255,6 @@ export function MembershipSection() {
                     className={`absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl opacity-0 group-hover:opacity-80 transition-all duration-700 ${plan.glowClass}`}
                   />
 
-                  {plan.highlighted && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-primary/40 blur-lg rounded-full animate-pulse" />
-                        <div className="relative pt-2 lg:pt-5 bg-primary text-center text-primary-foreground font-heading uppercase tracking-[0.2em] text-[10px] px-5 py-2 rounded-full font-black border-2 border-primary/80">
-                          Más Popular
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   <div className="relative z-10 flex flex-col flex-1">
                     <CardHeader className="!px-6 !pb-6 !pt-8 !gap-0">
                       <div className="flex items-start justify-between mb-4">
@@ -238,16 +267,6 @@ export function MembershipSection() {
                         >
                           <VisualIcon className="w-6 h-6" strokeWidth={2} />
                         </div>
-                        {plan.highlighted && (
-                          <div className="flex gap-0.5">
-                            {[...Array(3)].map((_, i) => (
-                              <div
-                                key={i}
-                                className="w-1 h-1 rounded-full bg-primary"
-                              />
-                            ))}
-                          </div>
-                        )}
                       </div>
                       <CardTitle className="font-heading text-3xl uppercase tracking-wide mb-2">
                         {plan.name}

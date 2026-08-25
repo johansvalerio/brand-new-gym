@@ -7,7 +7,7 @@ import type { Tables } from "@/types/database.types"
 
 export type SharedRoutineAuthor = Pick<
   Tables<"users">,
-  "id" | "first_name" | "last_name" | "avatar"
+  "id" | "first_name" | "last_name" | "avatar" | "role"
 >
 
 export type SharedRoutine = Tables<"routines"> & {
@@ -25,7 +25,7 @@ async function fetchSharedRoutines(): Promise<SharedRoutine[]> {
   const { data, error } = await supabase
     .from("routines")
     .select(
-      "*, author:users!routines_created_by_fkey(id, first_name, last_name, avatar), votes:routine_votes(user_id)",
+      "*, author:users!routines_created_by_fkey(id, first_name, last_name, avatar, role), votes:routine_votes(user_id)",
     )
     .eq("is_shared", true)
 

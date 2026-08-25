@@ -1,3 +1,8 @@
+'use client';
+
+import { useRef } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import {
   Mail,
   Phone,
@@ -40,9 +45,38 @@ const footerLinks = {
 
 export function Footer() {
   const year = new Date().getFullYear();
+  const containerRef = useRef<HTMLElement>(null);
+
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
+
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        /* La última palabra del sitio: ráfaga RGB ambiental sobre "Ulate."
+           — mismo ADN que el glitch de DURO, más pausado para la despedida */
+        gsap
+          .timeline({ repeat: -1, repeatDelay: 3.4, delay: 1.2 })
+          .to(".ft-glitch-main", { skewX: -6, x: 2, duration: 0.06 })
+          .to([".ft-glitch-a", ".ft-glitch-b"], { autoAlpha: 1, duration: 0.04 }, "<")
+          .to(".ft-glitch-a", { x: -8, duration: 0.07 })
+          .to(".ft-glitch-b", { x: 8, duration: 0.07 }, "<")
+          .to([".ft-glitch-a", ".ft-glitch-b"], { autoAlpha: 0, x: 0, duration: 0.05 }, "+=0.08")
+          .to(".ft-glitch-main", { skewX: 0, x: 0, duration: 0.08 })
+          .to(".ft-glitch-a", { autoAlpha: 1, x: 5, duration: 0.05 }, "+=0.12")
+          .to(".ft-glitch-b", { autoAlpha: 1, x: -5, duration: 0.05 }, "<")
+          .to([".ft-glitch-a", ".ft-glitch-b"], { autoAlpha: 0, x: 0, duration: 0.06 });
+      });
+
+      return () => mm.revert();
+    },
+    { scope: containerRef },
+  );
 
   return (
-    <footer className="relative bg-black pt-20 overflow-hidden">
+    <footer
+      ref={containerRef}
+      className="relative min-h-screen bg-black pt-20 overflow-hidden"
+    >
       {/* ░░ The closing wall — no grid, a grounded black floor ░░ */}
       <div className="absolute inset-0 pointer-events-none">
         {/* A single faint bottom glow — the "floor" light */}
@@ -69,7 +103,23 @@ export function Footer() {
           <h2 className="font-heading font-black uppercase leading-[0.85] tracking-[-0.03em] text-[clamp(2.75rem,7vw,5.5rem)] text-foreground">
             Gym
             <br />
-            <span className="text-primary">Ulate.</span>
+            <span className="text-primary">
+              <span className="relative inline-block">
+                <span className="ft-glitch-main inline-block">Ulate.</span>
+                <span
+                  aria-hidden="true"
+                  className="ft-glitch-a absolute inset-0 text-foreground opacity-0"
+                >
+                  Ulate.
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="ft-glitch-b absolute inset-0 text-white/70 opacity-0"
+                >
+                  Ulate.
+                </span>
+              </span>
+            </span>
           </h2>
 
           <p className="font-mono text-muted-foreground text-sm md:text-base mt-4 max-w-xl leading-relaxed">

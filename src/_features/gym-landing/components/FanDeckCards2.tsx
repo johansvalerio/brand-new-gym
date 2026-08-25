@@ -106,8 +106,17 @@ const CarouselStacked = () => {
   const scrollProgress = useMotionValue(0);
   const startProgress = React.useRef(0);
   const [windowWidth, setWindowWidth] = React.useState(0);
+  const [activeIdx, setActiveIdx] = React.useState(0);
 
   const total = slides.length;
+
+  /* Índice de la tarjeta del centro — alimenta el caption inferior */
+  React.useEffect(() => {
+    return scrollProgress.on("change", (v) => {
+      const idx = ((Math.round(v) % total) + total) % total;
+      setActiveIdx((prev) => (prev === idx ? prev : idx));
+    });
+  }, [scrollProgress, total]);
 
   React.useEffect(() => {
     setWindowWidth(window.innerWidth);
@@ -186,7 +195,7 @@ const CarouselStacked = () => {
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 mb-6">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-primary">
-              Zonas de Entrenamiento
+              Arsenal
             </span>
           </div>
           <h2 className="font-heading text-4xl md:text-6xl font-black uppercase text-foreground mb-6 leading-[0.95]">
@@ -209,7 +218,7 @@ const CarouselStacked = () => {
             </span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto font-mono text-lg leading-relaxed">
-            Swipe or drag to explore every corner of our facility.
+            Desliza o arrastra para recorrer cada rincón de nuestras instalaciones.
           </p>
         </div>
 
@@ -262,6 +271,24 @@ const CarouselStacked = () => {
               config={config}
             />
           ))}
+        </div>
+
+        {/* Caption — como en el coverflow: el texto vive debajo del mazo
+            y cambia con fade cuando la tarjeta activa gira */}
+        <div className="mt-12 min-h-[92px] px-6 text-center">
+          <motion.div
+            key={activeIdx}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            <p className="font-heading text-lg font-bold uppercase tracking-wide text-foreground">
+              {slides[activeIdx].title}
+            </p>
+            <p className="mt-1 font-mono text-sm text-muted-foreground">
+              {slides[activeIdx].description}
+            </p>
+          </motion.div>
         </div>
       </div>
     </section>
@@ -340,30 +367,9 @@ const Card = ({ slide, index, total, progress, config }: CardProps) => {
         className="absolute inset-0 bg-black pointer-events-none"
       />
 
-      <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
-
-<span className="absolute top-4 right-4 sm:top-6 sm:right-6 lg:top-7 lg:right-7 rounded-full bg-white/95 px-3 py-1 sm:px-4 sm:py-1.5 text-sm sm:text-base font-bold uppercase tracking-widest text-black backdrop-blur-md">
+      <span className="absolute top-4 right-4 sm:top-6 sm:right-6 lg:top-7 lg:right-7 rounded-full bg-white/95 px-3 py-1 sm:px-4 sm:py-1.5 text-sm sm:text-base font-bold uppercase tracking-widest text-black backdrop-blur-md">
         {slide.badge}
       </span>
-
-      <div className="absolute bottom-5 left-3 right-3 sm:bottom-8 sm:left-5 sm:right-5 lg:bottom-10 lg:left-6 lg:right-6 text-white text-center sm:text-left">
-        <motion.p
-          style={{
-            opacity: useTransform(offset, [-0.5, 0, 0.5], [0, 1, 0]),
-          }}
-          className="text-lg sm:text-xl lg:text-2xl font-bold leading-tight mb-1 sm:mb-2 drop-shadow-md"
-        >
-          {slide.title}
-        </motion.p>
-        <motion.p
-          style={{
-            opacity: useTransform(offset, [-0.5, 0, 0.5], [0, 1, 0]),
-          }}
-          className="hidden sm:block text-sm lg:text-base text-white/70 line-clamp-3 italic font-medium leading-relaxed"
-        >
-          {slide.description}
-        </motion.p>
-      </div>
     </motion.div>
   );
 };
