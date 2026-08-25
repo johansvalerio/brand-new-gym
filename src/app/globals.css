@@ -198,3 +198,24 @@
   background: #1a1a1a;
   color: #f8fafc;
 }
+
+/* Borde viajero de la card destacada en MembershipSection.
+   Se anima el ÁNGULO del conic-gradient vía custom property registrada
+   (@property) — el elemento nunca rota, solo la luz alrededor del borde. */
+@property --tb-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes membership-border-spin {
+  to {
+    --tb-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-sonner-toast] [data-close-button] {
+    transition: none;
+  }
+}

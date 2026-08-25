@@ -90,6 +90,39 @@ const fallbackVisual = (days: number): CardVisual => ({
   highlighted: false,
 });
 
+/**
+ * Único borde de la card destacada (mensual): patrón "animated gradient
+ * border" (BorderRotate) — el conic multi-destello EXACTO del componente,
+ * con sus paradas segmentadas que crean dos zonas de luz de corte nítido
+ * (30-40% y 77-90%), re-vestido con la paleta neón de la marca: verde
+ * profundo / #96d906 / lima pálido (en vez del dorado original). Aro limpio
+ * de 2px, sin halos. Se anima el ángulo del conic (--tb-angle, @property
+ * en globals.css); el elemento NUNCA rota. Siempre visible; respeta
+ * prefers-reduced-motion.
+ */
+const BORDER_DARK = "#42660a";
+const BORDER_LIGHT = "#e9ff9e";
+
+const travelingBorderStyle: React.CSSProperties = {
+  background: `conic-gradient(from var(--tb-angle), ${BORDER_DARK} 0%, var(--primary) 37%, ${BORDER_LIGHT} 30%, var(--primary) 33%, ${BORDER_DARK} 40%, ${BORDER_DARK} 50%, var(--primary) 77%, ${BORDER_LIGHT} 80%, var(--primary) 83%, ${BORDER_DARK} 90%)`,
+  WebkitMask:
+    "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+  WebkitMaskComposite: "xor",
+  maskComposite: "exclude",
+  padding: "2px",
+  animation: "membership-border-spin 5s linear infinite",
+};
+
+function TravelingBorder() {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-0 rounded-[inherit] motion-reduce:hidden"
+      style={travelingBorderStyle}
+    />
+  );
+}
+
 export function MembershipSection() {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const reduceMotion = useReducedMotion();
@@ -240,12 +273,13 @@ export function MembershipSection() {
                   onMouseEnter={() => setHoveredIdx(idx)}
                   onMouseLeave={() => setHoveredIdx(null)}
                   className={`pricing-card relative group overflow-hidden cursor-pointer transition-all duration-500 ease-out !gap-0 !py-0 flex flex-col
-                    ${plan.highlighted ? "md:-mt-4 md:mb-4 ring-2 ring-primary/40 border border-primary shadow-2xl shadow-primary/25" : "ring-1 ring-foreground/10 border border-border"}
+                    ${plan.highlighted ? "md:-mt-4 md:mb-4 !border-0 !ring-0 shadow-2xl shadow-primary/25" : "ring-1 ring-foreground/10 border border-border"}
                     ${isHovered ? "!scale-[1.02] z-20 shadow-2xl" : isAdjacent ? "scale-[0.98] opacity-70 z-0" : "scale-100 z-10"}
-                    ${isHovered && plan.highlighted ? "!shadow-primary/40 !ring-primary/80" : ""}
-                    ${isHovered && !plan.highlighted ? "!ring-primary/50 !border-primary/60" : ""}
+                    ${isHovered && plan.highlighted ? "!shadow-primary/40" : ""}
+                    ${isHovered && !plan.highlighted ? "ring-primary/50 border-primary/60" : ""}
                   `}
                 >
+                  {plan.highlighted && <TravelingBorder />}
                   <div
                     className={`absolute inset-0 bg-gradient-to-b ${plan.accent} opacity-70`}
                   />
@@ -274,9 +308,9 @@ export function MembershipSection() {
                       <CardDescription className="font-mono text-sm leading-relaxed min-h-[40px]">
                         {plan.description}
                       </CardDescription>
-                      <div className="mt-6 flex items-end gap-2">
+                      <div className="mt-6 flex flex-wrap items-end gap-2">
                         <span
-                          className={`text-6xl font-black font-heading leading-none transition-colors duration-500 ${
+                          className={`text-5xl sm:text-6xl font-black font-heading leading-none transition-colors duration-500 ${
                             isHovered ? "text-primary" : "text-foreground"
                           }`}
                         >

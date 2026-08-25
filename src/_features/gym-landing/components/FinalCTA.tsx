@@ -231,10 +231,10 @@ export function FinalCTA() {
             ref={buttonRef}
             size="lg"
             onClick={() => navigate('/auth/login')}
-            className="relative bg-primary-foreground text-primary hover:bg-black/90 font-heading tracking-[0.2em] uppercase text-base md:text-lg px-12 md:px-16 h-16 md:h-20 rounded-none ring-2 ring-black ring-offset-4 ring-offset-primary focus-visible:ring-black hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 shadow-2xl shadow-black/30"
+            className="relative bg-primary-foreground text-primary hover:bg-black/90 font-heading tracking-[0.1em] sm:tracking-[0.2em] uppercase text-base md:text-lg px-6 sm:px-12 md:px-16 h-16 md:h-20 rounded-none ring-2 ring-black ring-offset-4 ring-offset-primary focus-visible:ring-black hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 shadow-2xl shadow-black/30"
           >
             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-            <span className="relative z-10 flex items-center gap-3 md:gap-4">
+            <span className="relative z-10 flex items-center gap-2.5 sm:gap-3 md:gap-4">
               Comenzar Ahora
               <ArrowRight
                 className="w-5 h-5 md:w-6 md:h-6 transition-transform duration-300 group-hover:translate-x-1"

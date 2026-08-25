@@ -134,7 +134,7 @@ export function SharedRoutines() {
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
-      <div className="flex flex-col gap-6">
+      <div className="flex min-w-0 flex-col gap-6">
         {routines.map((routine, index) => (
           <SharedRoutineCard
             key={routine.id}
@@ -203,10 +203,10 @@ function SharedRoutineCard({
     <article className="group relative overflow-hidden rounded-lg border border-border bg-card transition-colors duration-300 hover:border-primary/40">
       <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
 
-      <header className="relative flex items-start gap-4 border-b border-border/60 p-4 sm:p-6">
+      <header className="relative flex items-start gap-3 border-b border-border/60 p-4 sm:gap-4 sm:p-6">
         {/* Ranking */}
         <span
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md border font-sans text-base font-black ${
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md border font-sans text-base font-black sm:h-10 sm:w-10 ${
             rank === 1
               ? "border-primary bg-primary/20 text-primary"
               : rank <= 3
@@ -218,10 +218,10 @@ function SharedRoutineCard({
           {rank}
         </span>
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 pr-14 sm:pr-0">
           {/* Autor: avatar + nombre + procedencia + fecha */}
           <div className="flex items-center gap-3">
-            <AuthorAvatar author={routine.author} />
+            <AuthorAvatar author={routine.author} className="h-9 w-9 sm:h-10 sm:w-10" />
             <div className="min-w-0">
               <p className="flex items-center gap-2 truncate font-sans text-sm font-bold text-foreground">
                 {authorName(routine)}
@@ -263,7 +263,8 @@ function SharedRoutineCard({
           </div>
         </div>
 
-        {/* Like estilo red social: flame relleno si ya voté */}
+        {/* Like estilo red social: flame relleno si ya voté. En móvil flota en
+            la esquina para que el header nunca dependa del ancho disponible. */}
         <button
           type="button"
           onClick={onVote}
@@ -279,14 +280,14 @@ function SharedRoutineCard({
           }
           aria-pressed={hasVoted}
           aria-label={hasVoted ? "Quitar voto" : "Votar esta rutina"}
-          className={`flex shrink-0 cursor-pointer flex-col items-center gap-1 rounded-md border px-3.5 py-2 transition-all duration-200 disabled:cursor-not-allowed ${
+          className={`absolute right-4 top-4 flex shrink-0 cursor-pointer flex-col items-center gap-1 rounded-md border px-3 py-2 transition-all duration-200 disabled:cursor-not-allowed sm:static sm:px-3.5 ${
             hasVoted
               ? "border-primary/60 bg-primary/15"
               : "border-border bg-secondary/50 hover:border-primary/50 hover:bg-primary/10"
           } ${!canVote ? "opacity-70" : ""}`}
         >
           <Flame
-            className={`h-5 w-5 transition-colors duration-200 ${
+            className={`h-4 w-4 transition-colors duration-200 sm:h-5 sm:w-5 ${
               hasVoted
                 ? "fill-primary text-primary"
                 : "text-muted-foreground group-hover:text-primary/60"
@@ -347,7 +348,7 @@ function TopCommunityAside({ routines }: { routines: SharedRoutine[] }) {
   return (
     <aside className="h-fit space-y-4 lg:sticky lg:top-8">
       {/* Stats del ranking */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="rounded-lg border border-border bg-card px-4 py-3">
           <p className="font-sans text-2xl font-black leading-none text-foreground tabular-nums">
             {routines.length}

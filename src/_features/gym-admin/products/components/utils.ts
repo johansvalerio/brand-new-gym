@@ -1,5 +1,9 @@
 export const currency = (value: number) =>
-  new Intl.NumberFormat("es-CR", { style: "currency", currency: "CRC" }).format(value)
+  new Intl.NumberFormat("es-CR", {
+    style: "currency",
+    currency: "CRC",
+    maximumFractionDigits: 0,
+  }).format(value)
 
 export type StockLevel = "out" | "low" | "ok"
 
