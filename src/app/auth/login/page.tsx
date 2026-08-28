@@ -13,9 +13,9 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   const breadcrumbItems = [
-    { name: "Inicio", item: "https://gymulate.com" },
-    { name: "Autenticación", item: "https://gymulate.com/auth" },
-    { name: "Iniciar Sesión", item: "https://gymulate.com/auth/login" },
+    { name: "Inicio", item: "https://gymulate.vercel.app" },
+    { name: "Autenticación", item: "https://gymulate.vercel.app/auth" },
+    { name: "Iniciar Sesión", item: "https://gymulate.vercel.app/auth/login" },
   ];
 
   return (

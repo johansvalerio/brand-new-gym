@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   twitter: {
     title: "Gymulate - Centro de Entrenamiento Táctico de Fitness",
     description: "Únete a Gymulate - el centro de entrenamiento táctico de fitness con equipamiento de élite, seguimiento con datos, acceso 24/7 y una comunidad que exige excelencia.",
-    images: ["https://gymulate.com/og-image.jpg"],
+    images: ["https://gymulate.vercel.app/og-image.jpg"],
   },
 };
 
@@ -40,7 +40,7 @@ const jsonLd = {
   "@type": "GymOrFitnessCenter",
   name: "Gymulate",
   description: "Centro de entrenamiento táctico de fitness con equipamiento de élite, seguimiento con datos y acceso 24/7",
-  url: "https://gymulate.com",
+  url: "https://gymulate.vercel.app",
   telephone: "+506 8888-1111",
   address: {
     "@type": "PostalAddress",
@@ -77,11 +77,6 @@ const jsonLd = {
     "Vestidores",
     "Duchas",
   ],
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.8",
-    reviewCount: "247",
-  },
 };
 
 export default function Home() {

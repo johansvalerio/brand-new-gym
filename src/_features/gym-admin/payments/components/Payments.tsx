@@ -1,10 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { useQueryClient } from "@tanstack/react-query"
+import { useMemo, useState } from "react"
 import { Banknote, CheckCircle2, Loader2, ShieldAlert } from "lucide-react"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
-import { createClient } from "@/lib/supabase/client"
 import { useDecidePayment, usePayments, type PaymentRow } from "../hooks/usePayments"
 import { PaymentsStats, type PaymentsStatsData } from "./payments-stats"
 import { PendingPaymentCard } from "./pending-payment-card"
@@ -26,16 +24,6 @@ export function Payments() {
   const [filters, setFilters] = useState<PaymentFilters>(defaultPaymentFilters)
   const [walkInOpen, setWalkInOpen] = useState(false)
   const [editing, setEditing] = useState<PaymentRow | null>(null)
-  const queryClient = useQueryClient()
-
-  // Barrido de vencidas al entrar (fallback del cron nocturno)
-  useEffect(() => {
-    if (!isAdmin) return
-    const supabase = createClient()
-    void supabase.rpc("expire_stale_memberships").then(() => {
-      queryClient.invalidateQueries({ queryKey: ["users"] })
-    })
-  }, [isAdmin, queryClient])
 
   const stats = useMemo(() => {
     const pendingRows = payments

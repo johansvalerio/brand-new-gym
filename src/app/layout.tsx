@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   creator: "Gymulate",
   publisher: "Gymulate",
   alternates: {
-    canonical: "https://gymulate.com",
+    canonical: "https://gymulate.vercel.app",
   },
   icons: {
     icon: [
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "es_CR",
-    url: "https://gymulate.com",
+    url: "https://gymulate.vercel.app",
     title: "Gymulate - Centro de Entrenamiento Táctico de Fitness",
     description: "Transforma tu cuerpo con equipamiento de élite, seguimiento con datos y acceso 24/7 en Gymulate.",
     siteName: "Gymulate",

@@ -4,7 +4,7 @@ import ConstellationBackground from "@/_features/shared/components/Constellation
 export const metadata = {
   title: "Dashboard | Gymulate",
   description:
-    "Vista general del gimnasio: miembros, membresías por vencer, solicitudes de pago e ingresos del mes.",
+    "Tu vista general: membresía, rutinas, pagos y actividad — cada rol ve lo suyo en tiempo real.",
 };
 
 export default function DashboardPage() {
@@ -21,8 +21,8 @@ export default function DashboardPage() {
             Dash<span className="text-primary">board</span>
           </h1>
           <p className="mt-3 max-w-2xl font-mono text-sm leading-relaxed text-muted-foreground md:text-base">
-            Miembros, vencimientos próximos, solicitudes de pago e ingresos —
-            todo actualizado en tiempo real.
+            Tu membresía, tus rutinas y tu actividad — todo actualizado en
+            tiempo real.
           </p>
         </header>
 

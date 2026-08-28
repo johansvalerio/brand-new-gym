@@ -425,7 +425,7 @@ function MetadataTab({
             Rutina activa
           </p>
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            Aparece en el perfil del miembro
+            La rutina que el miembro está siguiendo ahora
           </p>
         </div>
       </label>

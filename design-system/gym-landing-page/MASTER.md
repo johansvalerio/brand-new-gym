@@ -34,7 +34,7 @@ src/
 
 **Rules:**
 - New feature → new folder under `_features/<name>/` with `components/` and `hooks/`. `shared/` only for cross-feature code.
-- **Component granularity (2026-08-23, applies to ALL new code):** one concern per file. A page/feature composes SEPARATE component files — never pile multiple sections/widgets into a single `.tsx`. Canonical example: `dashboard/components/` → `Dashboard.tsx` (orchestrator: guard + hooks + data derivation) composing `dashboard-stats.tsx`, `expiring-members.tsx`, `pending-payments.tsx`. Parent fetches via hooks and passes props down; children stay presentational (or own their small mutations). `payments/` and `membership/` already follow this split (stats / card / history files). Legacy monoliths still pending: Users.tsx, Products.tsx.
+- **Component granularity (2026-08-23, applies to ALL new code):** one concern per file. A page/feature composes SEPARATE component files — never pile multiple sections/widgets into a single `.tsx`. Canonical example: `dashboard/components/` → `Dashboard.tsx` (router por rol) → `admin-dashboard.tsx` (orchestrator: guard + hooks + data derivation) composing `dashboard-stats.tsx`, `expiring-members.tsx`, `pending-payments.tsx`. Parent fetches via hooks and passes props down; children stay presentational (or own their small mutations). `payments/` and `membership/` already follow this split (stats / card / history files). Legacy monoliths still pending: Users.tsx, Products.tsx.
 - **Body scroll lock en diálogos:** todo dialog llama `useBodyScrollLock(open)` (`shared/hooks/`) — congela el scroll del fondo mientras está abierto y lo restaura al cerrar. Los confirm-deletes lo llaman con `Boolean(entity)`.
 - Page files in `app/` stay thin: they render the feature component.
 - Never hand-edit `database.types.ts`; regenerate it from the DB and derive row/DTO types from `Tables` / `TablesInsert` / `TablesUpdate`.
@@ -182,6 +182,19 @@ Thin server page (`PageProps<"/users/profile/[id]">` + `await params`) rendering
 Thin server page rendering `_features/gym-routines/components/shared-routines.tsx` (client). Data via `useSharedRoutines()` (`sharedKeys.all`) — fetches `is_shared = true` with author join + embedded votes; ranking sorted client-side by vote count desc (ties → newest first). **Like-style voting** (`useToggleVote`, optimistic snapshot→update→rollback): Flame icon filled `fill-primary text-primary` when voted, outline gray otherwise; own routine or no session → non-clickable with explanatory title; NO success toast on votes (social-style silence), error toast only. Empty state: "Aún no hay rutinas compartidas". Entry point: "Ranking de rutinas" (Trophy) in FloatingNav dropdown.
 
 **Routine card menu toggles:** boolean flags use `ToggleRow` (mini switch LEFT, label RIGHT; ON = `bg-primary`, OFF = `bg-secondary`; menu stays open while toggling). `Activa` visible when `canEditRoutine`; `Compartida` visible only to the routine's author (`created_by === viewer.id`). Sharing also shows a "Compartida" badge on the card.
+
+### Role Dashboards (`/dashboard`, 2026-08-25)
+
+`Dashboard.tsx` (gym-admin/dashboard/components) es **solo router**: lee el rol desde `useAuthSession` y renderiza un orquestador por rol. Sin fila de perfil → "Acceso restringido". El FloatingNav muestra "Dashboard" a cualquier usuario autenticado.
+
+| Rol | Orquestador | Secciones |
+|---|---|---|
+| admin | `admin-dashboard.tsx` | `dashboard-stats` (×5) + `expiring-members` + `pending-payments`; corre el barrido `expire_stale_memberships` al entrar |
+| coach | `gym-coach/dashboard/components/CoachDashboard.tsx` | `coach-stats` (mis miembros / activos / por vencer 7d / rutinas creadas) + `my-members` + `members-without-routine` (CTA Dumbbell → wizard de rutina del miembro) |
+| user | `gym-member/dashboard/components/MemberDashboard.tsx` | `membership-banner` (pago pending → ámbar "en revisión"; activa → countdown + Renovar si ≤7d; sin membresía → CTA rojo) + `my-routine-card` (rutina activa + CTA Entrenar) + `my-payment-status` + `recent-notifications` + `ranking-preview` |
+
+- Hooks del coach en `useCoachDashboard.ts`: `useCoachMembers(coachId)` filtra `.eq('coach_id')` y su query key vive bajo `["users"]` (hereda invalidaciones del CRUD); `useRoutinesLite()` pide columnas mínimas para derivar "quién tiene rutina activa".
+- Regla purity: NUNCA llames `Date.now()` en render/useMemo — usa `useNow()` (`shared/hooks`, hydration-safe: `null` hasta el mount, tick 30s). Los cálculos de vencimiento omiten el filtro cuando `now === null`.
 
 ---
 

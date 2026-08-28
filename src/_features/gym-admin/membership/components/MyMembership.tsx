@@ -1,10 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { useQueryClient } from "@tanstack/react-query"
+import { useMemo, useState } from "react"
 import { Loader2, LogIn, Banknote } from "lucide-react"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
-import { createClient } from "@/lib/supabase/client"
 import { usePlans } from "@/_features/gym-admin/users/hooks/usePlans"
 import type { PlanRef } from "@/_features/gym-admin/users/components/utils"
 import {
@@ -26,16 +24,6 @@ export function MyMembership() {
   const { data: plans = [] } = usePlans()
   const { data: payments = [], isLoading: paymentsLoading } = usePayments()
   const createRequest = useCreatePaymentRequest()
-  const queryClient = useQueryClient()
-
-  // Barrido de vencidas al entrar (fallback del cron nocturno)
-  useEffect(() => {
-    if (!profile?.id) return
-    const supabase = createClient()
-    void supabase.rpc("expire_stale_memberships").then(() => {
-      queryClient.invalidateQueries({ queryKey: ["users"] })
-    })
-  }, [profile?.id, queryClient])
 
   const hasPendingRequest = useMemo(
     () => payments.some((p) => p.status === "pending"),

@@ -503,7 +503,6 @@ export type Database = {
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean }
       is_coach: { Args: Record<string, never>; Returns: boolean }
-      expire_stale_memberships: { Args: Record<string, never>; Returns: undefined }
     }
     Enums: {
       membership_status: "active" | "inactive" | "pending" | "expired"

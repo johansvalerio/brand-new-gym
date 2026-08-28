@@ -194,13 +194,11 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
         <DropdownMenuSeparator className="my-2" />
 
         <DropdownMenuGroup>
-          {user.isAdmin && (
-            <DropdownMenuItem onClick={() => navigate('/dashboard')}
-              className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
-              <LayoutDashboard className="h-4 w-4 mr-1" />
-              Dashboard
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem onClick={() => navigate('/dashboard')}
+            className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+            <LayoutDashboard className="h-4 w-4 mr-1" />
+            Dashboard
+          </DropdownMenuItem>
           {user.profileId ? (
             <DropdownMenuItem onClick={() => navigate(`/users/profile/${user.profileId}`)} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
               <UserCircle className="h-4 w-4 mr-1" />
