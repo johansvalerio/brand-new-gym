@@ -2,7 +2,7 @@
 
 import { Banknote, CalendarClock, CheckCircle2 } from "lucide-react"
 import { FilterPill } from "@/_features/shared/components/filter-pill"
-import type { PlanRow } from "@/_features/gym-admin/users/hooks/usePlans"
+import type { PlanRow } from "@/_features/gym-admin/plans/hooks/usePlans"
 
 const DAY_MS = 86_400_000
 

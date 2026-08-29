@@ -1,7 +1,7 @@
 "use client"
 
 import { CalendarClock, Plus, Search } from "lucide-react"
-import type { PlanRow } from "../hooks/usePlans"
+import type { PlanRow } from "@/_features/gym-admin/plans/hooks/usePlans"
 import { FilterPill } from "@/_features/shared/components/filter-pill"
 import { ViewToggle, type ViewMode } from "@/_features/shared/components/view-toggle"
 

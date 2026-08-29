@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Banknote, Loader2, Search, Smartphone, X } from "lucide-react"
 import { useUsers } from "@/_features/gym-admin/users/hooks/useUsers"
-import { usePlans } from "@/_features/gym-admin/users/hooks/usePlans"
+import { usePlans } from "@/_features/gym-admin/plans/hooks/usePlans"
 import { currency } from "@/_features/gym-admin/products/components/utils"
 import { useBodyScrollLock } from "@/_features/shared/hooks/useBodyScrollLock"
 import {

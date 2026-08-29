@@ -9,15 +9,18 @@ import {
   GraduationCap,
   ShieldCheck,
   User,
+  CopyPlus,
 } from "lucide-react"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import {
   useSharedRoutines,
   useToggleVote,
+  useCopySharedRoutine,
   type SharedRoutine,
   type SharedRoutineAuthor,
 } from "../hooks/useSharedRoutines"
 import { goalLabel } from "../hooks/routine-helpers"
+import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
 
 function authorName(routine: SharedRoutine): string {
   const author = routine.author
@@ -94,6 +97,8 @@ export function SharedRoutines() {
   const { profile } = useAuthSession()
   const { data: routines = [], isLoading, error } = useSharedRoutines()
   const toggleVote = useToggleVote()
+  const copyRoutine = useCopySharedRoutine()
+  const { navigate } = usePageTransition()
 
   const viewerId = profile?.id ?? null
 
@@ -108,6 +113,19 @@ export function SharedRoutines() {
       voterProfileId: viewerId,
       wasVoted,
     })
+  }
+
+  const handleCopy = async (routine: SharedRoutine) => {
+    if (!viewerId) {
+      navigate("/auth/login")
+      return
+    }
+    if (copyRoutine.isPending) return
+    await copyRoutine.mutateAsync({
+      routineId: routine.id,
+      viewerId,
+    })
+    navigate(`/users/profile/${viewerId}/routine`)
   }
 
   if (isLoading) {
@@ -143,6 +161,8 @@ export function SharedRoutines() {
             viewerId={viewerId}
             onVote={() => handleVote(routine)}
             votePending={toggleVote.isPending}
+            onCopy={() => handleCopy(routine)}
+            copyPending={copyRoutine.isPending}
           />
         ))}
       </div>
@@ -181,12 +201,16 @@ function SharedRoutineCard({
   viewerId,
   onVote,
   votePending,
+  onCopy,
+  copyPending,
 }: {
   routine: SharedRoutine
   rank: number
   viewerId: string | null
   onVote: () => void
   votePending: boolean
+  onCopy: () => void
+  copyPending: boolean
 }) {
   const votes = routine.votes.length
   const hasVoted =
@@ -195,6 +219,8 @@ function SharedRoutineCard({
   const isViewerOwner = Boolean(viewerId) && routine.user_id === viewerId
   // Sin sesión o viendo tu propia rutina → el like no es clickeable.
   const canVote = Boolean(viewerId) && !isOwnRoutine
+  // Copiar solo si la rutina no es del viewer.
+  const canCopy = !isViewerOwner
 
   const provenance = provenanceOf(routine)
   const ProvenanceIcon = PROVENANCE_META[provenance].icon
@@ -307,6 +333,26 @@ function SharedRoutineCard({
         <p className="relative px-5 pb-5 font-mono text-sm leading-relaxed text-muted-foreground sm:px-6 sm:pb-6">
           {routine.notes}
         </p>
+      ) : null}
+
+      {/* Copiar la rutina a la lista personal del viewer */}
+      {canCopy ? (
+        <div className="relative border-t border-border/60 px-4 py-3 sm:px-6">
+          <button
+            type="button"
+            onClick={onCopy}
+            disabled={copyPending}
+            title={!viewerId ? "Inicia sesión para copiarla" : "Copiar a mis rutinas"}
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-secondary/50 px-4 py-2.5 font-sans text-xs font-bold uppercase tracking-wider text-foreground transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {copyPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <CopyPlus className="h-4 w-4" />
+            )}
+            {copyPending ? "Copiando..." : "Copiar a mis rutinas"}
+          </button>
+        </div>
       ) : null}
     </article>
   )

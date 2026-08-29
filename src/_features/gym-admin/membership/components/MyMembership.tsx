@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { Loader2, LogIn, Banknote } from "lucide-react"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
-import { usePlans } from "@/_features/gym-admin/users/hooks/usePlans"
+import { usePlans } from "@/_features/gym-admin/plans/hooks/usePlans"
 import type { PlanRef } from "@/_features/gym-admin/users/components/utils"
 import {
   useCreatePaymentRequest,

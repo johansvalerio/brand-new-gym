@@ -2,7 +2,7 @@
 
 import { Banknote, Smartphone } from "lucide-react"
 import { currency } from "@/_features/gym-admin/products/components/utils"
-import type { PlanRow } from "@/_features/gym-admin/users/hooks/usePlans"
+import type { PlanRow } from "@/_features/gym-admin/plans/hooks/usePlans"
 
 export function PlanRequestCards({
   plans,

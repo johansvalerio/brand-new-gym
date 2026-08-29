@@ -113,3 +113,41 @@ export function useToggleVote() {
     },
   })
 }
+
+/**
+ * Copia una rutina compartida del ranking a la lista personal del viewer.
+ * La copy la hace el RPC `copy_shared_routine` (SECURITY DEFINER: bypassa RLS
+ * para leer los días/ejercicios ajenos, pero fija el destino al perfil del
+ * llamante). Tras copiar, invalida ["users", viewerId, "routines"].
+ */
+export function useCopySharedRoutine() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      routineId,
+      viewerId,
+    }: {
+      routineId: number
+      viewerId: string
+    }): Promise<Tables<"routines">> => {
+      const supabase = createClient()
+      const { data, error } = await supabase.rpc("copy_shared_routine", {
+        source_routine_id: routineId,
+      })
+      if (error) throw error
+      return data as Tables<"routines">
+    },
+    onSuccess: (routine, { viewerId }) => {
+      toast.success(`Rutina "${routine.name}" copiada a tus rutinas`)
+      queryClient.invalidateQueries({
+        queryKey: ["users", viewerId, "routines"],
+      })
+    },
+    onError: (error) => {
+      toast.error("No se pudo copiar la rutina", {
+        description: error.message,
+      })
+    },
+  })
+}

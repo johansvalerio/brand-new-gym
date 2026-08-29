@@ -205,6 +205,12 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
               Mi perfil
             </DropdownMenuItem>
           ) : null}
+          {user.profileId ? (
+            <DropdownMenuItem onClick={() => navigate('/workout')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+              <Dumbbell className="h-4 w-4 mr-1" />
+              Entrenar
+            </DropdownMenuItem>
+          ) : null}
           {
             (user.isAdmin || user.isCoach) && (
               <DropdownMenuItem onClick={() => navigate('/users')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
@@ -237,6 +243,13 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
               className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
               <Banknote className="h-4 w-4 mr-1" />
               Pagos
+            </DropdownMenuItem>
+          )}
+          {user.isAdmin && (
+            <DropdownMenuItem onClick={() => navigate('/plans')}
+              className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+              <CreditCard className="h-4 w-4 mr-1" />
+              Planes
             </DropdownMenuItem>
           )}
           <DropdownMenuItem className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primar">

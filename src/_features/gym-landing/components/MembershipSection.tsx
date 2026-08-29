@@ -13,7 +13,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession";
-import { usePlans } from "@/_features/gym-admin/users/hooks/usePlans";
+import { usePlans } from "@/_features/gym-admin/plans/hooks/usePlans";
 import {
   useCreatePaymentRequest,
 } from "@/_features/gym-admin/payments/hooks/usePayments";

@@ -5,83 +5,69 @@ import { X, User } from "lucide-react"
 import { useBodyScrollLock } from "@/_features/shared/hooks/useBodyScrollLock"
 import type { Tables } from "@/types/database.types"
 
-export type UserFormPayload = {
+/**
+ * Auto-edición del perfil propio: SOLO campos seguros (los datos básicos).
+ * Sin email (identidad de login), sin rol, sin coach y sin estado de membresía
+ * — esos los protege el RLS y los gestiona el admin.
+ */
+export type OwnProfilePayload = {
   first_name: string
   last_name: string | null
-  email: string
   phone: string | null
   avatar: string | null
-  role: NonNullable<Tables<"users">["role"]>
-  coach_id: string | null
-  membership_status: NonNullable<Tables<"users">["membership_status"]>
   gender: Tables<"users">["gender"]
 }
 
-interface UserFormDialogProps {
+interface OwnProfileDialogProps {
   open: boolean
-  user?: Tables<"users"> | null
-  coaches?: { id: string; first_name: string | null; last_name: string | null }[]
+  profile: Pick<
+    Tables<"users">,
+    "first_name" | "last_name" | "phone" | "avatar" | "gender"
+  >
   onClose: () => void
-  onSubmit: (dto: UserFormPayload) => Promise<void>
+  onSubmit: (payload: OwnProfilePayload) => Promise<void>
 }
 
 type FormState = {
   first_name: string
   last_name: string
-  email: string
   phone: string
-  role: UserFormPayload["role"]
-  coach_id: string
-  membership_status: UserFormPayload["membership_status"]
   avatar: string
-  gender: UserFormPayload["gender"]
+  gender: Tables<"users">["gender"]
 }
 
-const emptyForm: FormState = {
-  first_name: "",
-  last_name: "",
-  email: "",
-  phone: "",
-  role: "user",
-  coach_id: "",
-  membership_status: "active",
-  avatar: "",
-  gender: null,
-}
-
-export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: UserFormDialogProps) {
+export function OwnProfileDialog({
+  open,
+  profile,
+  onClose,
+  onSubmit,
+}: OwnProfileDialogProps) {
   useBodyScrollLock(open)
-  const isEdit = Boolean(user)
-  const [form, setForm] = useState<FormState>(emptyForm)
+  const [form, setForm] = useState<FormState>({
+    first_name: "",
+    last_name: "",
+    phone: "",
+    avatar: "",
+    gender: null,
+  })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const firstFieldRef = useRef<HTMLInputElement>(null)
 
-  // Sync form with the user being edited whenever the dialog opens.
   useEffect(() => {
     if (!open) return
     setErrors({})
-    if (user) {
-      setForm({
-        first_name: user.first_name ?? "",
-        last_name: user.last_name ?? "",
-        email: user.email ?? "",
-        phone: user.phone ?? "",
-        role: user.role ?? "user",
-        coach_id: user.coach_id ?? "",
-        membership_status: user.membership_status ?? "active",
-        avatar: user.avatar ?? "",
-        gender: user.gender ?? null,
-      })
-    } else {
-      setForm(emptyForm)
-    }
-    // Focus the first field for keyboard users.
+    setForm({
+      first_name: profile.first_name ?? "",
+      last_name: profile.last_name ?? "",
+      phone: profile.phone ?? "",
+      avatar: profile.avatar ?? "",
+      gender: profile.gender ?? null,
+    })
     const t = setTimeout(() => firstFieldRef.current?.focus(), 50)
     return () => clearTimeout(t)
-  }, [open, user])
+  }, [open, profile])
 
-  // Close on Escape.
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -96,33 +82,21 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }))
 
-  const validate = () => {
-    const next: Record<string, string> = {}
-
-    if (!form.first_name.trim()) next.first_name = "El nombre es obligatorio."
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      next.email = "Ingresa un email válido."
-    }
-
-    setErrors(next)
-    return Object.keys(next).length === 0
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validate()) return
+
+    const next: Record<string, string> = {}
+    if (!form.first_name.trim()) next.first_name = "El nombre es obligatorio."
+    setErrors(next)
+    if (Object.keys(next).length > 0) return
 
     setIsSubmitting(true)
     try {
       await onSubmit({
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim() || null,
-        email: form.email.trim(),
         phone: form.phone.trim() || null,
         avatar: form.avatar.trim() || null,
-        role: form.role,
-        coach_id: form.coach_id || null,
-        membership_status: form.membership_status as UserFormPayload["membership_status"],
         gender: form.gender,
       })
     } finally {
@@ -135,18 +109,15 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
       className="fixed inset-0 z-[100] flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="user-form-title"
+      aria-labelledby="own-profile-form-title"
     >
-      {/* Overlay */}
       <button
         aria-label="Cerrar"
         onClick={onClose}
         className="absolute inset-0 cursor-pointer bg-black/70 backdrop-blur-sm"
       />
 
-      {/* Panel */}
       <div className="relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
-        {/* accent glow */}
         <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
 
         <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-6 sm:py-4">
@@ -155,11 +126,14 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
               <User className="h-5 w-5" />
             </span>
             <div>
-              <h2 id="user-form-title" className="font-sans text-lg font-black uppercase tracking-tight text-foreground">
-                {isEdit ? "Editar miembro" : "Nuevo miembro"}
+              <h2
+                id="own-profile-form-title"
+                className="font-sans text-lg font-black uppercase tracking-tight text-foreground"
+              >
+                Editar mi perfil
               </h2>
               <p className="text-xs text-muted-foreground">
-                {isEdit ? `ID #${user?.id}` : "Agregar al gimnasio"}
+                Tus datos básicos
               </p>
             </div>
           </div>
@@ -173,12 +147,15 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
+        <form
+          onSubmit={handleSubmit}
+          className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5"
+        >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Nombre" htmlFor="first_name" error={errors.first_name}>
+            <Field label="Nombre" htmlFor="own-first_name" error={errors.first_name}>
               <input
                 ref={firstFieldRef}
-                id="first_name"
+                id="own-first_name"
                 value={form.first_name}
                 onChange={(e) => set("first_name", e.target.value)}
                 placeholder="Carlos"
@@ -186,31 +163,20 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
               />
             </Field>
 
-            <Field label="Apellido (opcional)" htmlFor="last_name" error={errors.last_name}>
+            <Field label="Apellido (opcional)" htmlFor="own-last_name">
               <input
-                id="last_name"
+                id="own-last_name"
                 value={form.last_name}
                 onChange={(e) => set("last_name", e.target.value)}
                 placeholder="Ramírez"
-                className={inputCls(errors.last_name)}
+                className={inputCls()}
               />
             </Field>
           </div>
 
-          <Field label="Email" htmlFor="email" error={errors.email}>
+          <Field label="Teléfono" htmlFor="own-phone">
             <input
-              id="email"
-              type="email"
-              value={form.email}
-              onChange={(e) => set("email", e.target.value)}
-              placeholder="carlos@email.com"
-              className={inputCls(errors.email)}
-            />
-          </Field>
-
-          <Field label="Teléfono" htmlFor="phone">
-            <input
-              id="phone"
+              id="own-phone"
               value={form.phone}
               onChange={(e) => set("phone", e.target.value)}
               placeholder="+506 8888-1111"
@@ -218,14 +184,16 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
             />
           </Field>
 
-          <Field label="Género" htmlFor="gender">
+          <Field label="Género" htmlFor="own-gender">
             <select
-              id="gender"
+              id="own-gender"
               value={form.gender ?? ""}
               onChange={(e) =>
                 set(
                   "gender",
-                  e.target.value === "" ? null : (e.target.value as UserFormPayload["gender"]),
+                  e.target.value === ""
+                    ? null
+                    : (e.target.value as Tables<"users">["gender"]),
                 )
               }
               className={inputCls()}
@@ -237,57 +205,9 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
             </select>
           </Field>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Field label="Rol" htmlFor="role">
-              <select
-                id="role"
-                value={form.role}
-                onChange={(e) => set("role", e.target.value as UserFormPayload["role"])}
-                className={inputCls()}
-              >
-                <option value="user">Usuario</option>
-                <option value="coach">Coach</option>
-                <option value="admin">Admin</option>
-              </select>
-            </Field>
-
-            <Field label="Estado" htmlFor="membership_status">
-              <select
-                id="membership_status"
-                value={form.membership_status}
-                onChange={(e) => set("membership_status", e.target.value as UserFormPayload["membership_status"])}
-                className={inputCls()}
-              >
-                <option value="active">Activo</option>
-                <option value="inactive">Inactivo</option>
-                <option value="pending">Pendiente</option>
-                <option value="expired">Expirado</option>
-              </select>
-            </Field>
-          </div>
-
-          <Field label="Coach asignado (opcional)" htmlFor="coach_id">
-            <select
-              id="coach_id"
-              value={form.coach_id}
-              onChange={(e) => set("coach_id", e.target.value)}
-              className={inputCls()}
-            >
-              <option value="">Sin coach</option>
-              {coaches.map((coach) => {
-                const name = `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim() || "Coach"
-                return (
-                  <option key={coach.id} value={coach.id}>
-                    {name}
-                  </option>
-                )
-              })}
-            </select>
-          </Field>
-
-          <Field label="URL de avatar (opcional)" htmlFor="avatar">
+          <Field label="URL de avatar (opcional)" htmlFor="own-avatar">
             <input
-              id="avatar"
+              id="own-avatar"
               value={form.avatar}
               onChange={(e) => set("avatar", e.target.value)}
               placeholder="https://..."
@@ -309,7 +229,7 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
               disabled={isSubmitting}
               className="flex cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed items-center gap-2 rounded-none bg-primary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
             >
-              {isSubmitting ? "Guardando..." : (isEdit ? "Guardar cambios" : "Crear miembro")}
+              {isSubmitting ? "Guardando..." : "Guardar cambios"}
             </button>
           </div>
         </form>
@@ -330,7 +250,10 @@ function Field({
   children: React.ReactNode
 }) {
   return (
-    <label htmlFor={htmlFor} className="flex flex-col gap-2 text-sm text-foreground">
+    <label
+      htmlFor={htmlFor}
+      className="flex flex-col gap-2 text-sm text-foreground"
+    >
       <span className="font-sans text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </span>
@@ -343,6 +266,8 @@ function Field({
 function inputCls(error?: string) {
   return [
     "w-full rounded-md border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60",
-    error ? "border-destructive focus:border-destructive" : "border-border focus:border-primary focus:ring-2 focus:ring-primary/30",
+    error
+      ? "border-destructive focus:border-destructive"
+      : "border-border focus:border-primary focus:ring-2 focus:ring-primary/30",
   ].join(" ")
 }

@@ -30,12 +30,16 @@ import {
   type UserRow,
 } from "@/_features/gym-admin/users/hooks/useUsers"
 import { useCoaches, coachDisplayName } from "@/_features/gym-admin/users/hooks/useCoaches"
-import { usePlans } from "@/_features/gym-admin/users/hooks/usePlans"
+import { usePlans } from "@/_features/gym-admin/plans/hooks/usePlans"
 import { MembershipCountdown } from "@/_features/gym-admin/users/components/MembershipCountdown"
 import {
   UserFormDialog,
   type UserFormPayload,
 } from "@/_features/gym-admin/users/components/user-form-dialog"
+import {
+  OwnProfileDialog,
+  type OwnProfilePayload,
+} from "./own-profile-dialog"
 import { ConfirmDeleteDialog } from "@/_features/gym-admin/users/components/confirm-delete-dialog"
 import {
   membershipBadgeClasses,
@@ -71,6 +75,19 @@ function roleLabel(role: UserRow["role"]): string {
   }
 }
 
+function genderLabel(gender: UserRow["gender"]): string {
+  switch (gender) {
+    case "masculino":
+      return "Masculino"
+    case "femenino":
+      return "Femenino"
+    case "otro":
+      return "Otro"
+    default:
+      return "Sin especificar"
+  }
+}
+
 function formatDate(value: string | null | undefined): string {
   if (!value) return "—"
   return new Date(value).toLocaleDateString("es-CR", {
@@ -88,6 +105,7 @@ export function UserProfile({ id }: { id: string }) {
   const { navigate } = usePageTransition()
 
   const [formOpen, setFormOpen] = useState(false)
+  const [ownFormOpen, setOwnFormOpen] = useState(false)
   const [deleting, setDeleting] = useState<UserRow | null>(null)
   const updateUser = useUpdateUser()
   const deleteUser = useDeleteUser()
@@ -140,9 +158,25 @@ export function UserProfile({ id }: { id: string }) {
         role: payload.role,
         coach_id: payload.coach_id,
         membership_status: payload.membership_status,
+        gender: payload.gender,
       },
     })
     setFormOpen(false)
+  }
+
+  const handleOwnUpdate = async (payload: OwnProfilePayload) => {
+    if (!profile) return
+    await updateUser.mutateAsync({
+      id: profile.id,
+      dto: {
+        first_name: payload.first_name,
+        last_name: payload.last_name,
+        phone: payload.phone,
+        avatar: payload.avatar,
+        gender: payload.gender,
+      },
+    })
+    setOwnFormOpen(false)
   }
 
   const handleDelete = async () => {
@@ -324,6 +358,19 @@ export function UserProfile({ id }: { id: string }) {
                       Eliminar
                     </button>
                   </>
+                ) : isOwnProfile ? (
+                  <button
+                    onClick={() => setOwnFormOpen(true)}
+                    disabled={updateUser.isPending}
+                    className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {updateUser.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Pencil className="h-4 w-4" />
+                    )}
+                    Editar mi perfil
+                  </button>
                 ) : null}
               </div>
             </div>
@@ -335,6 +382,7 @@ export function UserProfile({ id }: { id: string }) {
           <DataCard title="Contacto" icon={<Mail className="h-4 w-4" />}>
             <Meta large label="Email" value={profile.email ?? "—"} />
             <Meta large label="Teléfono" value={profile.phone ?? "Sin teléfono"} />
+            <Meta large label="Género" value={genderLabel(profile.gender)} />
             <Meta large label="Dirección" value={profile.address ?? "No registrada"} />
           </DataCard>
 
@@ -368,6 +416,13 @@ export function UserProfile({ id }: { id: string }) {
         user={deleting}
         onCancel={() => setDeleting(null)}
         onConfirm={handleDelete}
+      />
+
+      <OwnProfileDialog
+        open={ownFormOpen}
+        profile={profile}
+        onClose={() => setOwnFormOpen(false)}
+        onSubmit={handleOwnUpdate}
       />
     </section>
   )

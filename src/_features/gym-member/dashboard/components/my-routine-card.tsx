@@ -99,7 +99,7 @@ export function MyRoutineCard({ userId }: { userId: string }) {
             </ul>
 
             <button
-              onClick={() => navigate(`/users/profile/${userId}/routine`)}
+              onClick={() => navigate(`/workout`)}
               className="mt-5 w-full cursor-pointer rounded-md bg-primary py-3 font-sans text-xs font-bold uppercase tracking-wider text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90"
             >
               Entrenar

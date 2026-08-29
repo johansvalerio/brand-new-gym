@@ -71,6 +71,132 @@ export type Database = {
         }
         Relationships: []
       }
+      check_ins: {
+        Row: {
+          check_in_date: string
+          checked_in_at: string
+          id: number
+          user_id: string
+        }
+        Insert: {
+          check_in_date?: string
+          checked_in_at?: string
+          id?: never
+          user_id: string
+        }
+        Update: {
+          check_in_date?: string
+          checked_in_at?: string
+          id?: never
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "check_ins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      set_logs: {
+        Row: {
+          exercise_id: number
+          id: number
+          is_warmup: boolean
+          reps: number
+          set_number: number
+          weight: number
+          workout_log_id: number
+        }
+        Insert: {
+          exercise_id: number
+          id?: never
+          is_warmup?: boolean
+          reps: number
+          set_number: number
+          weight?: number
+          workout_log_id: number
+        }
+        Update: {
+          exercise_id?: number
+          id?: never
+          is_warmup?: boolean
+          reps?: number
+          set_number?: number
+          weight?: number
+          workout_log_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "set_logs_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "set_logs_workout_log_id_fkey"
+            columns: ["workout_log_id"]
+            isOneToOne: false
+            referencedRelation: "workout_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_logs: {
+        Row: {
+          completed_at: string | null
+          id: number
+          notes: string | null
+          routine_day_id: number | null
+          routine_id: number | null
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: never
+          notes?: string | null
+          routine_day_id?: number | null
+          routine_id?: number | null
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          id?: never
+          notes?: string | null
+          routine_day_id?: number | null
+          routine_id?: number | null
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_logs_routine_day_id_fkey"
+            columns: ["routine_day_id"]
+            isOneToOne: false
+            referencedRelation: "routine_days"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_logs_routine_id_fkey"
+            columns: ["routine_id"]
+            isOneToOne: false
+            referencedRelation: "routines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exercises: {
         Row: {
           created_at: string
@@ -410,6 +536,7 @@ export type Database = {
           email: string
           email_verified: boolean | null
           first_name: string | null
+          gender: Database["public"]["Enums"]["user_gender"] | null
           id: string
           join_date: string | null
           last_name: string | null
@@ -436,6 +563,7 @@ export type Database = {
           email: string
           email_verified?: boolean | null
           first_name?: string | null
+          gender?: Database["public"]["Enums"]["user_gender"] | null
           id?: string
           join_date?: string | null
           last_name?: string | null
@@ -462,6 +590,7 @@ export type Database = {
           email?: string
           email_verified?: boolean | null
           first_name?: string | null
+          gender?: Database["public"]["Enums"]["user_gender"] | null
           id?: string
           join_date?: string | null
           last_name?: string | null
@@ -503,6 +632,19 @@ export type Database = {
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean }
       is_coach: { Args: Record<string, never>; Returns: boolean }
+      copy_shared_routine: {
+        Args: { source_routine_id: number }
+        Returns: Database["public"]["Tables"]["routines"]["Row"]
+      }
+      save_workout: {
+        Args: {
+          p_routine_id: number | null
+          p_routine_day_id: number | null
+          p_notes: string | null
+          p_sets: Json
+        }
+        Returns: Database["public"]["Tables"]["workout_logs"]["Row"]
+      }
     }
     Enums: {
       membership_status: "active" | "inactive" | "pending" | "expired"
@@ -515,6 +657,7 @@ export type Database = {
         | "perdida_de_grasa"
         | "movilidad"
       user_role: "admin" | "user" | "coach"
+      user_gender: "masculino" | "femenino" | "otro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -557,6 +700,7 @@ export const Constants = {
         "movilidad",
       ],
       user_role: ["admin", "user", "coach"],
+      user_gender: ["masculino", "femenino", "otro"],
     },
   },
 } as const

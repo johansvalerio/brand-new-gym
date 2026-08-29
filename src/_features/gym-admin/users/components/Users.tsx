@@ -11,7 +11,7 @@ import {
 } from "../hooks/useUsers"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { useCoaches } from "../hooks/useCoaches"
-import { usePlans } from "../hooks/usePlans"
+import { usePlans } from "@/_features/gym-admin/plans/hooks/usePlans"
 import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
 import { ViewToggle, type ViewMode } from "@/_features/shared/components/view-toggle"
 import { UsersCards } from "./users-card"
@@ -131,6 +131,7 @@ export function Users() {
           role: payload.role,
           coach_id: payload.coach_id,
           membership_status: payload.membership_status,
+          gender: payload.gender,
         },
       })
     } else {
@@ -143,6 +144,7 @@ export function Users() {
         role: payload.role,
         coach_id: payload.coach_id,
         membership_status: payload.membership_status,
+        gender: payload.gender,
         join_date: new Date().toISOString(),
         last_visit: new Date().toISOString(),
       })

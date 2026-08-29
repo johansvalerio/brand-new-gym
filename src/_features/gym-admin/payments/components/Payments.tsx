@@ -14,7 +14,7 @@ import {
   type PaymentFilters,
 } from "./payment-history-filters"
 import { WalkInPaymentDialog } from "./walk-in-payment-dialog"
-import { usePlans } from "@/_features/gym-admin/users/hooks/usePlans"
+import { usePlans } from "@/_features/gym-admin/plans/hooks/usePlans"
 
 export function Payments() {
   const { isAdmin, loading: authLoading } = useAuthSession()
