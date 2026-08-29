@@ -211,18 +211,6 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
               Entrenar
             </DropdownMenuItem>
           ) : null}
-          {
-            (user.isAdmin || user.isCoach) && (
-              <DropdownMenuItem onClick={() => navigate('/users')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
-                <UserPlus className="h-4 w-4 mr-1" />
-                Usuarios
-              </DropdownMenuItem>
-            )
-          }
-          <DropdownMenuItem onClick={() => navigate('/products')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
-            <Package className="h-4 w-4 mr-1" />
-            Productos
-          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate(`/users/profile/${user.profileId}/routine`)}
             className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
             <Flame className="h-4 w-4 mr-1" />
@@ -238,6 +226,18 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
             <CreditCard className="h-4 w-4 mr-1" />
             Mi membresía
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/products')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+            <Package className="h-4 w-4 mr-1" />
+            Productos
+          </DropdownMenuItem>
+          {
+            (user.isAdmin || user.isCoach) && (
+              <DropdownMenuItem onClick={() => navigate('/users')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+                <UserPlus className="h-4 w-4 mr-1" />
+                Usuarios
+              </DropdownMenuItem>
+            )
+          }
           {user.isAdmin && (
             <DropdownMenuItem onClick={() => navigate('/payments')}
               className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">

@@ -19,10 +19,17 @@ src/
 ├── app/                      # Next.js 16 App Router (pages, layout, error, robots, sitemap)
 │   ├── page.tsx              # Landing
 │   ├── users/  products/     # Admin pages (thin wrappers over _features)
+│   ├── plans/                # Admin: CRUD de planes de membresía
+│   ├── workout/              # Sesión de entrenamiento del miembro (registrar series)
 │   └── auth/                 # Login
 ├── _features/                # Feature modules — the real structure
 │   ├── gym-landing/          # Landing sections (hero, pricing, gallery, FinalCTA...)
-│   ├── gym-admin/            # users/ and products/, each with components/ + hooks/
+│   ├── gym-admin/            # users/ products/ payments/ membership/ plans/ dashboard/
+│   ├── gym-coach/            # dashboard del coach
+│   ├── gym-member/           # dashboard del miembro
+│   ├── gym-routines/         # rutinas (listas, wizard, ranking compartido, votos, copiar)
+│   ├── gym-checkin/          # check-in diario de asistencia
+│   ├── gym-workout/          # registro real de entrenamientos (workout_logs/set_logs)
 │   ├── auth/                 # useAuthSession hook + login UI
 │   └── shared/               # FloatingNav, PageTransitionOverlay, usePageTransition
 ├── components/
@@ -48,7 +55,7 @@ src/
 | Table | Key columns | Notes |
 |---|---|---|
 | `public.users` | `id`, `auth_id` (→ auth.users), `email`, `role`, `coach_id`, `plan_id`, `membership_status/start/end` | Profile per auth user; `role` enum `user_role`: **`admin` \| `user` \| `coach`** (NOT "member"); `coach_id` self-FK (one active coach, trigger enforces role='coach'); `plan_id` FK → `plans`; `membership_status` enum active/inactive/pending/expired; start/end = cached current period (fills the profile countdown). The old `membership_plan` enum is DROPPED (2026-08-22). |
-| `public.plans` | `id`, `slug` unique, `name`, `duration_days`, `price` (colones CRC), `is_active` | Membership plans seeded: diario ₡2.500 (1d) / semanal ₡10.000 (7d) / mensual ₡15.000 (30d). Editable via SQL by admin (no CRUD UI yet). `handle_new_user()` recreated without the dropped column. |
+| `public.plans` | `id`, `slug` unique, `name`, `duration_days`, `price` (colones CRC), `is_active` | Membership plans seeded: diario ₡3.000 (1d) / semanal ₡10.000 (7d) / mensual ₡15.000 (30d) — names "Pago diario/semanal/mensual". **CRUD UI en `/plans` (admin-only, 2026-08-28)**: el `slug` se AUTOGENERA del nombre (`slugify`, sin acentos, espacios→guion) solo al crear; al editar el nombre NO cambia el slug (evita romper `payment-history-filters`/`users-toolbar`/`users-utils` que filtran por slug). `handle_new_user()` recreado sin la columna dropped. |
 | `public.products` | `product_id`, `product_name`, `product_price`, `product_stock`, `category_id` | All columns prefixed `product_`; `category_id` FK → `categories.id` (nullable) |
 | `public.categories` | `id`, `slug` unique, `name` | Product taxonomy; `slug` = URL-safe identifier (queries/filters), `name` = human label (renamable). Seeded with 6 categories (proteinas, creatina, pre-entreno, vitaminas, accesorios, ropa). |
 | `public.exercises` | `name` unique, `muscle_group`, `equipment` | Exercise catalog, seeded (~20) |
@@ -58,6 +65,9 @@ src/
 | `public.routine_days` | `routine_id` FK, `day_index` 1-7, `focus` | unique(routine_id, day_index) |
 | `public.routine_exercises` | `day_id` FK, `exercise_id` FK, sets, reps, rest_seconds | Ordered by `order_index` |
 | `public.routine_votes` | `routine_id` FK, `user_id` FK, unique(routine_id, user_id) | Like-style voting; 1 voto por usuario por rutina; autor no puede votarse a sí mismo (RLS) |
+| `public.check_ins` | `id`, `user_id` FK, `check_in_date` (date, tz CR), `checked_in_at` (timestamptz) | Asistencia diaria. **unique(user_id, check_in_date)** → máx 1 por usuario/día (índice es sobre `check_in_date`, no `checked_in_at::date`, porque Postgres exige IMMUTABLE en expresiones de índice; por eso se calcula con `(now() at time zone 'America/Costa_Rica')::date`). Paso 1 de Fase 1 (2026-08-28). |
+| `public.workout_logs` | `id`, `user_id` FK, `routine_id` FK (nullable), `routine_day_id` FK (nullable), `started_at`, `completed_at` (nullable), `notes` | Sesión real de entrenamiento. `routine_id`/`routine_day_id` nullable para permitir "entrenamiento libre" (sin rutina). `completed_at = NULL` significa **en curso**. Paso 3 de Fase 1 (2026-08-28). |
+| `public.set_logs` | `id`, `workout_log_id` FK, `exercise_id` FK, `set_number`, `weight` (numeric kg), `reps`, `is_warmup` | Cada serie real levantada. Hereda la pertenencia del `workout_log` padre en RLS. Paso 3 de Fase 1 (2026-08-28). |
 
 **Environment:** `.env.local` → `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Browser access via `createClient()` from `@/lib/supabase/client`.
 

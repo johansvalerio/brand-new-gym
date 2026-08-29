@@ -12,8 +12,8 @@ export type ExerciseEntry = {
 
 /**
  * Editor de series de UN ejercicio dentro de la sesión.
- * Cada fila = una serie con peso (kg) y reps; el número de serie se deriva
- * del índice. Los valores son strings para permitir campos vacíos while typing.
+ * Cada serie = peso (kg) + reps, con micro-label SIEMPRE visible (igual al
+ * ExerciseEditor de rutinas): en móvil se apilan, en desktop es una tabla.
  */
 export function SetLogInputs({
   entry,
@@ -60,46 +60,103 @@ export function SetLogInputs({
       </div>
 
       <div className="flex flex-col gap-2">
-        {/* Cabecera de columnas (≥sm) */}
+        {/* Cabecera de columnas (solo desktop: el header ya da contexto) */}
         <div className="hidden grid-cols-[2.5rem_1fr_1fr_2rem] gap-2 px-1 sm:grid">
-          <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Set</span>
-          <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Peso (kg)</span>
-          <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Reps</span>
+          <span className="text-center font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+            Set
+          </span>
+          <span className="text-center font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+            Peso (kg)
+          </span>
+          <span className="text-center font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+            Reps
+          </span>
           <span />
         </div>
 
         {entry.sets.map((s, i) => (
-          <div
-            key={i}
-            className="grid grid-cols-[2.5rem_1fr_1fr_2rem] items-center gap-2"
-          >
-            <span className="text-center font-mono text-sm font-bold text-muted-foreground">
-              {i + 1}
-            </span>
-            <input
-              inputMode="decimal"
-              value={s.weight}
-              onChange={(e) => updateSet(i, "weight", e.target.value)}
-              placeholder="0"
-              aria-label={`Peso serie ${i + 1}`}
-              className="w-full rounded-md border border-border bg-background px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/30"
-            />
-            <input
-              inputMode="numeric"
-              value={s.reps}
-              onChange={(e) => updateSet(i, "reps", e.target.value)}
-              placeholder="0"
-              aria-label={`Reps serie ${i + 1}`}
-              className="w-full rounded-md border border-border bg-background px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/30"
-            />
-            <button
-              type="button"
-              onClick={() => removeSet(i)}
-              aria-label={`Quitar serie ${i + 1}`}
-              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+          <div key={i}>
+            {/* Móvil: cada serie con su número y labels arriba de cada campo */}
+            <div className="rounded-md border border-border/50 bg-background/40 p-2 sm:hidden">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Serie {i + 1}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeSet(i)}
+                  aria-label={`Quitar serie ${i + 1}`}
+                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor={`weight-${entry.key}-${i}`}
+                    className="text-center font-mono text-[9px] uppercase tracking-wider text-muted-foreground"
+                  >
+                    Peso (kg)
+                  </label>
+                  <input
+                    id={`weight-${entry.key}-${i}`}
+                    inputMode="decimal"
+                    value={s.weight}
+                    onChange={(e) => updateSet(i, "weight", e.target.value)}
+                    placeholder="0"
+                    className="w-full rounded-md border border-border bg-background px-2 py-2 text-center font-sans text-xs font-bold text-primary outline-none placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor={`reps-${entry.key}-${i}`}
+                    className="text-center font-mono text-[9px] uppercase tracking-wider text-muted-foreground"
+                  >
+                    Reps
+                  </label>
+                  <input
+                    id={`reps-${entry.key}-${i}`}
+                    inputMode="numeric"
+                    value={s.reps}
+                    onChange={(e) => updateSet(i, "reps", e.target.value)}
+                    placeholder="0"
+                    className="w-full rounded-md border border-border bg-background px-2 py-2 text-center font-sans text-xs text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop: fila en tabla */}
+            <div className="hidden grid-cols-[2.5rem_1fr_1fr_2rem] items-center gap-2 sm:grid">
+              <span className="text-center font-mono text-sm font-bold text-muted-foreground">
+                {i + 1}
+              </span>
+              <input
+                inputMode="decimal"
+                value={s.weight}
+                onChange={(e) => updateSet(i, "weight", e.target.value)}
+                placeholder="0"
+                aria-label={`Peso serie ${i + 1}`}
+                className="w-full rounded-md border border-border bg-background px-2 py-2 text-center font-sans text-sm font-bold text-primary outline-none placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/30"
+              />
+              <input
+                inputMode="numeric"
+                value={s.reps}
+                onChange={(e) => updateSet(i, "reps", e.target.value)}
+                placeholder="0"
+                aria-label={`Reps serie ${i + 1}`}
+                className="w-full rounded-md border border-border bg-background px-2 py-2 text-center font-sans text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/30"
+              />
+              <button
+                type="button"
+                onClick={() => removeSet(i)}
+                aria-label={`Quitar serie ${i + 1}`}
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground/50 transition-colors hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         ))}
 
