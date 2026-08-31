@@ -1,94 +1,147 @@
 "use client"
 
+import * as React from "react"
 import { Dumbbell, Pencil, Trash2 } from "lucide-react"
 import type { ProductRow } from "@/_features/gym-admin/products/hooks/useProducts"
-import { currency, stockBadgeClasses, stockLabel, stockLevel } from "./utils"
+import { currency } from "./utils"
+import { cn } from "@/lib/utils"
 
 interface ProductsCardsProps {
   products: ProductRow[]
   onEdit: (product: ProductRow) => void
   onDelete: (product: ProductRow) => void
+  onSelect?: (product: ProductRow) => void
   canManage?: boolean
 }
 
-export function ProductsCards({ products, onEdit, onDelete, canManage = true }: ProductsCardsProps) {
+function InteractiveCard({
+  product,
+  onSelect,
+  onEdit,
+  onDelete,
+  canManage,
+}: {
+  product: ProductRow
+  onSelect?: (p: ProductRow) => void
+  onEdit: (p: ProductRow) => void
+  onDelete: (p: ProductRow) => void
+  canManage: boolean
+}) {
+  const cardRef = React.useRef<HTMLDivElement>(null)
+  const [style, setStyle] = React.useState<React.CSSProperties>({})
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return
+    const { left, top, width, height } = cardRef.current.getBoundingClientRect()
+    const x = e.clientX - left
+    const y = e.clientY - top
+    const rotateX = ((y - height / 2) / (height / 2)) * -6
+    const rotateY = ((x - width / 2) / (width / 2)) * 6
+    setStyle({
+      transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03, 1.03, 1.03)`,
+      transition: "transform 0.1s ease-out",
+    })
+  }
+
+  const handleMouseLeave = () => {
+    setStyle({
+      transform: "perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)",
+      transition: "transform 0.4s ease-in-out",
+    })
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {products.map((product) => {
-        const level = stockLevel(product.product_stock)
-        return (
-          <article
-            key={product.product_id}
-            className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/50"
-          >
-            {/* hover glow */}
-            <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
+    <div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onClick={() => onSelect?.(product)}
+      style={{ ...style, transformStyle: "preserve-3d" } as React.CSSProperties}
+      className={cn(
+        "group relative flex aspect-[9/12] w-full max-w-[340px] cursor-pointer flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-lg",
+      )}
+    >
+      {/* Background image */}
+      {product.product_image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={product.product_image}
+          alt={product.product_name}
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{ transform: "translateZ(-20px) scale(1.08)" }}
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-secondary">
+          <Dumbbell className="h-12 w-12 text-muted-foreground/30" />
+        </div>
+      )}
+      {/* Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
 
-            {/* image / placeholder */}
-            <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
-              {product.product_image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={product.product_image || "/placeholder.svg"}
-                  alt={product.product_name}
-                  className="h-full w-full object-cover grayscale transition-all duration-500 group-hover:grayscale-0"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <Dumbbell className="h-10 w-10 text-muted-foreground/40" />
-                </div>
-              )}
-              <span
-                className={`absolute left-3 top-3 rounded-full border px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-wider ${stockBadgeClasses(level)}`}
+      {/* Content 3D */}
+      <div className="absolute inset-0 flex flex-col p-4" style={{ transform: "translateZ(32px)" }}>
+        {/* Glass header */}
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-white/10 bg-white/10 p-3 backdrop-blur-md">
+          <div className="min-w-0">
+            <h3 className="truncate font-sans text-base font-bold leading-tight text-white">{product.product_name}</h3>
+            <p className="truncate text-xs text-white/70">{product.category?.name ?? product.product_description?.slice(0, 32) ?? "Gymulate"}</p>
+          </div>
+          <span className="shrink-0 rounded-full bg-black/40 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-white">
+            #{String(product.product_id).padStart(3, "0")}
+          </span>
+        </div>
+
+        {/* Price tag */}
+        <div className="absolute left-4 top-[92px]">
+          <div className="rounded-full bg-black/45 px-3.5 py-1.5 text-sm font-black text-white backdrop-blur-sm">
+            {currency(product.product_price)}
+          </div>
+        </div>
+
+        {/* Bottom actions */}
+        <div className="mt-auto flex items-center justify-between gap-2">
+          <div className="flex gap-1.5">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <span key={i} className={cn("h-1.5 w-1.5 rounded-full", i === 0 ? "bg-white" : "bg-white/30")} />
+            ))}
+          </div>
+          {canManage ? (
+            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => onEdit(product)}
+                aria-label={`Editar ${product.product_name}`}
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur transition-all hover:border-primary hover:bg-primary hover:text-black hover:shadow-[0_0_12px_rgba(150,217,6,0.6)]"
               >
-                {stockLabel(product.product_stock)}
-              </span>
-              {product.category ? (
-                <span className="absolute right-3 top-3 max-w-[60%] truncate rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-primary">
-                  {product.category.name}
-                </span>
-              ) : null}
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => onDelete(product)}
+                aria-label={`Eliminar ${product.product_name}`}
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur transition-colors hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
             </div>
+          ) : null}
+        </div>
+      </div>
 
-            {/* body */}
-            <div className="relative flex flex-1 flex-col p-4">
-              <span className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                #{String(product.product_id).padStart(3, "0")}
-              </span>
-              <h3 className="font-sans text-base font-bold leading-tight text-foreground text-balance">
-                {product.product_name}
-              </h3>
-              <p className="mt-1.5 line-clamp-2 flex-1 text-sm leading-relaxed text-muted-foreground">
-                {product.product_description ?? "Sin descripción."}
-              </p>
+      {/* stock/category pill on image */}
+      {product.category ? (
+        <span className="absolute bottom-14 left-4 max-w-[60%] truncate rounded-full border border-white/20 bg-white/10 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur">
+          {product.category.name}
+        </span>
+      ) : null}
+    </div>
+  )
+}
 
-              <div className="mt-4 flex items-end justify-between">
-                <span className="font-sans text-2xl font-black leading-none text-primary">
-                  {currency(product.product_price)}
-                </span>
-                {canManage ? (
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => onEdit(product)}
-                      aria-label={`Editar ${product.product_name}`}
-                      className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-9 sm:w-9 transition-colors hover:border-primary hover:text-primary"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => onDelete(product)}
-                      aria-label={`Eliminar ${product.product_name}`}
-                      className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-9 sm:w-9 transition-colors hover:border-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </article>
-        )
-      })}
+export function ProductsCards({ products, onEdit, onDelete, onSelect, canManage = true }: ProductsCardsProps) {
+  return (
+    <div className="grid grid-cols-1 place-items-center gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {products.map((product) => (
+        <InteractiveCard key={product.product_id} product={product} onSelect={onSelect} onEdit={onEdit} onDelete={onDelete} canManage={canManage} />
+      ))}
     </div>
   )
 }

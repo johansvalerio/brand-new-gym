@@ -8,10 +8,11 @@ interface ProductsTableProps {
   products: ProductRow[]
   onEdit: (product: ProductRow) => void
   onDelete: (product: ProductRow) => void
+  onSelect?: (product: ProductRow) => void
   canManage?: boolean
 }
 
-export function ProductsTable({ products, onEdit, onDelete, canManage = true }: ProductsTableProps) {
+export function ProductsTable({ products, onEdit, onDelete, onSelect, canManage = true }: ProductsTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">
       <div className="overflow-x-auto">
@@ -36,7 +37,8 @@ export function ProductsTable({ products, onEdit, onDelete, canManage = true }: 
               return (
                 <tr
                   key={product.product_id}
-                  className="group border-b border-border/60 transition-colors last:border-0 hover:bg-secondary/40"
+                  onClick={() => onSelect?.(product)}
+                  className="group cursor-pointer border-b border-border/60 transition-colors last:border-0 hover:bg-secondary/40"
                 >
                   <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-muted-foreground">
                     #{String(product.product_id).padStart(3, "0")}
@@ -95,7 +97,7 @@ export function ProductsTable({ products, onEdit, onDelete, canManage = true }: 
                   </td>
                   {canManage ? (
                     <td className="whitespace-nowrap px-4 py-3">
-                      <div className="flex items-center justify-end gap-1.5">
+                      <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => onEdit(product)}
                           aria-label={`Editar ${product.product_name}`}

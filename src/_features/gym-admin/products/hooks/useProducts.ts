@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/database.types"
+import { productFormSchema } from "../../lib/product.schema"
 
 export type ProductRow = Tables<"products"> & {
   category: { id: string; slug: string; name: string } | null
@@ -23,7 +24,7 @@ async function fetchProducts(): Promise<ProductRow[]> {
     .select("*, category:categories(id, slug, name)")
     .order("product_id", { ascending: false })
 
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return (data ?? []) as unknown as ProductRow[]
 }
 
@@ -39,6 +40,15 @@ export function useCreateProduct() {
 
   return useMutation({
     mutationFn: async (dto: CreateProductDto): Promise<ProductRow> => {
+      const parsed = productFormSchema.safeParse({
+        product_name: dto.product_name as string,
+        product_description: (dto.product_description as string) ?? null,
+        product_price: dto.product_price as number,
+        product_stock: dto.product_stock as number,
+        product_image: (dto.product_image as string) ?? null,
+        category_id: (dto.category_id as string) ?? null,
+      })
+      if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Datos inválidos")
       const supabase = createClient()
       const { data, error } = await supabase
         .from("products")
@@ -46,7 +56,7 @@ export function useCreateProduct() {
         .select("*, category:categories(id, slug, name)")
         .single()
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
       return data as unknown as ProductRow
     },
     onSuccess: (product) => {
@@ -80,7 +90,7 @@ export function useUpdateProduct() {
         .select("*, category:categories(id, slug, name)")
         .single()
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
       return data as unknown as ProductRow
     },
     onSuccess: (product) => {
@@ -106,7 +116,7 @@ export function useDeleteProduct() {
         .delete()
         .eq("product_id", product.product_id)
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onMutate: async (product) => {
       await queryClient.cancelQueries({ queryKey: productKeys.all })

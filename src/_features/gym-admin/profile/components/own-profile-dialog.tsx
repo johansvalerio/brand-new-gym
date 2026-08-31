@@ -23,7 +23,7 @@ interface OwnProfileDialogProps {
   profile: Pick<
     Tables<"users">,
     "first_name" | "last_name" | "phone" | "avatar" | "gender"
-  >
+  > & { id?: string }
   onClose: () => void
   onSubmit: (payload: OwnProfilePayload) => Promise<void>
 }
@@ -36,37 +36,8 @@ type FormState = {
   gender: Tables<"users">["gender"]
 }
 
-export function OwnProfileDialog({
-  open,
-  profile,
-  onClose,
-  onSubmit,
-}: OwnProfileDialogProps) {
+export function OwnProfileDialog({ open, profile, onClose, onSubmit }: OwnProfileDialogProps) {
   useBodyScrollLock(open)
-  const [form, setForm] = useState<FormState>({
-    first_name: "",
-    last_name: "",
-    phone: "",
-    avatar: "",
-    gender: null,
-  })
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const firstFieldRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    setErrors({})
-    setForm({
-      first_name: profile.first_name ?? "",
-      last_name: profile.last_name ?? "",
-      phone: profile.phone ?? "",
-      avatar: profile.avatar ?? "",
-      gender: profile.gender ?? null,
-    })
-    const t = setTimeout(() => firstFieldRef.current?.focus(), 50)
-    return () => clearTimeout(t)
-  }, [open, profile])
 
   useEffect(() => {
     if (!open) return
@@ -78,6 +49,36 @@ export function OwnProfileDialog({
   }, [open, onClose])
 
   if (!open) return null
+
+  // key remount — mismo patrón que user-form-dialog/product-form-dialog:
+  // evita useEffect sync anti-patrón, el Inner se remonta con estado lazy.
+  const key =
+    (profile as { id?: string }).id ??
+    `${profile.first_name ?? ""}-${profile.last_name ?? ""}-${profile.phone ?? ""}-${profile.avatar ?? ""}-${profile.gender ?? ""}`
+
+  return <OwnProfileInner key={key} profile={profile} onClose={onClose} onSubmit={onSubmit} />
+}
+
+function OwnProfileInner({
+  profile,
+  onClose,
+  onSubmit,
+}: Omit<OwnProfileDialogProps, "open">) {
+  const [form, setForm] = useState<FormState>(() => ({
+    first_name: profile.first_name ?? "",
+    last_name: profile.last_name ?? "",
+    phone: profile.phone ?? "",
+    avatar: profile.avatar ?? "",
+    gender: profile.gender ?? null,
+  }))
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const firstFieldRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const t = setTimeout(() => firstFieldRef.current?.focus(), 50)
+    return () => clearTimeout(t)
+  }, [])
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -132,9 +133,7 @@ export function OwnProfileDialog({
               >
                 Editar mi perfil
               </h2>
-              <p className="text-xs text-muted-foreground">
-                Tus datos básicos
-              </p>
+              <p className="text-xs text-muted-foreground">Tus datos básicos</p>
             </div>
           </div>
 

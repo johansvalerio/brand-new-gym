@@ -17,6 +17,7 @@ import { ProductFormDialog } from "./product-form-dialog"
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog"
 import { ProductsStats } from "./products-stats"
 import { ProductsToolbar } from "./products-toolbar"
+import { ProductDetailModal } from "@/components/ui/product-detail-modal"
 
 type ViewMode = "cards" | "table"
 
@@ -36,6 +37,7 @@ export function Products() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<ProductRow | null>(null)
   const [deleting, setDeleting] = useState<ProductRow | null>(null)
+  const [selected, setSelected] = useState<ProductRow | null>(null)
 
   const filtered = useMemo(() => {
     let result = products
@@ -139,7 +141,7 @@ export function Products() {
           onCreate={openCreate}
         />
 
-        {/* Content */}
+        {/* Content — contenedor para cards 3D sobre constellation */}
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 py-20 text-center">
             <PackageOpen className="h-10 w-10 text-muted-foreground/40" />
@@ -149,21 +151,28 @@ export function Products() {
             </p>
           </div>
         ) : (
-          <>
+          <div className="rounded-2xl border border-border/60 bg-card/40 p-4 sm:p-6 backdrop-blur supports-[backdrop-filter]:bg-card/30">
             {/* Mobile: siempre tarjetas; la tabla solo existe ≥sm */}
             <div className={view === "table" ? "sm:hidden" : undefined}>
-              <ProductsCards products={filtered} onEdit={openEdit} onDelete={setDeleting} canManage={isAdmin} />
+              <ProductsCards products={filtered} onEdit={openEdit} onDelete={setDeleting} onSelect={setSelected} canManage={isAdmin} />
             </div>
             {view === "table" && (
               <div className="hidden sm:block">
-                <ProductsTable products={filtered} onEdit={openEdit} onDelete={setDeleting} canManage={isAdmin} />
+                <ProductsTable
+                  products={filtered}
+                  onEdit={openEdit}
+                  onDelete={setDeleting}
+                  onSelect={setSelected}
+                  canManage={isAdmin}
+                />
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
 
       {/* Dialogs */}
+      <ProductDetailModal product={selected} open={Boolean(selected)} onClose={() => setSelected(null)} />
       <ProductFormDialog
         open={formOpen}
         product={editing}

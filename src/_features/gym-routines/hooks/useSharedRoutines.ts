@@ -29,7 +29,7 @@ async function fetchSharedRoutines(): Promise<SharedRoutine[]> {
     )
     .eq("is_shared", true)
 
-  if (error) throw error
+  if (error) throw new Error(error.message)
 
   // Ranking: más votos arriba; desempate por más recientes.
   return ((data ?? []) as unknown as SharedRoutine[]).sort((a, b) => {
@@ -71,7 +71,7 @@ export function useToggleVote() {
           .delete()
           .eq("routine_id", routineId)
 
-        if (error) throw error
+        if (error) throw new Error(error.message)
         return
       }
 
@@ -80,7 +80,7 @@ export function useToggleVote() {
         .from("routine_votes")
         .insert({ routine_id: routineId, user_id: voterProfileId })
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onMutate: async ({ routineId, voterProfileId, wasVoted }) => {
       await queryClient.cancelQueries({ queryKey: sharedKeys.all })
@@ -135,7 +135,7 @@ export function useCopySharedRoutine() {
       const { data, error } = await supabase.rpc("copy_shared_routine", {
         source_routine_id: routineId,
       })
-      if (error) throw error
+      if (error) throw new Error(error.message)
       return data as Tables<"routines">
     },
     onSuccess: (routine, { viewerId }) => {

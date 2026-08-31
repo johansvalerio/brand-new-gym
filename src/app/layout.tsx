@@ -4,7 +4,10 @@ import "./globals.css";
 import { PageTransitionOverlay } from "@/_features/shared/components/PageTransitionOverlay";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { AppToaster } from "@/components/providers/app-toaster";
+import { AuthProvider } from "@/components/providers/auth-provider";
 import { FloatingNav } from "@/_features/shared/components/FloatingNav";
+import { AppShell } from "@/components/layout/app-sidebar";
+import { createClient } from "@/lib/supabase/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -69,20 +72,30 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const supabase = await createClient()
+  // getUser() valida el JWT contra Auth server — getSession() viene de cookies sin verificar
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  let profile: import("@/types/database.types").Tables<"users"> | null = null
+  if (user?.id) {
+    const { data } = await supabase.from("users").select("*").eq("auth_id", user.id).maybeSingle()
+    profile = data ?? null
+  }
+
   return (
-    <html
-      lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="es" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <QueryProvider>
-          <FloatingNav />
-          <PageTransitionOverlay />
-          {children}
-          <AppToaster />
-        </QueryProvider>
+        <AuthProvider initialUser={user} initialProfile={profile}>
+          <QueryProvider>
+            <FloatingNav />
+            <PageTransitionOverlay />
+            <AppShell>{children}</AppShell>
+            <AppToaster />
+          </QueryProvider>
+        </AuthProvider>
       </body>
     </html>
-  );
+  )
 }

@@ -19,7 +19,7 @@ async function fetchCheckIns(userId: string): Promise<CheckInRow[]> {
     .eq("user_id", userId)
     .order("checked_in_at", { ascending: false })
 
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return data ?? []
 }
 
@@ -43,7 +43,7 @@ export function useCreateCheckIn() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
       return data as CheckInRow
     },
     onSuccess: (row, userId) => {

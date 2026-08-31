@@ -11,7 +11,9 @@ export type CreateRoutineDto = TablesInsert<"routines">
 export type UpdateRoutineDto = TablesUpdate<"routines">
 
 export const routineKeys = {
+  all: ["routines"] as const,
   detail: (id: number) => ["routines", id] as const,
+  byUser: (userId: string) => ["users", userId, "routines"] as const,
 }
 
 async function fetchRoutine(id: number): Promise<RoutineRow | null> {
@@ -22,7 +24,7 @@ async function fetchRoutine(id: number): Promise<RoutineRow | null> {
     .eq("id", id)
     .maybeSingle()
 
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return data
 }
 
@@ -46,15 +48,12 @@ export function useCreateRoutine() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
       return data
     },
     onSuccess: (routine) => {
       toast.success(`Rutina "${routine.name}" creada correctamente`)
-      // Invalida la lista del usuario dueño
-      queryClient.invalidateQueries({
-        queryKey: ["users", routine.user_id, "routines"],
-      })
+      queryClient.invalidateQueries({ queryKey: routineKeys.byUser(routine.user_id) })
       queryClient.invalidateQueries({ queryKey: routineKeys.detail(routine.id) })
     },
     onError: (error) => {
@@ -84,14 +83,12 @@ export function useUpdateRoutine() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
       return data
     },
     onSuccess: (routine) => {
       toast.success(`Rutina "${routine.name}" actualizada correctamente`)
-      queryClient.invalidateQueries({
-        queryKey: ["users", routine.user_id, "routines"],
-      })
+      queryClient.invalidateQueries({ queryKey: routineKeys.byUser(routine.user_id) })
       queryClient.invalidateQueries({ queryKey: routineKeys.detail(routine.id) })
     },
     onError: (error) => {
@@ -112,22 +109,13 @@ export function useDeleteRoutine() {
         .from("routines")
         .delete()
         .eq("id", routine.id)
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onMutate: async (routine) => {
-      await queryClient.cancelQueries({
-        queryKey: ["users", routine.user_id, "routines"],
-      })
-      const previous = queryClient.getQueryData<UserRoutine[]>([
-        "users",
-        routine.user_id,
-        "routines",
-      ])
+      await queryClient.cancelQueries({ queryKey: routineKeys.byUser(routine.user_id) })
+      const previous = queryClient.getQueryData<UserRoutine[]>(routineKeys.byUser(routine.user_id))
 
-      queryClient.setQueryData<UserRoutine[]>(
-        ["users", routine.user_id, "routines"],
-        (old) => old?.filter((r) => r.id !== routine.id) ?? old,
-      )
+      queryClient.setQueryData<UserRoutine[]>(routineKeys.byUser(routine.user_id), (old) => old?.filter((r) => r.id !== routine.id) ?? old)
 
       return { previous }
     },
@@ -136,19 +124,12 @@ export function useDeleteRoutine() {
     },
     onError: (error, routine, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(
-          ["users", routine.user_id, "routines"],
-          context.previous,
-        )
+        queryClient.setQueryData(routineKeys.byUser(routine.user_id), context.previous)
       }
-      toast.error("No se pudo eliminar la rutina", {
-        description: error.message,
-      })
+      toast.error("No se pudo eliminar la rutina", { description: error.message })
     },
     onSettled: (_data, _err, routine) => {
-      queryClient.invalidateQueries({
-        queryKey: ["users", routine.user_id, "routines"],
-      })
+      queryClient.invalidateQueries({ queryKey: routineKeys.byUser(routine.user_id) })
       queryClient.invalidateQueries({ queryKey: routineKeys.detail(routine.id) })
     },
   })

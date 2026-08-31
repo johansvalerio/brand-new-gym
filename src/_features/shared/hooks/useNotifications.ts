@@ -21,7 +21,7 @@ async function fetchNotifications(): Promise<NotificationRow[]> {
     .order("created_at", { ascending: false })
     .limit(50)
 
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return data ?? []
 }
 
@@ -43,8 +43,13 @@ export function useNotifications(enabled: boolean) {
     if (!enabled) return
     const supabase = createClient()
 
+    // Fix iPhone/dashboard: "cannot add postgres_changes after subscribe()"
+    // Ocurre porque `NotificationBell` y `RecentNotifications` montan el mismo hook
+    // con el mismo nombre de canal "notifications-realtime" + StrictMode doble-montaje.
+    // Canal único por instancia + kill previo evita el race.
+    const channelName = `notifications-realtime-${Math.random().toString(36).slice(2, 9)}-${Date.now()}`
     const channel = supabase
-      .channel("notifications-realtime")
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications" },
@@ -88,7 +93,7 @@ export function useMarkNotificationRead() {
         .update({ read: true })
         .eq("id", id)
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: notificationKeys.all })
@@ -120,7 +125,7 @@ export function useMarkAllNotificationsRead() {
         .update({ read: true })
         .eq("read", false)
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all })

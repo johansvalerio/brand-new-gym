@@ -23,7 +23,7 @@ async function fetchCoaches(): Promise<CoachOption[]> {
     .eq("role", "coach")
     .order("first_name", { ascending: true })
 
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return data ?? []
 }
 

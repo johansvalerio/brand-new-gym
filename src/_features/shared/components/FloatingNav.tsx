@@ -12,9 +12,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, Settings, LogOut, UserCircle, Trophy, Bell, Banknote, LayoutDashboard } from 'lucide-react';
+import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, Settings, LogOut, UserCircle, Trophy, Bell, Banknote, LayoutDashboard, CalendarDays } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { usePageTransition } from '@/_features/shared/hooks/usePageTransition';
+import { usePathname } from 'next/navigation';
 import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
@@ -79,7 +80,7 @@ export function FloatingNav() {
     [user, isAdmin, isCoach, profile],
   );
   const { navigate } = usePageTransition();
-
+  const pathname = usePathname();
 
   const handleScroll = () => {
     setScrolled(window.scrollY > 50);
@@ -91,6 +92,11 @@ export function FloatingNav() {
   }, []);
 
   if (loading) return null;
+
+  // En rutas app (/dashboard, /workout...) el sidebar reemplaza al floating nav — después de todos los hooks
+  if (["/dashboard", "/users", "/workout", "/routines", "/membership", "/products", "/payments", "/plans"].some((p) => pathname.startsWith(p))) {
+    return null;
+  }
 
   return (
     <nav className="fixed -top-1 left-0 right-0 z-90 pointer-events-none flex justify-center px-6 py-6">
@@ -211,6 +217,10 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
               Entrenar
             </DropdownMenuItem>
           ) : null}
+          <DropdownMenuItem onClick={() => navigate('/workout/history')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+            <CalendarDays className="h-4 w-4 mr-1" />
+            Histórico
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate(`/users/profile/${user.profileId}/routine`)}
             className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
             <Flame className="h-4 w-4 mr-1" />

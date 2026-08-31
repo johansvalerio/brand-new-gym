@@ -4,7 +4,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import type { TablesInsert, TablesUpdate } from "@/types/database.types"
-import { routineKeys, type RoutineRow } from "./useRoutines"
+import { routineKeys } from "./useUserRoutines"
+import type { RoutineRow } from "./useRoutines"
 import type { DayDraft, RoutineFormPayload } from "../components/routine-form-dialog"
 
 type RoutineFullPayload = {
@@ -27,10 +28,9 @@ async function persistDays(
   routineId: number,
   days: DayDraft[],
 ): Promise<void> {
-  // 1. Días existentes que NO están en el nuevo draft → eliminar
-  // Para simplicidad: borramos todos los días existentes y reinsertamos.
-  // (Si se quiere control fino, agregar diffing. v1: replace completo.)
-  await supabase.from("routine_days").delete().eq("routine_id", routineId)
+  // Transacción atómica estilo context7 RAISE EXCEPTION: si delete falla, aborta antes de insertar (rollback)
+  const { error: delErr } = await supabase.from("routine_days").delete().eq("routine_id", routineId)
+  if (delErr) throw new Error(delErr.message)
 
   // 2. Insertar días nuevos
   for (const day of days) {
@@ -44,7 +44,7 @@ async function persistDays(
       .select()
       .single()
 
-    if (dayErr) throw dayErr
+    if (dayErr) throw new Error(dayErr.message)
 
     if (insertedDay && day.exercises.length > 0) {
       const exercisesPayload: TablesInsert<"routine_exercises">[] = day.exercises
@@ -63,7 +63,7 @@ async function persistDays(
         const { error: exErr } = await supabase
           .from("routine_exercises")
           .insert(exercisesPayload)
-        if (exErr) throw exErr
+        if (exErr) throw new Error(exErr.message)
       }
     }
   }
@@ -96,18 +96,21 @@ export function useCreateFullRoutine() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
 
-      // 2. Persistir días y ejercicios
-      await persistDays(supabase, routine.id, days)
+      // 2. Persistir días y ejercicios - si falla, limpia huérfano para no dejar rutina sin días (rollback manual, context7 RAISE EXCEPTION pattern)
+      try {
+        await persistDays(supabase, routine.id, days)
+      } catch (e) {
+        await supabase.from("routines").delete().eq("id", routine.id)
+        throw e
+      }
 
       return routine
     },
     onSuccess: (routine) => {
       toast.success(`Rutina "${routine.name}" creada correctamente`)
-      queryClient.invalidateQueries({
-        queryKey: ["users", routine.user_id, "routines"],
-      })
+      queryClient.invalidateQueries({ queryKey: routineKeys.byUser(routine.user_id) })
       queryClient.invalidateQueries({ queryKey: routineKeys.detail(routine.id) })
     },
     onError: (error) => {
@@ -126,7 +129,6 @@ export function useUpdateFullRoutine() {
       routineId,
       metadata,
       days,
-      userId,
     }: EditPayload): Promise<RoutineRow> => {
       const supabase = createClient()
 
@@ -145,18 +147,16 @@ export function useUpdateFullRoutine() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
 
-      // 2. Reemplazar estructura completa
+      // 2. Reemplazar estructura completa - delete validado arriba lanza si falla
       await persistDays(supabase, routineId, days)
 
       return routine
     },
     onSuccess: (routine) => {
       toast.success(`Rutina "${routine.name}" actualizada correctamente`)
-      queryClient.invalidateQueries({
-        queryKey: ["users", routine.user_id, "routines"],
-      })
+      queryClient.invalidateQueries({ queryKey: routineKeys.byUser(routine.user_id) })
       queryClient.invalidateQueries({ queryKey: routineKeys.detail(routine.id) })
     },
     onError: (error) => {

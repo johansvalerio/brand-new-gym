@@ -30,7 +30,7 @@ async function fetchCoachMembers(coachId: string): Promise<CoachMemberRow[]> {
     .eq("coach_id", coachId)
     .order("created_at", { ascending: false })
 
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return (data ?? []) as unknown as CoachMemberRow[]
 }
 
@@ -49,7 +49,7 @@ async function fetchRoutinesLite(): Promise<RoutineLite[]> {
     .from("routines")
     .select("id, name, user_id, created_by, is_active, is_shared")
 
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return (data ?? []) as unknown as RoutineLite[]
 }
 

@@ -9,8 +9,10 @@ export const metadata = {
 
 export default function SharedRoutinesPage() {
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-background py-16 text-foreground selection:bg-primary/30 sm:py-24">
-      <ConstellationBackground />
+    <main className="relative min-h-screen overflow-x-hidden bg-background py-20 sm:py-24 text-foreground selection:bg-primary/30">
+      <div className="opacity-40">
+        <ConstellationBackground />
+      </div>
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <header className="mb-10">
           <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.2em] text-primary">

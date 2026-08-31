@@ -9,8 +9,10 @@ export const metadata = {
 
 export default function MyMembershipPage() {
   return (
-    <main className="relative min-h-screen py-16 bg-background text-foreground overflow-x-hidden selection:bg-primary/30 sm:py-24">
-      <ConstellationBackground />
+    <main className="relative min-h-screen py-20 sm:py-24 bg-background text-foreground overflow-x-hidden selection:bg-primary/30">
+      <div className="opacity-40">
+        <ConstellationBackground />
+      </div>
       <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <header className="mb-10">
           <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.2em] text-primary">

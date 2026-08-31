@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import type { Tables } from "@/types/database.types"
+import { walkInPaymentSchema } from "../../lib/payment.schema"
 
 export type PaymentRow = Tables<"payments"> & {
   user: {
@@ -30,7 +31,7 @@ async function fetchPayments(): Promise<PaymentRow[]> {
     )
     .order("requested_at", { ascending: false })
 
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return (data ?? []) as unknown as PaymentRow[]
 }
 
@@ -46,21 +47,24 @@ export function usePayments() {
   // El payload de postgres_changes no trae los embeds (usuario/plan), así que
   // invalidamos y refetchamos con joins — imperceptible para el usuario.
   useEffect(() => {
+    // solo suscribe si hay user validado — usa getUser no getSession
+    // canal único por instancia para evitar "cannot add postgres_changes after subscribe()" cuando 2 componentes montan usePayments (StrictMode + dashboard+payments)
+    let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null = null
+    let cancelled = false
     const supabase = createClient()
-
-    const channel = supabase
-      .channel("payments-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "payments" },
-        () => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (cancelled || !user) return
+      const channelName = `payments-realtime-${Math.random().toString(36).slice(2, 9)}-${Date.now()}`
+      channel = supabase
+        .channel(channelName)
+        .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, () => {
           void queryClient.invalidateQueries({ queryKey: paymentKeys.all })
-        },
-      )
-      .subscribe()
-
+        })
+        .subscribe()
+    })
     return () => {
-      void supabase.removeChannel(channel)
+      cancelled = true
+      if (channel) void supabase.removeChannel(channel)
     }
   }, [queryClient])
 
@@ -87,7 +91,7 @@ export function useCreatePaymentRequest() {
         method,
       })
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       toast.success("Solicitud enviada", {
@@ -110,7 +114,7 @@ export function useCancelPaymentRequest() {
       const supabase = createClient()
       const { error } = await supabase.from("payments").delete().eq("id", id)
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onMutate: async ({ id }) => {
       await queryClient.cancelQueries({ queryKey: paymentKeys.all })
@@ -158,7 +162,7 @@ export function useUpdatePayment() {
         .update({ plan_id: planId, method, note: note || null })
         .eq("id", id)
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       toast.success("Pago actualizado")
@@ -190,6 +194,8 @@ export function useCreateWalkInPayment() {
       method: "sinpe" | "efectivo"
       note?: string
     }): Promise<void> => {
+      const parsed = walkInPaymentSchema.safeParse({ userId, planId, method, note: note || null })
+      if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Datos inválidos")
       const supabase = createClient()
       const { error } = await supabase.from("payments").insert({
         user_id: userId,
@@ -199,7 +205,7 @@ export function useCreateWalkInPayment() {
         note: note || null,
       })
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onSuccess: () => {
       toast.success("Pago registrado — membresía activada")
@@ -233,7 +239,7 @@ export function useDecidePayment() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
       void data
     },
     onSuccess: (_data, vars) => {

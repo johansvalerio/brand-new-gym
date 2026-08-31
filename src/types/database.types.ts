@@ -202,6 +202,8 @@ export type Database = {
           created_at: string
           equipment: string | null
           id: number
+          image_url: string | null
+          instructions: string | null
           muscle_group: string
           name: string
         }
@@ -209,6 +211,8 @@ export type Database = {
           created_at?: string
           equipment?: string | null
           id?: never
+          image_url?: string | null
+          instructions?: string | null
           muscle_group: string
           name: string
         }
@@ -216,6 +220,8 @@ export type Database = {
           created_at?: string
           equipment?: string | null
           id?: never
+          image_url?: string | null
+          instructions?: string | null
           muscle_group?: string
           name?: string
         }

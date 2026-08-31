@@ -1,18 +1,15 @@
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import type { Tables } from "@/types/database.types"
+import { useExerciseCatalog, type ExerciseRow } from "@/_features/gym-routines/hooks/useExercises"
+
+export type { ExerciseRow }
+export { useExerciseCatalog }
 
 export type WorkoutLogRow = Tables<"workout_logs">
-
-export type ExerciseRow = {
-  id: number
-  name: string
-  muscle_group: string
-  equipment: string | null
-}
 
 export type SetDraft = {
   exercise_id: number
@@ -34,25 +31,6 @@ export const workoutKeys = {
   all: (userId: string) => ["workouts", userId] as const,
 }
 
-async function fetchExerciseCatalog(): Promise<ExerciseRow[]> {
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from("exercises")
-    .select("id, name, muscle_group, equipment")
-    .order("muscle_group", { ascending: true })
-    .order("name", { ascending: true })
-  if (error) throw error
-  return data ?? []
-}
-
-export function useExerciseCatalog() {
-  return useQuery({
-    queryKey: ["exercises", "catalog"],
-    queryFn: fetchExerciseCatalog,
-    staleTime: 5 * 60_000,
-  })
-}
-
 export function useSaveWorkout() {
   const queryClient = useQueryClient()
 
@@ -65,7 +43,7 @@ export function useSaveWorkout() {
         p_notes: input.notes,
         p_sets: input.sets as unknown as never[],
       })
-      if (error) throw error
+      if (error) throw new Error(error.message)
       return data as WorkoutLogRow
     },
     onSuccess: (_log, input) => {

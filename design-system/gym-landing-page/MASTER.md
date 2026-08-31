@@ -6,9 +6,10 @@
 
 ---
 
-**Project:** Gym Landing Page
-**Updated:** 2026-08-21
+**Project:** Gym Landing Page + App (Monster Energy)
+**Updated:** 2026-08-31 — React 19.2.8 / Next 16.3.0 / Supabase SSR / TanStack Query v5 / Zod 4.5.4
 **Category:** Fitness/Gym App
+**Stack:** `react:19.2.8` `next:16.3.0` `tailwindcss:4` `@base-ui/react:1.7` `@supabase/ssr:0.12.4` `zod:4.5.4`
 
 ---
 
@@ -16,34 +17,46 @@
 
 ```
 src/
-├── app/                      # Next.js 16 App Router (pages, layout, error, robots, sitemap)
+├── app/                      # Next.js 16 App Router (proxy.ts = middleware)
+│   ├── layout.tsx            # Root SSR layout: fetches session/profile via supabase/server.ts → AuthProvider
 │   ├── page.tsx              # Landing
 │   ├── users/  products/     # Admin pages (thin wrappers over _features)
-│   ├── plans/                # Admin: CRUD de planes de membresía
-│   ├── workout/              # Sesión de entrenamiento del miembro (registrar series)
-│   └── auth/                 # Login
+│   ├── plans/  payments/     # Admin: CRUD planes / pagos
+│   ├── routines/             # Rutinas compartidas (público)
+│   ├── workout/              # Sesión de entrenamiento (registrar series)
+│   └── auth/                 # Login + callback
 ├── _features/                # Feature modules — the real structure
 │   ├── gym-landing/          # Landing sections (hero, pricing, gallery, FinalCTA...)
 │   ├── gym-admin/            # users/ products/ payments/ membership/ plans/ dashboard/
+│   │   ├── lib/              # zod schemas: user.schema.ts, product.schema.ts, plan.schema.ts, payment.schema.ts
+│   │   ├── users/components/ # Users.tsx, user-form-dialog.tsx (key remount), users-table/card/toolbar
+│   │   └── payments/         # Payments.tsx, walk-in-payment-dialog.tsx
 │   ├── gym-coach/            # dashboard del coach
 │   ├── gym-member/           # dashboard del miembro
-│   ├── gym-routines/         # rutinas (listas, wizard, ranking compartido, votos, copiar)
-│   ├── gym-checkin/          # check-in diario de asistencia
-│   ├── gym-workout/          # registro real de entrenamientos (workout_logs/set_logs)
-│   ├── auth/                 # useAuthSession hook + login UI
-│   └── shared/               # FloatingNav, PageTransitionOverlay, usePageTransition
+│   ├── gym-routines/         # rutinas
+│   │   ├── components/routine-form/  # dialog.tsx, shell.tsx, chrome.tsx, form-body.tsx, context.tsx (wizard)
+│   │   │   └── routine-form-types.ts + routine-form-data.ts + routine.schema.ts
+│   │   ├── components/user-routines/ # index.tsx, routine-card.tsx, day-panel.tsx, card-menu.tsx, empty-state.tsx
+│   │   └── lib/              # routine.schema.ts (zod) — metadata/structure/full + zodToWizardErrors
+│   ├── gym-checkin/          # check-in diario
+│   ├── gym-workout/          # registro entrenamientos (workout_logs/set_logs via RPC save_workout)
+│   ├── auth/                 # useAuthSession (wrapper sobre AuthProvider context)
+│   └── shared/               # FloatingNav, PageTransitionOverlay, usePageTransition, useBodyScrollLock, useNow
 ├── components/
-│   ├── ui/                   # shadcn-style primitives
-│   └── providers/            # QueryProvider, AppToaster
-├── lib/supabase/             # client.ts (browser), server.ts
-└── types/database.types.ts   # GENERATED from Supabase — single source of truth for types
+│   ├── ui/                   # shadcn-style primitives sobre @base-ui/react (button/card/dialog/dropdown-menu/input/select/table/tabs/badge/carousel/coverflow/progress/skeleton/separator/avatar)
+│   └── providers/            # QueryProvider, AppToaster, AuthProvider (SSR)
+├── lib/supabase/             # client.ts (browser createBrowserClient), server.ts (createServerClient con next/headers cookies)
+└── types/database.types.ts   # GENERATED — single source for Tables/TablesInsert/TablesUpdate (never hand-edit)
+opencode.json                 # MCP: supabase (project wknacbyqqpsvswjhwrbx), context7, github
 ```
 
 **Rules:**
-- New feature → new folder under `_features/<name>/` with `components/` and `hooks/`. `shared/` only for cross-feature code.
-- **Component granularity (2026-08-23, applies to ALL new code):** one concern per file. A page/feature composes SEPARATE component files — never pile multiple sections/widgets into a single `.tsx`. Canonical example: `dashboard/components/` → `Dashboard.tsx` (router por rol) → `admin-dashboard.tsx` (orchestrator: guard + hooks + data derivation) composing `dashboard-stats.tsx`, `expiring-members.tsx`, `pending-payments.tsx`. Parent fetches via hooks and passes props down; children stay presentational (or own their small mutations). `payments/` and `membership/` already follow this split (stats / card / history files). Legacy monoliths still pending: Users.tsx, Products.tsx.
-- **Body scroll lock en diálogos:** todo dialog llama `useBodyScrollLock(open)` (`shared/hooks/`) — congela el scroll del fondo mientras está abierto y lo restaura al cerrar. Los confirm-deletes lo llaman con `Boolean(entity)`.
-- Page files in `app/` stay thin: they render the feature component.
+- New feature → new folder under `_features/<name>/` with `components/` and `hooks/` + `lib/*.schema.ts` for zod. `shared/` only for cross-feature code.
+- **Component granularity (2026-08-31, applies to ALL):** one concern per file. Monolitos eliminados: `routine-form-dialog.tsx:510` → `routine-form/dialog|shell|chrome|form-body|context`, `user-routines.tsx:707` → `user-routines/index|routine-card|day-panel|card-menu|empty-state`. `dashboard/components/` ya cumplía (`Dashboard.tsx` router → `admin-dashboard.tsx` orquestador → `dashboard-stats` etc.). Barrels `src/_features/gym-routines/components/routine-form-dialog.tsx:1` y `user-routines.tsx:1` solo re-exportan para compatibilidad — nuevo código importa desde `routine-form/*` y `user-routines/*`.
+- **Body scroll lock en diálogos:** todo dialog llama `useBodyScrollLock(open)` (`shared/hooks/useBodyScrollLock.ts`) — congela scroll fondo. Confirm-deletes con `Boolean(entity)`.
+- **Z-index global (2026-08-31):** `FloatingNav` `z-90` → **todos los modals/dialogs `z-[100]`** (`routine-form/form-body.tsx:95` `fixed inset-0 z-[100]`, `chrome.tsx:18` loader `z-[100]`, `user-form-dialog.tsx:53`, `product-form-dialog`, `confirm-delete-dialog`, `own-profile-dialog.tsx:39` + `Dialog` primitives `dialog.tsx:26` `z-[100]` + `product-detail-modal.tsx:71` `Dialog z-[100]`) → `PageTransitionOverlay` `z-[9999]`. Nunca `z-50` para modals o quedan debajo del nav. Product detail modal también respeta `z-[100]` para quedar por encima del nav como rutinas.
+- **Anti set-state-in-effect:** nunca `useEffect(()=> setState(...),[open,product])` para sync form. Usar `key={entity?.id ?? "new"}` que remonta `Inner` con `useState(()=> entity ? {...} : emptyForm)` lazy. Únicos effects permitidos: `Escape` listener, `focus` timeout, `auth.onAuthStateChange` suscripción. `carousel.tsx` `onSelect(api)` es excepción documentada con `eslint-disable`.
+- Page files in `app/` stay thin: they render the feature component. `layout.tsx` es **async Server** que pasa `initialSession/initialProfile` a `AuthProvider`.
 - Never hand-edit `database.types.ts`; regenerate it from the DB and derive row/DTO types from `Tables` / `TablesInsert` / `TablesUpdate`.
 
 ---
@@ -54,572 +67,230 @@ src/
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `public.users` | `id`, `auth_id` (→ auth.users), `email`, `role`, `coach_id`, `plan_id`, `membership_status/start/end` | Profile per auth user; `role` enum `user_role`: **`admin` \| `user` \| `coach`** (NOT "member"); `coach_id` self-FK (one active coach, trigger enforces role='coach'); `plan_id` FK → `plans`; `membership_status` enum active/inactive/pending/expired; start/end = cached current period (fills the profile countdown). The old `membership_plan` enum is DROPPED (2026-08-22). |
-| `public.plans` | `id`, `slug` unique, `name`, `duration_days`, `price` (colones CRC), `is_active` | Membership plans seeded: diario ₡3.000 (1d) / semanal ₡10.000 (7d) / mensual ₡15.000 (30d) — names "Pago diario/semanal/mensual". **CRUD UI en `/plans` (admin-only, 2026-08-28)**: el `slug` se AUTOGENERA del nombre (`slugify`, sin acentos, espacios→guion) solo al crear; al editar el nombre NO cambia el slug (evita romper `payment-history-filters`/`users-toolbar`/`users-utils` que filtran por slug). `handle_new_user()` recreado sin la columna dropped. |
-| `public.products` | `product_id`, `product_name`, `product_price`, `product_stock`, `category_id` | All columns prefixed `product_`; `category_id` FK → `categories.id` (nullable) |
-| `public.categories` | `id`, `slug` unique, `name` | Product taxonomy; `slug` = URL-safe identifier (queries/filters), `name` = human label (renamable). Seeded with 6 categories (proteinas, creatina, pre-entreno, vitaminas, accesorios, ropa). |
-| `public.exercises` | `name` unique, `muscle_group`, `equipment` | Exercise catalog, seeded (~20) |
-| `public.routines` | `user_id` FK, `created_by` FK (author), `goal` enum `routine_goal`, `is_active`, `is_shared` | **Badge provenance**: `created_by === user_id` → self-made ("Tu rutina"), else coach/admin-authored ("De tu coach"). `is_shared=true` publica la rutina en `/routines`; solo el autor (o admin) puede compartirla (trigger `prevent_unauthorized_share`) |
-| `public.payments` | `user_id`, `plan_id`, `amount` (snapshot CRC), `method` sinpe/efectivo, `status` pending/approved/rejected, `requested_at/decided_at/decided_by`, `note` | Solicitudes sin pasarela: el usuario crea la solicitud (una pendiente máx — índice parcial único), el admin aprueba/rechaza desde `/payments`. Trigger de aprobación llama `activate_membership()` (acumula sobre vigencia activa) y sella decided_at/by. **Delegación (2026-08-24): los forms de usuario YA NO asignan planes** — todo plan se asigna vía pagos; el admin registra walk-ins con "Registrar pago" en /payments (dialog miembro+plan+método+nota → INSERT directo approved → activación instantánea; RLS insert permite admin para cualquier usuario) |
-| `public.notifications` | `user_id`, `type`, `title`, `body`, `link`, `read` | Solo las escriben triggers security-definer (`notify()`): pago solicitado→admins, decisión→solicitante, coach asignado↔miembro, vencimiento próximo→usuario (cron). Realtime via publication + RLS propia por usuario. Bell en FloatingNav con badge |
-| `public.routine_days` | `routine_id` FK, `day_index` 1-7, `focus` | unique(routine_id, day_index) |
-| `public.routine_exercises` | `day_id` FK, `exercise_id` FK, sets, reps, rest_seconds | Ordered by `order_index` |
-| `public.routine_votes` | `routine_id` FK, `user_id` FK, unique(routine_id, user_id) | Like-style voting; 1 voto por usuario por rutina; autor no puede votarse a sí mismo (RLS) |
-| `public.check_ins` | `id`, `user_id` FK, `check_in_date` (date, tz CR), `checked_in_at` (timestamptz) | Asistencia diaria. **unique(user_id, check_in_date)** → máx 1 por usuario/día (índice es sobre `check_in_date`, no `checked_in_at::date`, porque Postgres exige IMMUTABLE en expresiones de índice; por eso se calcula con `(now() at time zone 'America/Costa_Rica')::date`). Paso 1 de Fase 1 (2026-08-28). |
-| `public.workout_logs` | `id`, `user_id` FK, `routine_id` FK (nullable), `routine_day_id` FK (nullable), `started_at`, `completed_at` (nullable), `notes` | Sesión real de entrenamiento. `routine_id`/`routine_day_id` nullable para permitir "entrenamiento libre" (sin rutina). `completed_at = NULL` significa **en curso**. Paso 3 de Fase 1 (2026-08-28). |
-| `public.set_logs` | `id`, `workout_log_id` FK, `exercise_id` FK, `set_number`, `weight` (numeric kg), `reps`, `is_warmup` | Cada serie real levantada. Hereda la pertenencia del `workout_log` padre en RLS. Paso 3 de Fase 1 (2026-08-28). |
+| `public.users` | `id`, `auth_id` (→ auth.users), `email`, `role`, `coach_id`, `plan_id`, `membership_status/start/end` | `role` enum `admin\|user\|coach`; `coach_id` self-FK `ON DELETE SET NULL`; `plan_id` FK → `plans`; `membership_status` active/inactive/pending/expired. `membership_plan` enum DROPPED 2026-08-22. |
+| `public.plans` | `id`, `slug` unique, `name`, `duration_days`, `price` CRC, `is_active` | Diario ₡3.000 / semanal ₡10.000 / mensual ₡15.000. CRUD `/plans` admin-only 2026-08-28: `slug` AUTOGENERA al crear (`slugify`), al editar no cambia. |
+| `public.products` | `product_id`, `product_name`, `product_price`, `product_stock`, `category_id` | Prefixed `product_`; `category_id` FK → `categories.id` nullable |
+| `public.categories` | `id`, `slug` unique, `name` | 6 categorías seeded |
+| `public.exercises` | `name` unique, `muscle_group`, `equipment`, `image_url` | Catalog ~30 con `image_url` local `/exercises/*.jpg` |
+| `public.routines` | `user_id` FK `CASCADE`, `created_by` FK `SET NULL` (2026-08-31 fix), `goal` enum, `is_active`, `is_shared` | `created_by===user_id` → "Tu rutina", else coach. `is_shared` solo autor/admin (trigger `prevent_unauthorized_share`). `created_by` nullable tras delete del creador (rutina huérfana muestra "Asignada"). |
+| `public.payments` | `user_id` FK `CASCADE`, `plan_id` FK, `amount` snapshot, `method` sinpe/efectivo, `status` pending/approved/rejected, `decided_by` FK `SET NULL` (2026-08-31 fix) | Una pendiente máx por usuario (índice parcial). Trigger aprobación `activate_membership()` acumula. Walk-in `status approved` directo. |
+| `public.notifications` | `user_id` FK `CASCADE`, `type`, `title`, `body`, `link`, `read` | Solo triggers `security-definer` `notify()` + Realtime. |
+| `public.routine_days` | `routine_id` FK `CASCADE`, `day_index` 1-7, `focus` | unique(routine_id, day_index) |
+| `public.routine_exercises` | `day_id` FK `CASCADE`, `exercise_id` FK `RESTRICT`, sets, reps, rest_seconds | Ordered by `order_index` |
+| `public.routine_votes` | `routine_id` FK `CASCADE`, `user_id` FK `CASCADE`, unique | 1 voto por usuario, autor no vota (RLS) |
+| `public.check_ins` | `id`, `user_id` FK `CASCADE`, `check_in_date` (tz CR), `checked_in_at` | unique(user_id, check_in_date) |
+| `public.workout_logs` | `id`, `user_id` FK `CASCADE`, `routine_id` FK `SET NULL`, `routine_day_id` FK `SET NULL`, `started_at`, `completed_at` | `completed_at=NULL` = en curso |
+| `public.set_logs` | `id`, `workout_log_id` FK `CASCADE`, `exercise_id` FK, `set_number`, `weight` kg, `reps`, `is_warmup` | Hereda RLS del `workout_log` padre |
 
-**Environment:** `.env.local` → `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Browser access via `createClient()` from `@/lib/supabase/client`.
+**Environment:** `.env.local` → `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (`sb_publishable_...` nuevo) + `SUPABASE_ACCESS_TOKEN` `sbp_...` para MCP. Browser via `createBrowserClient`, Server via `createServerClient` (`lib/supabase/server.ts` con `cookies()` `next/headers`).
 
-**DB-level guards (triggers — verified 2026-08-22):**
-- `prevent_sensitive_changes`: users can't self-change `role`/`email` (is_admin bypass). Blocks even direct SQL without admin claims.
-- `validate_coach_role`: `coach_id` must reference a row with `role='coach'`.
-- Own-profile UPDATE policy additionally pins `role` AND `coach_id` (no self-escalation).
+**DB-level guards (triggers):**
+- `prevent_sensitive_changes`: users can't self-change `role`/`email` (is_admin bypass).
+- `validate_coach_role`: `coach_id` must be `role='coach'`.
+- Own-profile UPDATE pins `role`, `coach_id`, `membership_status/start/end`, `plan_id` (no auto-activación; corre vía `activate_membership()`).
 
-**RLS model (verified in DB — simulation matrix passed with JWT claims):**
+**DB-level functions (SECURITY DEFINER, solo `authenticated` salvo helpers):**
+- `copy_shared_routine(source_routine_id)` → copia cabecera+días+ejercicios, valida `auth.uid()`, bloquea propia/no-compartida. Solo `authenticated`.
+- `save_workout(p_routine_id, p_routine_day_id, p_notes, p_sets jsonb)` → transacción `workout_log`+`set_logs`, valida ≥1 serie. Solo `authenticated`.
+- Helpers `is_admin()`, `is_coach()`, `can_vote_routine()` → `SECURITY DEFINER`, `GRANT anon,authenticated` para RLS (advisor WARN esperado, no revocar anon o rompe `routine_days` SELECT para shared anon).
+
+**RLS model (verified anon vs authenticated — 2026-08-31):**
 
 | Table | Policy | Access |
 |---|---|---|
-| users | "Users can view/insert/update own profile" | `auth.uid() = auth_id`; role + coach_id pinned (no self-escalation) |
-| users | "Admins can view/update/insert/delete all users" | `is_admin()` |
-| users | "Coaches can view users" | `is_coach()` |
-| products / exercises | viewable by everyone / editable by admin | SELECT `true` / ALL `is_admin()` |
-| categories | viewable by everyone / editable by admin | SELECT `true` / ALL `is_admin()` |
-| plans | viewable by everyone / editable by admin | SELECT `true` / ALL `is_admin()` |
-| payments | dueño ve las suyas / admin todo; INSERT forzado a propio; DELETE propio-pending | UPDATE status solo admin → trigger activa membresía |
-| notifications | solo propias (SELECT/UPDATE read) | INSERT exclusivo de triggers security-definer |
-| routines | viewable by owner, admin and coach | owner (by `auth_id`) OR `is_admin()` OR `is_coach()` |
-| routines | shared viewable by everyone | `is_shared = true` |
-| routines | writable by admin, coach or self | admin/coach any; user only own `user_id` |
-| routine_votes | viewable by everyone / votable rules | SELECT `true`; INSERT solo voto propio sobre rutina compartida ajena; DELETE solo voto propio |
-| routine_days / routine_exercises | inherit routine visibility/writability | subquery through `routines` → owner/admin/coach |
+| users | own profile / admin all / coach view | `auth.uid()=auth_id` / `is_admin()` / `is_coach()` |
+| products / exercises / categories / plans | viewable everyone / editable admin | `SELECT true` / `ALL is_admin()` → anon puede `SELECT` (landing/catálogo) pero `INSERT 42501` bloqueado |
+| payments | dueño ve suyas / admin todo; INSERT propio o admin; DELETE propio-pending | UPDATE status solo admin → trigger |
+| notifications | solo propias | `user_id = auth.uid()` |
+| routines | owner/admin/coach OR shared | `is_shared=true` anon ve shared; writable owner/admin/coach |
+| routine_votes | viewable everyone / votable | `SELECT true`; INSERT `can_vote_routine` bloquea self-vote |
+| routine_days / routine_exercises | inherit via routines + `is_shared` (2026-08-31 fix) | anon ve días/ejercicios de `is_shared=true`; writable owner/admin/coach |
+| check_ins | own/admin/coach | anon 0, auth own |
+| workout_logs / set_logs | own/admin/coach | writes vía `save_workout` RPC |
 
-**DB-level guards for sharing/voting:** trigger `prevent_unauthorized_share` (only author or admin can set `is_shared=true`); vote INSERT policy pins `user_id` to the caller's profile and blocks self-votes.
-
-> **Golden rule:** the frontend guard (`isAdmin` hiding UI) is cosmetic. Real protection lives in these RLS policies. Any new table or privileged column must ship with its policy — not just a hidden button.
+> **Golden rule:** frontend guard (`isAdmin` hide) es cosmético. RLS es la protección real. Nueva tabla/columna = policy + regen `database.types.ts`.
 
 ---
 
-## State & Data Fetching — TanStack Query v5
+## State & Data Fetching — TanStack Query v5 + Wizard Context
 
-**Provider:** `src/components/providers/query-provider.tsx` — defaults: `staleTime: 60_000`, `refetchOnWindowFocus: false`, `retry: 1` (queries) / `retry: 0` (mutations). Devtools included.
+**Provider:** `src/components/providers/query-provider.tsx:1` — `staleTime: 60_000`, `refetchOnWindowFocus: false`, `retry: 1` / `0`.
 
-**Conventions (replicate exactly in new features):**
-
-1. **Query keys factory** per entity:
+**Conventions:**
+1. **Query keys factory** per entity (unificado 2026-08-31):
    ```ts
-   export const userKeys = {
-     all: ["users"] as const,
-     detail: (id: string) => ["users", id] as const,
+   // src/_features/gym-routines/hooks/useRoutines.ts:13
+   export const routineKeys = {
+     all: ["routines"] as const,
+     byUser: (userId: string) => ["users", userId, "routines"] as const,
+     detail: (id: number) => ["routines", id] as const,
    }
+   // uso: invalidateQueries({queryKey: routineKeys.byUser(id)}) no strings sueltas
    ```
 2. **One hooks file per feature** (`_features/<x>/hooks/use<X>.ts`) exporting `use<X>`, `useCreate<X>`, `useUpdate<X>`, `useDelete<X>`.
-3. **Mutations** run Supabase calls, throw on `error`, invalidate `keys.all` on success.
-4. **Optimistic deletes** — canonical pattern (snapshot → remove → rollback):
-   ```ts
-   onMutate: async (item) => {
-     await queryClient.cancelQueries({ queryKey: keys.all })
-     const previous = queryClient.getQueryData<Row[]>(keys.all)
-     queryClient.setQueryData<Row[]>(keys.all, (old) => old?.filter((r) => r.id !== item.id) ?? old)
-     return { previous }
-   },
-   onSuccess: (_, item) => toast.success(...)          // no invalidate here
-   onError: (error, item, ctx) => {
-     if (ctx?.previous) queryClient.setQueryData(keys.all, ctx.previous)
-     toast.error(...)
-   },
-   onSettled: () => queryClient.invalidateQueries({ queryKey: keys.all })
-   ```
-5. Delete hooks receive the **full row** (not just the id) so toasts can show the entity name.
+3. **Mutations** `createClient()` dentro de `mutationFn`, `throw new Error(error.message)` (no `throw error` crudo → evita `[object Object]` `stitched-error.ts`), `zod` defensivo en `mutationFn` además del form (segunda capa), `invalidate byUser/detail` onSuccess.
+4. **Transacción `persistDays` (2026-08-31 fix):** `delete routine_days` con `if(delErr) throw new Error(delErr.message)` + `try {await persistDays} catch(e){ await delete routines header; throw e}` → no deja huérfano si falla día 2. Futuro: `rpc save_routine` como `save_workout`.
+5. **Optimistic deletes** — snapshot → remove → rollback (canon `useDeleteUser:122`, `useDeleteProduct`, `useDeleteRoutine:102` en `useRoutines.ts`).
+6. Delete hooks reciben **full row** para toast con nombre.
+
+**Wizard — `routine-form` local state (2026-08-31 decision):**
+
+- **NO Zustand** para wizard. Estado (`step`, `metadata`, `days`, `errors`, `isSubmitting`) vive y muere dentro del Dialog — no necesita sobrevivir entre rutas. Zustand es para estado global cross-route (carrito, gamificación, modales globales) y obligaría a `reset()` manual al cerrar (riesgo stale).
+- **Patrón:** `useReducer + 2 Contexts` interno scropeado en `src/_features/gym-routines/components/routine-form/context.tsx:1` — split `WizardStateCtx` + `WizardDispatchCtx` para que consumers que solo disparan acciones no re-rendericen cuando cambia state. Oficial `react.dev/learn/scaling-up-with-reducer-and-context`.
+- **React 19.2.8:** `createContext` provider directo `<WizardStateCtx value={state}>` (no `<WizardStateCtx.Provider>`). `useContext` consume. Lazy init `useReducer(reducer, undefined, () => ({step:"datos", metadata: initialMetadata(), days: initialDays()}))`.
+- **Scope:** `RoutineFormProvider` solo envuelve `RoutineFormShell` → `ShellChrome` → `FormBody`. No global, no admin dialogs. Al desmontar Dialog el estado muere solo.
+- **Actions serializables:** `type:"set_step"|"set_metadata_field"|"set_errors"|"set_submitting"|"set_days"` con payload plano `days: DayDraft[]`. NO pasar `updater: (prev)=>...` función dentro de action. `StructureTab:9` y `MetadataTab:38` ahora consumen `useWizardState/useWizardDispatch` directo — cero prop drilling incluso hacia tabs. `useSetDays` wrapper eliminado 2026-08-31.
+- **Regla conservadora deps:** `package.json` 23 deps. No añadir lib nueva si React puro resuelve. Documentar excepción en Decision Log.
+
+---
+
+## Validation — Zod (2026-08-31)
+
+**Schemas:** `src/_features/gym-routines/lib/routine.schema.ts` (`routineMetadataSchema`, `routineStructureSchema`, `fullRoutineSchema`, `zodToWizardErrors`) + `src/_features/gym-admin/lib/user.schema.ts`, `product.schema.ts`, `plan.schema.ts`, `payment.schema.ts`. `zod:4.5.4`.
+
+**Regla:** validar **antes** de `TanStack`/`Supabase` con `safeParse` en el **frontend** (`form-body.tsx:57` `goNext/handleSave`, `user-form-dialog:100`, `product:80`, `plan:76`, `walk-in:72`) y defensivo en **hooks** `mutationFn` (`useUsers:65` `userFormSchema.safeParse`, `useProducts:41` etc.) → evita `422` + `Postgres check` crudo, mensaje `zod` UX. `dto` sigue con `trim`/`Number` pero ya validado; `coerce` en `product/plan` evita `Number()` manual. `walk-in` valida `userId uuid` + `planId uuid` (antes solo `!!planId`).
+
+**Wizard mapping:** `zodToWizardErrors` convierte `ZodError` → `Record<string,string>` plano (`errors.name`, `errors.days_per_week`, `errors["day_0_focus"]`, `errors.days`) para que `MetadataTab:48` / `StructureTab:11` rendericen sin conocer Zod.
 
 ---
 
 ## Feedback System — Sonner Toasts
 
-**Mount:** `<AppToaster />` (root layout) → `position="top-right"`, Lucide icons (`CheckCircle2` success / `XCircle` error). Styles live in `globals.css` under `/* Sonner toasts: tactical neon */`.
-
-**Rules:**
-- Toasts fire **in the hooks** (`onSuccess` / `onError`), never in components.
-- Success: `toast.success(\`Usuario "${name}" creado correctamente\`)` — include the entity name.
-- Error: `toast.error("No se pudo crear el usuario", { description: error.message })` — always surface Supabase's message.
-
-**Visual spec (already in CSS — keep consistent):**
-
-| Element | Spec |
-|---|---|
-| Surface | `#09090B`, border `#1A1A1A`, radius 8px, dark drop shadow |
-| Success | left 3px bar `#96D906` + green glow + green icon (border stays neutral) |
-| Error | left 3px bar `#EF4444` **+ red-tinted border** + red icon |
-| Title | Geist Sans 12px, uppercase, tracking 0.06em, white |
-| Description | Geist Mono 12px, `#A1A1AA` |
+**Mount:** `<AppToaster />` (`src/components/providers/app-toaster.tsx`) en root layout → `top-right`, Lucide icons. Styles `src/app/globals.css:112` `/* Sonner tactical neon */` — borde lateral + glow `Monster #96D906` success / `#ef4444` error.
+**Rules:** Toasts **solo en hooks** `onSuccess/onError`, nunca en componentes (excepto `walk-in` `zod` `toast.error` previo a mutate). `throw new Error(error.message)` para que `description: error.message` no sea `[object Object]`.
 
 ---
 
 ## Authentication & Route Protection
 
-- **OAuth only** (Google / Facebook). No email+password.
-- **`src/proxy.ts`** (runs on document requests): `/users` + `/products` unauthenticated → redirect `/auth/login`; `/auth/login` while authenticated → redirect `/`.
-- **`useAuthSession()`** (`_features/auth/hooks/`): session + `isAdmin` / `isCoach` — the role is read from the **DB (`users.role`)**, never from Google's `user_metadata`.
-- **Admin menu** in FloatingNav renders `Usuarios` (visible for Admin + Coach) and `Productos` (visible for any authenticated user) items. On `/products`, the "Unidades" and "Valor inv." stats cards, the "Nuevo" button, and the per-row Pencil/Trash actions are admin-only; "Productos" count is visible to any authed viewer. The category filter dropdown is visible to all authed users (mirrors the search bar visibility); CRUD on products stays admin-only.
-- **Logout:** `supabase.auth.signOut()` then `navigate('/auth/login')`.
+- **OAuth only** (Google / Facebook). No email+password. `role` leído de **DB `users.role`**, nunca `user_metadata`.
+- **`src/proxy.ts`** (Next 16 `proxy` = ex-middleware): `protectedPaths` `/dashboard`, `/users`, `/products`, `/routines`, `/membership`, `/payments`, `/plans`, `/workout` → redirect `/auth/login`; `/auth/login` autenticado → `/`. Usa `createServerClient` con `cookies` y `parseCookieHeader` (`context7` `supabase/ssr` `getClaims` es optimización futura, hoy `getUser` funcional).
+- **`AuthProvider` SSR (2026-08-31 fix getUser):** `src/app/layout.tsx` `async` → `createClient()` `lib/supabase/server.ts` → `auth.getUser()` (validado contra Auth server, **no** `getSession` de cookies) → `select users where auth_id` → `<AuthProvider initialUser/initialProfile>` `src/components/providers/auth-provider.tsx` (`createContext`, `loading` inicial `!initialUser`). `useAuthSession()` `auth/hooks` ahora es `useContext(AuthContext)` sync → sin flash `Acceso restringido` en hard reload. `onAuthStateChange` re-valida con `getUser()` antes de confiar en `session.user`. `QueryClient` queda solo para data `public.*`, no para sesión. `proxy.ts` ya usa `getUser()`.
+- **FloatingNav ORDEN:** Dashboard → Mi perfil → Entrenar → Mis Rutinas → Ranking → Mi membresía → Productos → (Usuarios si admin/coach) → (Pagos/Planes si admin) → Configuración → Cerrar sesión.
+- **Logout:** `supabase.auth.signOut()` → `navigate('/auth/login')`.
 
 ---
 
 ## Navigation & Page Transitions
 
-Interactive navigation (buttons, menu items) must use `usePageTransition().navigate(href)` — NOT `router.push` directly. It plays the GSAP curtain exit (`window` event `gsap-page-exit`) and pushes after `TRANSITION_DURATION_MS + 20ms`. Plain `<a>` links are only for in-page hash anchors (landing sections).
+`usePageTransition().navigate(href)` (`src/_features/shared/hooks/usePageTransition.ts`) con GSAP curtain `gsap-page-exit` + `TRANSITION_DURATION_MS+20`, no `router.push`. `FloatingNav` y `Breadcrumbs` usan este hook.
 
 ---
 
-## Admin Page Pattern (standard anatomy)
+## Routine Wizard — Flujo detallado
 
-Every admin page (`/users`, `/products`, and future ones) follows:
-
-1. **Guard:** `const { isAdmin, loading } = useAuthSession()`; while loading → centered loader; `!isAdmin` → "Acceso restringido" card (stay on page, don't redirect).
-2. Ambient glows background + section header (chip + H2 with primary keyword).
-3. **Stats row** (3 stat cards) + search input + view toggle (cards/table) + primary "Nuevo" button.
-4. Data via feature hooks (TanStack). Loading / empty / error states each get a styled block.
-5. CRUD through two dialogs: `FormDialog` (create+edit, syncs from row on open) and `ConfirmDeleteDialog`. All dialogs use `fixed inset-0 z-[100] flex items-center justify-center p-4` (above FloatingNav's z-90) so the panel centers naturally without `pt-24`. See [[dialog-nav-clearance-convention]].
-
-### Member Profile Page (`/users/profile/[id]`)
-
-Thin server page (`PageProps<"/users/profile/[id]">` + `await params`) rendering `_features/gym-admin/profile/components/user-profile.tsx` (client). Data via `useUser(id)` with `userKeys.detail(id)` — the `["users", id]` key invalidated automatically by `keys.all`.
-
-**Access rules:** own profile → always allowed (any role with session, RLS-backed). Admin → any profile + CRUD buttons (`UserFormDialog` + `ConfirmDeleteDialog` reused, not duplicated) + Routine action (Dumbbell icon). Coach → Routine action (Dumbbell icon) only. Non-admin/coach on someone else → "Acceso restringido" card. "Mi perfil" menu item in FloatingNav (needs `profile.id` from `useAuthSession`, which exposes the full own row).
-
-### Shared Routines Page (`/routines`, public)
-
-Thin server page rendering `_features/gym-routines/components/shared-routines.tsx` (client). Data via `useSharedRoutines()` (`sharedKeys.all`) — fetches `is_shared = true` with author join + embedded votes; ranking sorted client-side by vote count desc (ties → newest first). **Like-style voting** (`useToggleVote`, optimistic snapshot→update→rollback): Flame icon filled `fill-primary text-primary` when voted, outline gray otherwise; own routine or no session → non-clickable with explanatory title; NO success toast on votes (social-style silence), error toast only. Empty state: "Aún no hay rutinas compartidas". Entry point: "Ranking de rutinas" (Trophy) in FloatingNav dropdown.
-
-**Routine card menu toggles:** boolean flags use `ToggleRow` (mini switch LEFT, label RIGHT; ON = `bg-primary`, OFF = `bg-secondary`; menu stays open while toggling). `Activa` visible when `canEditRoutine`; `Compartida` visible only to the routine's author (`created_by === viewer.id`). Sharing also shows a "Compartida" badge on the card.
-
-### Role Dashboards (`/dashboard`, 2026-08-25)
-
-`Dashboard.tsx` (gym-admin/dashboard/components) es **solo router**: lee el rol desde `useAuthSession` y renderiza un orquestador por rol. Sin fila de perfil → "Acceso restringido". El FloatingNav muestra "Dashboard" a cualquier usuario autenticado.
-
-| Rol | Orquestador | Secciones |
-|---|---|---|
-| admin | `admin-dashboard.tsx` | `dashboard-stats` (×5) + `expiring-members` + `pending-payments`; corre el barrido `expire_stale_memberships` al entrar |
-| coach | `gym-coach/dashboard/components/CoachDashboard.tsx` | `coach-stats` (mis miembros / activos / por vencer 7d / rutinas creadas) + `my-members` + `members-without-routine` (CTA Dumbbell → wizard de rutina del miembro) |
-| user | `gym-member/dashboard/components/MemberDashboard.tsx` | `membership-banner` (pago pending → ámbar "en revisión"; activa → countdown + Renovar si ≤7d; sin membresía → CTA rojo) + `my-routine-card` (rutina activa + CTA Entrenar) + `my-payment-status` + `recent-notifications` + `ranking-preview` |
-
-- Hooks del coach en `useCoachDashboard.ts`: `useCoachMembers(coachId)` filtra `.eq('coach_id')` y su query key vive bajo `["users"]` (hereda invalidaciones del CRUD); `useRoutinesLite()` pide columnas mínimas para derivar "quién tiene rutina activa".
-- Regla purity: NUNCA llames `Date.now()` en render/useMemo — usa `useNow()` (`shared/hooks`, hydration-safe: `null` hasta el mount, tick 30s). Los cálculos de vencimiento omiten el filtro cuando `now === null`.
+```
+RoutineFormDialog (dialog.tsx:21) — gate open + useBodyScrollLock + key={routine?.id ?? "new"} remount
+  └─ RoutineFormShell (shell.tsx:11) — define EMPTY_METADATA + createEmptyDays, envuelve RoutineFormProvider (lazy init)
+      └─ ShellChrome (chrome.tsx:18) — hidrata days vía hydrateDaysFromRoutine(routine.id)+dispatch set_days, loader z-[100]
+          └─ FormBody (form-body.tsx:16) — consume useWizardState/dispatch, zod validate, goNext/goBack/handleSave, sonner
+              ├─ MetadataTab (metadata-tab.tsx:38) — consume useWizardState/dispatch directo (solo props: errors/firstFieldRef/onEnter)
+              └─ StructureTab (structure-tab.tsx:9) — consume useWizardState/dispatch directo (solo prop: errors), DayEditor[] + addDay/removeDay/moveDay via dispatch set_days
+```
+- **Validaciones por step:** `step==="datos"` → `routineMetadataSchema`, `step==="estructura"` → `routineStructureSchema` + `days`, `handleSave` → `fullRoutineSchema`. Errores viven en `WizardState.errors` y se mapean vía `zodToWizardErrors`.
+- **Hydration edit:** `chrome.tsx:18` `useEffect` `hydrateDaysFromRoutine` solo si `routine`, `cancelled` flag, `dispatch set_days`. Loader bloquea render hasta `hydratedDays`.
+- **Persistencia:** `page.tsx` de `users/profile/[id]/routine` llama `onSubmit` → `useCreateRoutine` / `useUpdateRoutine` + `persistDays` transaccional.
+- **Cero drilling:** `shell→chrome→form-body→tabs` ya no pasa `step/metadata/days/errors/isSubmitting` por props. Todo via `useWizardState/dispatch`. `own-profile-dialog.tsx:39` también migrado a `key` remount + `OwnProfileInner` lazy (igual que `user-form-dialog.tsx:53`).
 
 ---
 
-## Mobile Conventions (2026-08-22 — applies to admin + routines features)
+## Admin Page Pattern
 
-Desktop is frozen: base classes = mobile (375px baseline), every current desktop size is RESTORED with `sm:`/`md:` variants. Never change what `sm:` and up renders.
+Guard `isAdmin/loading` → glows + header chip+H2 → Stats (3) + Toolbar (search+view toggle+Nuevo) → TanStack data → `FormDialog` (key remount) + `ConfirmDeleteDialog` (`z-[100]`).
 
-1. **Dialogs with forms** (user/product form): panel = `flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden`; body/form = `min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5`; action row = **sticky footer** (`sticky bottom-0 -mx-4 ... border-t bg-card sm:-mx-6`) so submit is always reachable on phones. Routine dialog already used header/fixed-footer pattern.
-2. **Confirm-delete dialogs**: `max-h-[85vh] overflow-y-auto p-4 sm:p-6` guard on the panel.
-3. **Dialog chrome paddings**: header/footer `px-4 py-3 sm:px-6 sm:py-4`; close button `h-9 w-9 sm:h-8 sm:w-8`.
-4. **Tap targets ≥40px on mobile only**: table actions `h-10 w-10 sm:h-8 sm:w-8`, card actions `h-10 w-10 sm:h-9 sm:w-9`, day-editor/menu buttons `h-9 w-9 sm:h-7 sm:w-7`, ToggleBtn `p-2.5 sm:px-3 sm:py-1.5`.
-5. **Tables → cards below `sm:`**: Users + Products always render the cards grid on mobile; the table view exists only ≥sm (`<div className={view === "table" ? "sm:hidden" : ""}>` for cards + `<div className="hidden sm:block">` around the table). The cards/table toggle is `hidden sm:flex`.
-6. **Stats strips**: `grid-cols-1 sm:grid-cols-3` (never hard grid-cols-3).
-7. **Form field grids collapse at base**: pairs → `grid-cols-1 sm:grid-cols-2`; triples → `grid-cols-1 sm:grid-cols-3`. ExerciseEditor uses one grid that reflows: `grid-cols-4 sm:grid-cols-12` (select spans all 4 on mobile; desktop col-spans unchanged).
-8. **Icon-only buttons carry aria-labels** ("Nuevo miembro", "Nuevo producto", exercise inputs) since their text labels are hidden below sm.
-9. Long strings get mobile-safe truncation: emails `truncate`; routine names on shared ranking `line-clamp-2 sm:truncate`.
-10. **Primary toolbar action ("Nuevo") right-aligned at EVERY breakpoint** (`justify-end` on the actions container). Rationale: thumb zone on mobile (FAB convention) + it already sits right beside the view toggle on desktop. Never left-align it on one page and right-align it on another — cross-page consistency wins.
-11. **Dense numeric inputs get visible micro-labels** (pattern: ExerciseEditor in the routine dialog): `font-mono text-[9px] uppercase tracking-wider text-muted-foreground` label ABOVE each input via `htmlFor`/`id` pair; placeholders show EXAMPLE VALUES ("3", "8-12", "90"), never repeat the label text. Applies wherever fields are too narrow for inline labels (sets/reps/rest-style rows).
+### Shared Routines (`/routines`, public)
+`useSharedRoutines` `is_shared=true` + votes, ranking client, `Flame` vote, `CopyPlus` → `rpc copy_shared_routine` → `byUser` invalidate.
 
+### Workout (`/workout`)
+`workout-session.tsx` `Mi rutina` (detect `is_active`) pills `dayLabel` + `Libre` catalog, `useSaveWorkout` → `rpc save_workout`.
+
+### Dashboards (`/dashboard`)
+`Dashboard.tsx` router por rol (`admin-dashboard`, `CoachDashboard`, `MemberDashboard`) → `check-in-card` + `membership-banner` etc. Nunca `Date.now()` en render → `useNow()`.
+
+---
+
+## UI / Design System
+
+**Palette Monster:** `--primary: #96D906` (`globals.css:58`) + `#000000` background + `#09090b` card + `#1a1a1a` border/muted. Tipografía `Geist Sans` + `Geist Mono` para labels técnicos. `font-sans` uppercase tracking-tight para H2.
+
+**Primitives:** `src/components/ui/*` sobre `@base-ui/react` + `shadcn` + `tailwind-merge` + `clsx` + `class-variance-authority`. Actuales: `button.tsx`, `card.tsx`, `dialog.tsx`, `dropdown-menu.tsx`, `input.tsx`, `select.tsx`, `table.tsx`, `tabs.tsx`, `badge.tsx`, `avatar.tsx`, `carousel.tsx`, `coverflow-carousel.tsx`, `progress.tsx`, `skeleton.tsx`, `separator.tsx`. Eliminados 2026-08-31: `badge|carousel|coverflow|progress|skeleton|tabs|separator` ya restaurados porque volvieron a usarse (Tabs en Plans, Carousel en Landing) — lista actual es la del `glob` real.
+
+**Landing specifics:** `Hero5`, `DifferencesSection`, `CoachesSection`, `FanDeckCards2`, `Gallery`, `MembershipSection` (con `@property --tb-angle` border spinning `globals.css:205`), `LocationHours`, `FinalCTA`, `Footer`. `ConstellationBackground`, `FloatingNav`.
+
+**Sonner:** `globals.css:112-200` tactical neon — `data-sonner-toast` con barra lateral `::before` y glow por tipo.
+
+---
+
+## Mobile Conventions (2026-08-22)
+
+Base 375px, `sm:` restaura desktop. Dialogs `max-h-[85vh]` `overflow-y-auto`, sticky footer `bottom-0 -mx-4`, header `px-4 sm:px-6`, taps `h-9 w-9 sm:h-7`, Tables→cards `sm:hidden`, grids `grid-cols-1 sm:grid-cols-2`, micro-labels `text-[9px]` para `ExerciseEditor`, `cursor-pointer` siempre, `truncate` emails. `inputCls` con `border-destructive` si error.
+
+## Page Layout — Vertical Rhythm (2026-08-31)
+
+**Regla global para TODAS las `src/app/**/page.tsx` (mobile y desktop):**
+
+```tsx
+// shell canónico — no usar py-16 / py-8 / py-10
+<main className="relative min-h-screen bg-background py-20 sm:py-24 text-foreground overflow-x-hidden selection:bg-primary/30">
+  <ConstellationBackground /> {/* opcional solo en app pages con fondo oscuro */}
+  <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <header className="mb-10"> {/* header 40px, no mb-6 */}
+      <span className="mb-4 inline-flex ...">label</span>
+      <h1 className="font-sans text-4xl font-black uppercase tracking-tighter md:text-6xl">...</h1>
+      <p className="mt-3 font-mono text-sm md:text-base">...</p>
+    </header>
+    {/* contenido */}
+  </div>
+</main>
+```
+
+- `py-20` (80px) base + `sm:py-24` (96px) en `main` — más aire que `py-16` (64px) que hacía todo apretado. Nunca `py-16`/`py-8` en page shells.
+- `max-w-6xl` para dashboards/admin, `max-w-2xl` solo para flujos focales (`workout`, `auth/login`). `history/success` ya usan `max-w-2xl`/`max-w-lg` correcto.
+- `mb-10` para header de página (no `mb-6`), `gap-6`/`gap-8` entre secciones (no `gap-3` en page root).
+- `ConstellationBackground` opacity: `app/page.tsx` (landing) `opacity-100` (hero), **todas las `app/**/page.tsx` de features `opacity-40`** (`<div className="opacity-40"><ConstellationBackground/></div>`) para no competir con cards/tablas. Migrado 2026-08-31: `dashboard, membership, payments, plans, products, routines, users, workout/*`.
+- Pre-delivery: verificar `py-20 sm:py-24` + `opacity-40` en toda nueva app page. Migrado 2026-08-31: `dashboard, users, products, plans, payments, workout/*` de `py-16` → `py-20 sm:py-24`.
+
+---
 
 ## Development Environment
 
-- **Always `http://localhost:3000`** — never `127.0.0.1` (Next.js 16 blocks cross-origin dev resources from 127.0.0.1 → JS chunks blocked → no hydration → client components like FloatingNav don't render).
-- Type-check with `npx tsc --noEmit` (framework owns compilation; this is the verification command).
-- Supabase MCP is configured (pinned to this project) for SQL, migrations, and advisors.
-- Known leftover: `src/_features/gym-admin/data/mock.ts` references a deleted `../types` — delete it if unused.
+- `http://localhost:3000` siempre (no `127.0.0.1`).
+- `npx tsc --noEmit` verificación. `eslint-config-next:16.3.0`.
+- **MCP `opencode.json` (2026-08-31):** `mcp.supabase` (`@supabase/mcp-server-supabase --project-ref wknacbyqqpsvswjhwrbx` + `SUPABASE_ACCESS_TOKEN` `sbp_...`), `mcp.context7` (`@upstash/context7-mcp` + `CONTEXT7_API_KEY` `ctx7sk-...`), `mcp.github` (`@modelcontextprotocol/server-github` + `GITHUB_TOKEN`). Env `User` persistente, `opencode` reinicia para cargar.
+- Supabase MCP para SQL/advisors, `get_advisors` security/performance.
+- Eliminados 2026-08-31: `bash.exe.stackdump`, `tsc-check.log`, `tsconfig.tsbuildinfo`, `scripts/_fexdb.json` (1MB dataset ya importado), `.zcode/plans`, `supabase/.temp`. `database.types.ts` es generado — no commitear manual si no hay migración.
 
 ---
 
 ## Global Rules
 
-### Color Palette
+**Anti-Patterns (2026-08-31 actualizado):**
+- ❌ `setState` síncrono en `useEffect` para sync `form` de `props` → usar `key` remount + `useState(()=>props)` lazy (fix `product-form:48`, `plan:48`, `walk-in:46`, `routine-form/chrome:97` ya migrado; `RoutineFormShell` ya no hace setState en effect).
+- ❌ `throw error` crudo de Supabase (PostgrestError object) → `throw new Error(error.message)` o `[object Object]` en devtools.
+- ❌ `persistDays` sin `throw delErr` ni rollback → huérfano.
+- ❌ Query keys strings sueltas `["users",id,"routines"]` → usar factory `routineKeys.byUser`.
+- ❌ Pasar función no-serializable dentro de `WizardAction` (`updater: (prev)=>...`) → usar `set_days` con payload plano `days: DayDraft[]`. Wrapper `useSetDays` eliminado.
+- ❌ Estado local de wizard en Zustand/global store → usar `RoutineFormProvider` scropeado que muere al cerrar Dialog.
+- ❌ `Context.Provider` en React 19.2 → usar `<Ctx value={...}>` directo.
+- ❌ Validar solo en hook o solo en componente → validar en ambos (frontend `safeParse` + defensivo en `mutationFn`).
 
-| Role | Hex | CSS Variable |
-|------|-----|--------------|
-| Primary | `#96D906` | `--color-primary` |
-| On Primary | `#000000` | `--color-primary-foreground` |
-| Secondary | `#121212` | `--color-secondary` |
-| On Secondary | `#96D906` | `--color-secondary-foreground` |
-| Accent/CTA | `#96D906` | `--color-accent` |
-| Background | `#000000` | `--color-background` |
-| Foreground | `#F8FAFC` | `--color-foreground` |
-| Muted | `#1A1A1A` | `--color-muted` |
-| Muted Foreground | `#A1A1AA` | `--color-muted-foreground` |
-| Border | `#1A1A1A` | `--color-border` |
-| Destructive | `#EF4444` | `--color-destructive` |
-| Ring | `#96D906` | `--color-ring` |
-
-**Color Notes:** Monster Energy Green + black. High-contrast neon green on pure black for a cyberpunk/tactical gym aesthetic.
-
-### Accent Color Usage Patterns
-
-| Accent Type | Usage | Pattern |
-|-------------|-------|---------|
-| Section Label Chip | Top of every section header | Pill (rounded-full) + border-primary/30 + bg-primary/5 + dot pulse + uppercase mono tracking-[0.2em] |
-| Heading Underline | Keyword in heading gets SVG underline accent | `text-primary` + `relative inline-block` + absolute curved SVG path stroke |
-| Gradient Rings | Section dividers | 1px h-gradient from-transparent via-primary/30 to-transparent |
-| Corner Icons (optional) | Decorative in corner of feature sections | opacity-20 + w-12/h-12 + 3s bounce or 2s pulse |
+**Pre-Delivery Checklist (2026-08-31 actualizado):**
+- [ ] `zod` schema en `lib/*.schema.ts` + validación en `component` y defensiva en `hook`
+- [ ] Dialogs usan `key` remount, no `setState` en effect sync
+- [ ] `throw new Error(error.message)` en todos los hooks
+- [ ] `queryKeys` factory unificado + `invalidate byUser/detail`
+- [ ] `AuthProvider` SSR sin flash, `proxy` mismas cookies
+- [ ] Wizard usa `RoutineFormProvider` (2 contexts) + `useReducer` + `<Ctx value>` React 19, no prop drilling 17 props
+- [ ] `npx tsc --noEmit` + `eslint` 0 en `routine-form/*` y `gym-admin/lib/*`
+- [ ] `MASTER.md` actualizado si se añade tabla/columna/policy/feature
 
 ---
 
-### Background Layer System (Screaming Architecture)
-
-Every section MUST include layered backgrounds in this z-order (bottom → top):
-
-1. **Base color:** `bg-background` or `bg-card` — solid foundation
-2. **Ambient glows:** 2–4 radial gradient blobs (`blur-[100-140px]`, `bg-primary/5-10`), positioned in opposite corners
-3. **Grid/Pattern (optional):** Dotted or lined grid with `opacity-[0.03]`, primary-colored (rgba(150, 217, 6, 1))
-4. **Vertical lines (CTA only):** 4–6 vertical 1px lines at intervals, gradient fade top/bottom, `via-primary/10-20`
-5. **Radial spotlight (optional):** Mouse-tracking or centered radial at `primary/15-20`
-6. **Vignette:** `bg-[radial-gradient(ellipse_at_center,transparent_0%,#000_75%)]` at 40–60% opacity for dark immersive sections
-
-**Order:** All background layers use `pointer-events-none absolute inset-0 z-0` through z-5; content sits at `relative z-10` minimum.
-
----
-
-### Section Header Anatomy
-
-Every section header follows this exact vertical stack (centered OR left-aligned):
-
-```
-[Section Label Chip]  →  mb-4 to mb-6
-[H2 Heading]          →  font-heading font-black uppercase tracking-tighter
-                        text-4xl md:text-6xl leading-[0.9-0.95] mb-4 to mb-6
-                        → Primary keyword inside: <span class="text-primary"> + SVG underline
-[Description P]       →  font-mono text-muted-foreground text-lg max-w-2xl leading-relaxed
-```
-
-**H2 Scale Levels:**
-- Feature/Pricing: 4xl md:6xl
-- Immersive/Climax: 5xl sm:6xl md:7xl lg:8xl
-
----
-
-### Typography
-
-- **Heading Font:** Geist Sans (via `--font-geist-sans` / `font-heading`)
-- **Body Font:** Geist Mono (via `--font-geist-mono` / `font-mono`)
-- **Mood:** cyberpunk, neon, tactical, dark, monster energy green, high-contrast
-- **Loaded via:** `next/font/google` in `src/app/layout.tsx`
-
-**CSS Variables:**
-```css
---font-sans: var(--font-geist-sans);
---font-mono: var(--font-geist-mono);
---font-heading: var(--font-sans);
-```
-
-### Spacing Variables
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--space-xs` | `4px` / `0.25rem` | Tight gaps |
-| `--space-sm` | `8px` / `0.5rem` | Icon gaps, inline spacing |
-| `--space-md` | `16px` / `1rem` | Standard padding |
-| `--space-lg` | `24px` / `1.5rem` | Section padding |
-| `--space-xl` | `32px` / `2rem` | Large gaps |
-| `--space-2xl` | `48px` / `3rem` | Section margins |
-| `--space-3xl` | `64px` / `4rem` | Hero padding |
-
-### Shadow Depths
-
-| Level | Value | Usage |
-|-------|-------|-------|
-| `--shadow-sm` | `0 1px 2px rgba(0,0,0,0.05)` | Subtle lift |
-| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.1)` | Cards, buttons |
-| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.1)` | Modals, dropdowns |
-| `--shadow-xl` | `0 20px 25px rgba(0,0,0,0.15)` | Hero images, featured cards |
-
----
-
-## Component Specs
-
-### Buttons
-
-```css
-/* Primary Button */
-.btn-primary {
-  background: #96D906;
-  color: #000000;
-  padding: 12px 24px;
-  border-radius: 0; /* rounded-none */
-  font-weight: 600;
-  font-family: var(--font-heading);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-/* Secondary Button */
-.btn-secondary {
-  background: transparent;
-  color: #96D906;
-  border: 2px solid #96D906;
-  padding: 12px 24px;
-  border-radius: 0;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-```
-
-### Cards
-
-```css
-.card {
-  background: #09090B;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: var(--shadow-md);
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-```
-
-### Inputs
-
-```css
-.input {
-  padding: 12px 16px;
-  border: 1px solid #1A1A1A;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: border-color 200ms ease;
-}
-
-.input:focus {
-  border-color: #96D906;
-  outline: none;
-  box-shadow: 0 0 0 3px #96D90620;
-}
-```
-
-### Modals
-
-```css
-.modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
-
-.modal {
-  background: #09090B;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: var(--shadow-xl);
-  max-width: 500px;
-  width: 90%;
-}
-```
-
----
-
-### Card Tier System: Pricing Cards (3-Column Layout)
-
-| Layer | Treatment |
-|-------|-----------|
-| **Container** | `relative overflow-hidden group cursor-pointer` + base gradient accents per tier |
-| **Glow** (hover) | `-top-24 -right-24 w-48 h-48 rounded-full blur-3xl opacity-0 group-hover:opacity-40 transition-opacity duration-700` colored per tier |
-| **Icon** (tier) | Top-left: `p-3 rounded-xl transition-all duration-500` — hover fills to solid bg with icon color swap |
-| **Badge** (featured only) | `-translate-y-1/2` with `animate-pulse` halo underneath + uppercase 10px tracking-[0.2em] |
-| **Price** | `text-6xl font-black leading-none` + color shift to primary on card hover |
-| **Divider** | Gradient 1px line: `from-transparent via-border to-transparent` + mx-6 |
-| **Features** | `space-y-3.5` + rounded-full check icon bg: `primary/15` → `primary/25` on item hover |
-| **Footer CTA** | `h-14 w-full` + arrow icon that translates +x on group hover |
-| **Inter-card** | Sibling scale interplay: hovered = `scale-[1.02] z-20`, adjacent = `scale-[0.98] opacity-80 z-0`, rest = `scale-100 z-10` with 500ms ease-out |
-| **GSAP In** | `y:60, opacity:0, duration:0.7, stagger:0.18, ease:power3.out, scrollTrigger@top 75%` |
-| **Featured lift** | `md:-mt-4 md:mb-4` so middle card sits above neighbors |
-| **Trust line** | Below grid: centered mono text with horizontal dashes as separators |
-
----
-
-### Equipment Section — 3D Coverflow Carousel
-
-The equipment showcase (`EquipmentCarousel.tsx`) uses the **CoverflowCarousel** primitive (`components/ui/coverflow-carousel.tsx`, adapted from 21st.dev): a 3D rake of cards (rotateY + translateZ with distance falloff), infinite loop without DOM cloning, drag with flick inertia, keyboard arrows, dots, and per-slide caption (title + subtitle).
-
-- **Exception (user decision 2026-08-22):** this section's header has **NO chip/pill** above the H2 — the heading speaks alone. All other sections keep the chip pattern.
-- **Active card styling** comes from the `data-active` attribute painted by the engine: non-active cards `grayscale` + neutral border; active card full color + `border-primary/60` + green glow. Reuse this convention for any future coverflow instance.
-- Cards: `rounded-xl`, width via `cardWidth="clamp(200px, 26vw, 320px)"` (responsive by clamp).
-- Layered background per the global rules (2 ambient glows + hairline); entrance via GSAP ScrollTrigger (`y:40, stagger 0.15, power3.out`), respects `prefers-reduced-motion`.
-
-### Fan Deck Cards (Equipment / Gallery Layout)
-
-Default arrangement: cards stacked in a slight fan centered on the middle card.
-
-| State | Transform Rule |
-|-------|---------------|
-| **Idle (stacked)** | Each card offset by distance from center: `rotateZ(distance*2.5deg) translateX(distance*12px) translateY(abs(distance)*4px)` |
-| **Hovered card** | `rotateZ(0) + scale(1.04) + translateY(-18px)` + z-100 + border-primary + shadow-2xl shadow-primary/30 |
-| **Siblings LEFT of hover** | Additional `translateX(-55*spread -20px)` and `rotateZ -= spread*2deg` per step away |
-| **Siblings RIGHT of hover** | Additional `translateX(+55*spread +20px)` and `rotateZ += spread*2deg` per step away |
-| **Transition** | `all 650ms cubic-bezier(0.22, 1, 0.36, 1)` — smooth springy overshoot |
-
-**Card Interior:**
-- 4/5.2 aspect ratio + dark gradient base `#1a1f2e→#0f141e`
-- Tiny grid overlay via `mix-blend-overlay` at 24px size + opacity 80
-- Image: default `grayscale opacity-50 scale-100` → hover `grayscale-0 opacity-100 scale-110`, duration 700ms
-- Category chip top-left, arrow pulse badge top-right (only on hover)
-- Bottom gradient: default 0,0,0 85%→30%→0; hover deepens to 92%→50%→5%→0
-- Title scales: base md:text-lg → hover md:text-2xl
-- Description: `max-h-0 opacity-0 mt-0` → `max-h-24 opacity-100 mt-3` with 500ms ease-out
-- Progress bar (bottom, only hover): width 0%→100% gradient `primary→secondary` 1000ms ease-out
-
-**Mobile fallback:** Horizontal snap-x scroll (overflow-x-auto) with cards at w-[85%].
-
----
-
-### Hero Section Spec
-
-| Element | Spec |
-|---------|------|
-| **Container** | `relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-background` |
-| **Background image** | Unsplash gym image, `bg-cover bg-center bg-no-repeat`, `opacity-25 filter grayscale mix-blend-overlay` (slightly visible, dark) |
-| **Overlay** | `bg-gradient-to-b from-background/40 to-background` — darkens top, fades to solid black at bottom |
-| **Ambient glow** | Centered `bg-primary/10 blur-[120px]` behind content |
-| **H1** | `font-heading text-5xl md:text-7xl lg:text-9xl font-black uppercase tracking-tighter leading-[0.9]` — keyword in `text-primary` |
-| **Description** | `font-mono text-muted-foreground text-lg md:text-2xl max-w-2xl` |
-| **CTA buttons** | Primary: `bg-primary text-primary-foreground rounded-none font-heading tracking-wider uppercase` + Secondary: `border-border text-foreground hover:bg-secondary/10` |
-| **GSAP In** | h1: y:50 opacity:0 0.8s power3.out → p: y:20 opacity:0 0.6s power2.out → buttons: scale:0.8 opacity:0 0.5s back.out(1.7) |
-
----
-
-### Final CTA Section Spec (Climax Pattern)
-
-| Element | Spec |
-|---------|------|
-| **Padding** | py-36 + border-t border-border/60 mt-12 |
-| **Spotlight** | Mouse-tracking radial gradient: `radial-gradient(circle at ${x}% ${y}%, primary/18 0%, transparent 50%)` |
-| **Hero Badge** | Chip with `animate-ping` dot + "Limited Spots Available" uppercase mono at 11px 0.3em tracking |
-| **H2** | Split words in overflow-hidden blocks, each word animated separately via GSAP: y:80 stagger 0.08 power4.out |
-| **Keyword skew highlight** | One word inside span with `-skew-x-12` blurred bg accent behind text |
-| **Desc** | Two-line: first line muted, second slightly brighter (foreground/70) |
-| **Main CTA** | `group` wrapper with `-inset-1 gradient-to-r blur-lg` ring that fades in on hover → 0→60% opacity. Button: h-16→20 md, ring-2 ring-offset-4, hover scale-[1.03], shine sweep `translate-x-full` 1000ms on hover |
-| **Trust row** | Members avatars (-space-x-2) + star rating + security lock; separated by muted dots on md+, stacked on mobile |
-| **Decoratives** | Corner dumbbell (top-left, bounce 3s) + flame (bottom-right, pulse 2s), both opacity-20 |
-| **Background accents** | 3 ambient glows (center primary, upper-right secondary, lower-left accent) + 6 vertical gradient lines + SVG grid pattern 3% opacity |
-
----
-
-### Story/Pinned Text Section Spec
-
-| Layer | Spec |
-|-------|------|
-| **Container** | `relative bg-black overflow-hidden` + `h-screen` inner wrapper |
-| **Constellation BG** | Canvas-based: 60 particles distributed randomly. Each particle: position + velocity drift, twinkle opacity, glow halo (3.5× size radial gradient). Connection lines between 1-2 nearest neighbors at <22% vp distance with alpha falloff. All rotates very slowly. Canvas sits at z-1. |
-| **Glow** | Centered w-[60vw] h-[40vh] primary/10 blur-[120px] (z-0) |
-| **Vignette** | `radial-gradient ellipse_at_center transparent→#000@75%` opacity-50 (z-0) |
-| **Text layer** | z-20 — sits on top of particles |
-| **Phrases** | Pinned GSAP timeline: phrases enter from -120% left, center with word stagger color white→green (#96D906), hold, exit to +120% right. Last phrase holds (no exit). |
-| **Word style** | font-heading font-black uppercase whitespace-nowrap, size clamp(4rem,11vw,11rem), subtle primary text-shadow at 8% opacity |
-| **Scroll Trigger** | `start:top top, end:+=phrases*900, scrub:2, pin:true` |
-
----
-
-## Style Guidelines
-
-**Style:** Vibrant & Block-based
-
-**Keywords:** Bold, energetic, playful, block layout, geometric shapes, high color contrast, duotone, modern, energetic
-
-**Best For:** Startups, creative agencies, gaming, social media, youth-focused, entertainment, consumer
-
-**Key Effects:** Large sections (48px+ gaps), animated patterns, bold hover (color shift), scroll-snap, large type (32px+), 200-300ms
-
-### Page Pattern
-
-**Pattern Name:** Scroll-Triggered Storytelling + Screaming Architecture
-
-**Screaming Architecture Principle:** Every section is a self-contained "scene" with its own:
-- Layered background system (glows + patterns + optional spotlight)
-- Independent GSAP scrollTrigger entrance animation
-- Distinctive micro-interaction signature (hover interplay, fan spread, spotlight follow)
-- Optional particle/canvas enhancement for hero/pinned sections
-- Trust/social proof row at climax sections
-
-- **Conversion Strategy:** Narrative increases time-on-page 3x. Use progress indicator. Mobile: simplify animations.
-- **CTA Placement:** End of each chapter (mini) + Final climax CTA
-- **Section Order:** 1. Intro hook, 2. Chapter 1 (problem), 3. Chapter 2 (journey), 4. Chapter 3 (solution), 5. Climax CTA
-- **Section Gap:** Consistent `py-24` to `py-28` for standard, `py-32` to `py-36` for climax/immersive sections
-- **Container Width:** Standard `max-w-6xl` for content rows, `max-w-7xl` for feature showcases with expanded cards, `max-w-5xl` for CTAs
-
----
-
-### Motion Easing Reference
-
-| Use Case | Duration | Easing |
-|----------|----------|--------|
-| Micro hover (icon, color shift) | 200–350ms | `ease-out` or `cubic-bezier(0.4, 0, 0.2, 1)` |
-| Card interplay (scale, translate) | 500–650ms | `cubic-bezier(0.22, 1, 0.36, 1)` — springy arrival |
-| Fan deck (spread/rotate + neighbors) | 650ms | `cubic-bezier(0.22, 1, 0.36, 1)` |
-| GSAP entrance (y + opacity) | 600–800ms | `power3.out` |
-| Hero word stagger | 800–900ms | `power4.out` |
-| Button bounce entrance | 600ms | `back.out(1.7)` |
-| Scroll scrub pinned | per section | scrub: 2 (smoother), scrub: 1 (tighter) |
-| Description reveal max-h | 500ms | `ease-out` |
-| Progress bar fill | 1000ms | `ease-out` |
-
----
-
-## Anti-Patterns (Do NOT Use)
-
-- ❌ Static design
-- ❌ No gamification
-
-### Additional Forbidden Patterns
-
-- ❌ **Emojis as icons** — Use SVG icons (Heroicons, Lucide, Simple Icons)
-- ❌ **Missing cursor:pointer** — All clickable elements must have cursor:pointer
-- ❌ **Layout-shifting hovers** — Avoid scale transforms that shift layout (use isolated transforms)
-- ❌ **Low contrast text** — Maintain 4.5:1 minimum contrast ratio
-- ❌ **Instant state changes** — Always use transitions (150-300ms)
-- ❌ **Invisible focus states** — Focus states must be visible for a11y
-- ❌ **Naked sections** — No section without at least 2 ambient glows in background
-- ❌ **Inconsistent headers** — Every section header MUST use the chip + H2 (+SVG underline) + description pattern
-- ❌ **Abrupt motion** — Never use linear easing; always cubic-bezier or power curves
-- ❌ **Desktop-only motion** — Any complex fan/canvas effect needs a simplified mobile fallback
-- ❌ **Empty trust** — Climax CTAs MUST include social proof row (members, rating, guarantees)
-
----
-
-## Pre-Delivery Checklist
-
-Before delivering any UI code, verify:
-
-- [ ] No emojis used as icons (use SVG instead)
-- [ ] All icons from consistent icon set (Heroicons/Lucide)
-- [ ] `cursor-pointer` on all clickable elements
-- [ ] Hover states with smooth transitions (150-300ms)
-- [ ] Light mode: text contrast 4.5:1 minimum
-- [ ] Focus states visible for keyboard navigation
-- [ ] `prefers-reduced-motion` respected
-- [ ] Responsive: 375px, 768px, 1024px, 1440px
-- [ ] No content hidden behind fixed navbars
-- [ ] No horizontal scroll on mobile
-- [ ] Every section has background layer system (≥2 ambient glows)
-- [ ] Section headers use chip + H2(+underline) + description pattern
-- [ ] Complex hover/fan effects have simplified mobile (<768px) fallback
-- [ ] Motion easing uses power/cubic-bezier, never linear
-- [ ] Card hover interplay uses transform + z-index (no layout shift)
-- [ ] Canvas/particle effects stop when offscreen (RAF cleanup in useEffect return)
-- [ ] Climax CTA has social proof row
-- [ ] All sections have independent GSAP scrollTrigger entrance
-- [ ] CRUD mutations fire Sonner toasts in the hooks (success with entity name, error with `error.message`)
-- [ ] New tables/columns: RLS policy included + `database.types.ts` regenerated + types derived (`Tables`/`TablesInsert`/`TablesUpdate`)
-- [ ] TanStack hooks follow the keys-factory + invalidate (+ optimistic delete) conventions
-- [ ] Interactive navigation uses `navigate()` (page transition), not raw `router.push`
-- [ ] `npx tsc --noEmit` passes; app verified at `http://localhost:3000`
+## Decision Log
+
+| Fecha | Decisión | Razón | Alternativa descartada |
+|---|---|---|---|
+| 2026-08-31 | `RoutineForm` wizard → `useReducer + 2 Contexts` scropeado en `routine-form/context.tsx` | Estado local que muere con Dialog, 5 acciones agrupadas en dispatch, evita prop drilling `shell→chrome→form-body` sin deps nuevas. Split State/Dispatch evita re-renders. React 19 `<Ctx value>` | Zustand: brilla para global cross-route, pero aquí obliga `reset()` manual y añade dep a `package.json:23` sin necesidad. Se reconsidera si borrador debe sobrevivir fuera del wizard. |
+| 2026-08-31 | `own-profile-dialog` → `key` remount + `useState` lazy (igual que `user/product/plan/walk-in`) | Consistencia, no necesita context ni zod extra | Context para own-profile — innecesario |
+| 2026-08-31 | `persistDays` transaccional con rollback header | Evita rutina huérfana si falla día 2 | RPC `save_routine` futuro |
+| 2026-08-31 | Granularidad 1 concern/file para `routine-form` y `user-routines` | Legibilidad, evita monolitos 500+ líneas | Monolitos `routine-form-dialog.tsx` / `user-routines.tsx` |

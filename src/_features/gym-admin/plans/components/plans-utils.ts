@@ -26,3 +26,13 @@ export function slugify(name: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "")
 }
+
+/**
+ * Slug garantizado no vacío: si el nombre no produce un slug limpio
+ * (solo emojis/símbolos), usa un fallback único para no violar NOT NULL/unique.
+ */
+export function planSlug(name: string): string {
+  const base = slugify(name)
+  if (base) return base
+  return `plan-${Date.now()}`
+}

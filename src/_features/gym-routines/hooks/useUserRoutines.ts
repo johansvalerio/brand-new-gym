@@ -53,7 +53,10 @@ export type UserRoutine = {
 }
 
 export const routineKeys = {
+  // queryKey factory context7 tanstack/query: byUser + detail comparten base para invalidateQueries exact
+  all: ["routines"] as const,
   byUser: (userId: string) => ["users", userId, "routines"] as const,
+  detail: (id: number) => ["routines", id] as const,
 }
 
 async function fetchUserRoutines(userId: string): Promise<UserRoutine[]> {
@@ -105,7 +108,7 @@ async function fetchUserRoutines(userId: string): Promise<UserRoutine[]> {
     .order("is_active", { ascending: false })
     .order("created_at", { ascending: false })
 
-  if (error) throw error
+  if (error) throw new Error(error.message)
 
   // Ordenar días y ejercicios por sus índices (Supabase no garantiza orden en joins)
   const normalized = (data ?? []).map((routine) => ({

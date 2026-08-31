@@ -8,7 +8,7 @@ export default async function UserProfilePage({
   const { id } = await params;
 
   return (
-    <main className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30 py-16">
+    <main className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30 py-20 sm:py-24">
       <UserProfile id={id} />
     </main>
   );

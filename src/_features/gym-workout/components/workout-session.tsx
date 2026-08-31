@@ -16,6 +16,8 @@ import {
   type ExerciseEntry,
 } from "./set-log-inputs"
 import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
+import { ExerciseChooser } from "@/_features/gym-routines/components/exercise-chooser"
+import { RestTimerBar } from "./rest-timer"
 
 type Mode = "routine" | "free"
 
@@ -33,6 +35,8 @@ export function WorkoutSession() {
   const [selectedDayId, setSelectedDayId] = useState<number | null>(null)
   const [entries, setEntries] = useState<ExerciseEntry[]>([])
   const [notes, setNotes] = useState("")
+  const [chooserOpen, setChooserOpen] = useState(false)
+  const [restSeconds, setRestSeconds] = useState<number | null>(null)
 
   // Rutina activa (o la primera disponible).
   const activeRoutine = useMemo(
@@ -46,6 +50,8 @@ export function WorkoutSession() {
   )
 
   const isFree = mode === "free"
+  // Al menos una serie con peso o reps reales (habilita "Terminar").
+  const hasRealSet = entriesToSetDrafts(entries).length > 0
 
   const chooseDay = (dayId: number | null) => {
     setSelectedDayId(dayId)
@@ -126,7 +132,7 @@ export function WorkoutSession() {
       notes: notes.trim() || null,
       sets,
     })
-    navigate("/dashboard")
+    navigate("/workout/success")
   }
 
   if (authLoading) {
@@ -142,8 +148,20 @@ export function WorkoutSession() {
     (e) => !entries.some((entry) => entry.exercise_id === e.id),
   )
 
+  const restMap = useMemo(() => {
+    const m = new Map<number, number>()
+    if (!isFree && activeRoutine) {
+      for (const day of activeRoutine.routine_days) {
+        for (const ex of day.routine_exercises) {
+          if (!m.has(ex.exercise.id)) m.set(ex.exercise.id, ex.rest_seconds ?? 60)
+        }
+      }
+    }
+    return m
+  }, [activeRoutine, isFree])
+
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:max-w-4xl">
       <button
         onClick={() => navigate("/dashboard")}
         className="flex cursor-pointer items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"
@@ -191,7 +209,7 @@ export function WorkoutSession() {
       </div>
 
       {/* Selector de día (solo modo rutina) */}
-      {!isFree && activeRoutine ? (
+      {!isFree && activeRoutine && activeRoutine.routine_days.length > 0 ? (
         <div className="mb-6">
           <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             Día de tu rutina
@@ -213,35 +231,45 @@ export function WorkoutSession() {
             ))}
           </div>
         </div>
-      ) : !isFree && !activeRoutine ? (
+      ) : !isFree && activeRoutine ? (
+        <div className="mb-6 rounded-lg border border-dashed border-border bg-card/50 px-4 py-6 text-center text-sm text-muted-foreground">
+          Esta rutina no tiene días configurados. Cambiá a modo{" "}
+          <span className="text-primary">Libre</span> para registrar tu sesión.
+        </div>
+      ) : !isFree ? (
         <div className="mb-6 rounded-lg border border-dashed border-border bg-card/50 px-4 py-6 text-center text-sm text-muted-foreground">
           Aún no tenés una rutina. Cambiá a modo <span className="text-primary">Libre</span>{" "}
           para registrar tu sesión.
         </div>
       ) : null}
 
-      {/* Agregar ejercicio (solo libre) */}
+      {/* Agregar ejercicio (solo libre) — mismo diseño que mis rutinas: ExerciseChooser con grid de fotos */}
       {isFree ? (
         <div className="mb-6">
           <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             Agregar ejercicio
           </p>
-          <select
-            value=""
-            onChange={(e) => {
-              const ex = catalog.find((c) => c.id === Number(e.target.value))
+          <button
+            type="button"
+            onClick={() => setChooserOpen(true)}
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-border bg-secondary/30 px-4 py-3 font-sans text-sm font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          >
+            <Plus className="h-4 w-4" />
+            Agregar ejercicio
+          </button>
+          <p className="mt-2 font-mono text-[10px] text-muted-foreground">
+            {availableCatalog.length} disponibles · {entries.length} agregados
+          </p>
+          <ExerciseChooser
+            open={chooserOpen}
+            catalog={availableCatalog}
+            value={0}
+            onSelect={(id) => {
+              const ex = catalog.find((c) => c.id === id)
               if (ex) addFreeExercise(ex)
             }}
-            className="w-full rounded-md border border-border bg-card px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30"
-          >
-            <option value="">Seleccionar ejercicio…</option>
-            {availableCatalog.map((ex) => (
-              <option key={ex.id} value={ex.id}>
-                {ex.name}
-                {ex.muscle_group ? ` · ${ex.muscle_group}` : ""}
-              </option>
-            ))}
-          </select>
+            onClose={() => setChooserOpen(false)}
+          />
         </div>
       ) : null}
 
@@ -254,6 +282,8 @@ export function WorkoutSession() {
               entry={entry}
               onChange={onChangeEntry}
               onRemove={removeEntry}
+              restSeconds={restMap.get(entry.exercise_id) ?? 60}
+              onStartRest={(sec) => setRestSeconds(sec)}
             />
           ))}
         </div>
@@ -265,6 +295,16 @@ export function WorkoutSession() {
               ? "Agregá ejercicios para registrar tus series"
               : "Elegí un día para cargar sus ejercicios"}
           </p>
+          {isFree ? (
+            <button
+              type="button"
+              onClick={() => setChooserOpen(true)}
+              className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-md border border-primary bg-primary/10 px-4 py-2 font-sans text-xs font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/20"
+            >
+              <Plus className="h-4 w-4" />
+              Elegir ejercicio
+            </button>
+          ) : null}
         </div>
       )}
 
@@ -283,10 +323,10 @@ export function WorkoutSession() {
         />
       </div>
 
-      <div className="mt-6 flex justify-end">
+      <div className="mt-6 flex justify-end pb-16">
         <button
           onClick={() => void handleSave()}
-          disabled={saveWorkout.isPending || entries.length === 0}
+          disabled={saveWorkout.isPending || !hasRealSet}
           className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-6 py-3 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saveWorkout.isPending ? (
@@ -297,6 +337,7 @@ export function WorkoutSession() {
           Terminar entrenamiento
         </button>
       </div>
+      <RestTimerBar seconds={restSeconds} onClose={() => setRestSeconds(null)} onDone={() => setRestSeconds(null)} />
     </div>
   )
 }

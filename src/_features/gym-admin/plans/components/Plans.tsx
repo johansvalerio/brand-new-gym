@@ -16,7 +16,7 @@ import { PlansCards } from "./plans-card"
 import { PlansTable } from "./plans-table"
 import { PlanFormDialog, type PlanFormPayload } from "./plan-form-dialog"
 import { PlanConfirmDeleteDialog } from "./plan-confirm-delete-dialog"
-import { slugify } from "./plans-utils"
+import { planSlug } from "./plans-utils"
 
 export function Plans() {
   const { isAdmin, loading: authLoading } = useAuthSession()
@@ -59,7 +59,7 @@ export function Plans() {
     } else {
       await createPlan.mutateAsync({
         ...dto,
-        slug: slugify(dto.name),
+        slug: planSlug(dto.name),
       })
     }
     setFormOpen(false)

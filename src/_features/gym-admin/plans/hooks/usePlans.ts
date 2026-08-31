@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/database.types"
+import { planFormSchema } from "../../lib/plan.schema"
 
 export type PlanRow = Tables<"plans">
 export type CreatePlanDto = TablesInsert<"plans">
@@ -20,7 +21,7 @@ async function fetchPlans(): Promise<PlanRow[]> {
     .select("*")
     .order("duration_days", { ascending: true })
 
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return data ?? []
 }
 
@@ -36,6 +37,8 @@ export function useCreatePlan() {
 
   return useMutation({
     mutationFn: async (dto: CreatePlanDto): Promise<PlanRow> => {
+      const parsed = planFormSchema.safeParse({ name: dto.name as string, duration_days: dto.duration_days as number, price: dto.price as number, is_active: (dto.is_active as boolean) ?? true })
+      if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Datos inválidos")
       const supabase = createClient()
       const { data, error } = await supabase
         .from("plans")
@@ -43,7 +46,7 @@ export function useCreatePlan() {
         .select("*")
         .single()
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
       return data as PlanRow
     },
     onSuccess: (plan) => {
@@ -77,7 +80,7 @@ export function useUpdatePlan() {
         .select("*")
         .single()
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
       return data as PlanRow
     },
     onSuccess: (plan) => {
@@ -100,7 +103,7 @@ export function useDeletePlan() {
       const supabase = createClient()
       const { error } = await supabase.from("plans").delete().eq("id", plan.id)
 
-      if (error) throw error
+      if (error) throw new Error(error.message)
     },
     onMutate: async (plan) => {
       await queryClient.cancelQueries({ queryKey: plansKeys.all })

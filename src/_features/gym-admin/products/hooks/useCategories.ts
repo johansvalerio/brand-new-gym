@@ -17,7 +17,7 @@ async function fetchCategories(): Promise<CategoryRow[]> {
     .select("*")
     .order("name", { ascending: true })
 
-  if (error) throw error
+  if (error) throw new Error(error.message)
   return data ?? []
 }
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { X, User } from "lucide-react"
 import { useBodyScrollLock } from "@/_features/shared/hooks/useBodyScrollLock"
 import type { Tables } from "@/types/database.types"
+import { userFormSchema, zodToFormErrors } from "../../lib/user.schema"
 
 export type UserFormPayload = {
   first_name: string
@@ -49,39 +50,10 @@ const emptyForm: FormState = {
   gender: null,
 }
 
-export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: UserFormDialogProps) {
+export function UserFormDialog(props: UserFormDialogProps) {
+  const { open, user, coaches = [], onClose, onSubmit } = props
   useBodyScrollLock(open)
-  const isEdit = Boolean(user)
-  const [form, setForm] = useState<FormState>(emptyForm)
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const firstFieldRef = useRef<HTMLInputElement>(null)
 
-  // Sync form with the user being edited whenever the dialog opens.
-  useEffect(() => {
-    if (!open) return
-    setErrors({})
-    if (user) {
-      setForm({
-        first_name: user.first_name ?? "",
-        last_name: user.last_name ?? "",
-        email: user.email ?? "",
-        phone: user.phone ?? "",
-        role: user.role ?? "user",
-        coach_id: user.coach_id ?? "",
-        membership_status: user.membership_status ?? "active",
-        avatar: user.avatar ?? "",
-        gender: user.gender ?? null,
-      })
-    } else {
-      setForm(emptyForm)
-    }
-    // Focus the first field for keyboard users.
-    const t = setTimeout(() => firstFieldRef.current?.focus(), 50)
-    return () => clearTimeout(t)
-  }, [open, user])
-
-  // Close on Escape.
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -93,25 +65,60 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
 
   if (!open) return null
 
-  const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
-    setForm((prev) => ({ ...prev, [key]: value }))
+  return <UserFormInner key={user?.id ?? "new"} user={user ?? null} coaches={coaches} onClose={onClose} onSubmit={onSubmit} />
+}
+
+function UserFormInner({ user, coaches = [], onClose, onSubmit }: Omit<UserFormDialogProps, "open"> & { user: Tables<"users"> | null }) {
+  const isEdit = Boolean(user)
+  const [form, setForm] = useState<FormState>(() =>
+    user
+      ? {
+          first_name: user.first_name ?? "",
+          last_name: user.last_name ?? "",
+          email: user.email ?? "",
+          phone: user.phone ?? "",
+          role: user.role ?? "user",
+          coach_id: user.coach_id ?? "",
+          membership_status: user.membership_status ?? "active",
+          avatar: user.avatar ?? "",
+          gender: user.gender ?? null,
+        }
+      : emptyForm,
+  )
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const firstFieldRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const t = setTimeout(() => firstFieldRef.current?.focus(), 50)
+    return () => clearTimeout(t)
+  }, [])
+
+  const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((prev) => ({ ...prev, [key]: value }))
 
   const validate = () => {
-    const next: Record<string, string> = {}
-
-    if (!form.first_name.trim()) next.first_name = "El nombre es obligatorio."
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      next.email = "Ingresa un email válido."
+    const parsed = userFormSchema.safeParse({
+      first_name: form.first_name,
+      last_name: form.last_name || null,
+      email: form.email,
+      phone: form.phone || null,
+      avatar: form.avatar || null,
+      role: form.role,
+      coach_id: form.coach_id || null,
+      membership_status: form.membership_status,
+      gender: form.gender,
+    })
+    if (!parsed.success) {
+      setErrors(zodToFormErrors(parsed.error))
+      return false
     }
-
-    setErrors(next)
-    return Object.keys(next).length === 0
+    setErrors({})
+    return true
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
-
     setIsSubmitting(true)
     try {
       await onSubmit({
@@ -131,24 +138,10 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="user-form-title"
-    >
-      {/* Overlay */}
-      <button
-        aria-label="Cerrar"
-        onClick={onClose}
-        className="absolute inset-0 cursor-pointer bg-black/70 backdrop-blur-sm"
-      />
-
-      {/* Panel */}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="user-form-title">
+      <button aria-label="Cerrar" onClick={onClose} className="absolute inset-0 cursor-pointer bg-black/70 backdrop-blur-sm" />
       <div className="relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
-        {/* accent glow */}
         <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
-
         <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary">
@@ -158,106 +151,46 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
               <h2 id="user-form-title" className="font-sans text-lg font-black uppercase tracking-tight text-foreground">
                 {isEdit ? "Editar miembro" : "Nuevo miembro"}
               </h2>
-              <p className="text-xs text-muted-foreground">
-                {isEdit ? `ID #${user?.id}` : "Agregar al gimnasio"}
-              </p>
+              <p className="text-xs text-muted-foreground">{isEdit ? `ID #${user?.id}` : "Agregar al gimnasio"}</p>
             </div>
           </div>
-
-          <button
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:h-8 sm:w-8"
-          >
+          <button onClick={onClose} aria-label="Cerrar" className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:h-8 sm:w-8">
             <X className="h-4 w-4" />
           </button>
         </div>
-
         <form onSubmit={handleSubmit} className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Nombre" htmlFor="first_name" error={errors.first_name}>
-              <input
-                ref={firstFieldRef}
-                id="first_name"
-                value={form.first_name}
-                onChange={(e) => set("first_name", e.target.value)}
-                placeholder="Carlos"
-                className={inputCls(errors.first_name)}
-              />
+              <input ref={firstFieldRef} id="first_name" value={form.first_name} onChange={(e) => set("first_name", e.target.value)} placeholder="Carlos" className={inputCls(errors.first_name)} />
             </Field>
-
             <Field label="Apellido (opcional)" htmlFor="last_name" error={errors.last_name}>
-              <input
-                id="last_name"
-                value={form.last_name}
-                onChange={(e) => set("last_name", e.target.value)}
-                placeholder="Ramírez"
-                className={inputCls(errors.last_name)}
-              />
+              <input id="last_name" value={form.last_name} onChange={(e) => set("last_name", e.target.value)} placeholder="Ramírez" className={inputCls(errors.last_name)} />
             </Field>
           </div>
-
           <Field label="Email" htmlFor="email" error={errors.email}>
-            <input
-              id="email"
-              type="email"
-              value={form.email}
-              onChange={(e) => set("email", e.target.value)}
-              placeholder="carlos@email.com"
-              className={inputCls(errors.email)}
-            />
+            <input id="email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="carlos@email.com" className={inputCls(errors.email)} />
           </Field>
-
           <Field label="Teléfono" htmlFor="phone">
-            <input
-              id="phone"
-              value={form.phone}
-              onChange={(e) => set("phone", e.target.value)}
-              placeholder="+506 8888-1111"
-              className={inputCls()}
-            />
+            <input id="phone" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+506 8888-1111" className={inputCls()} />
           </Field>
-
           <Field label="Género" htmlFor="gender">
-            <select
-              id="gender"
-              value={form.gender ?? ""}
-              onChange={(e) =>
-                set(
-                  "gender",
-                  e.target.value === "" ? null : (e.target.value as UserFormPayload["gender"]),
-                )
-              }
-              className={inputCls()}
-            >
+            <select id="gender" value={form.gender ?? ""} onChange={(e) => set("gender", e.target.value === "" ? null : (e.target.value as UserFormPayload["gender"]))} className={inputCls()}>
               <option value="">Sin especificar</option>
               <option value="masculino">Masculino</option>
               <option value="femenino">Femenino</option>
               <option value="otro">Otro</option>
             </select>
           </Field>
-
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Field label="Rol" htmlFor="role">
-              <select
-                id="role"
-                value={form.role}
-                onChange={(e) => set("role", e.target.value as UserFormPayload["role"])}
-                className={inputCls()}
-              >
+              <select id="role" value={form.role} onChange={(e) => set("role", e.target.value as UserFormPayload["role"])} className={inputCls()}>
                 <option value="user">Usuario</option>
                 <option value="coach">Coach</option>
                 <option value="admin">Admin</option>
               </select>
             </Field>
-
             <Field label="Estado" htmlFor="membership_status">
-              <select
-                id="membership_status"
-                value={form.membership_status}
-                onChange={(e) => set("membership_status", e.target.value as UserFormPayload["membership_status"])}
-                className={inputCls()}
-              >
+              <select id="membership_status" value={form.membership_status} onChange={(e) => set("membership_status", e.target.value as UserFormPayload["membership_status"])} className={inputCls()}>
                 <option value="active">Activo</option>
                 <option value="inactive">Inactivo</option>
                 <option value="pending">Pendiente</option>
@@ -265,14 +198,8 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
               </select>
             </Field>
           </div>
-
           <Field label="Coach asignado (opcional)" htmlFor="coach_id">
-            <select
-              id="coach_id"
-              value={form.coach_id}
-              onChange={(e) => set("coach_id", e.target.value)}
-              className={inputCls()}
-            >
+            <select id="coach_id" value={form.coach_id} onChange={(e) => set("coach_id", e.target.value)} className={inputCls()}>
               <option value="">Sin coach</option>
               {coaches.map((coach) => {
                 const name = `${coach.first_name ?? ""} ${coach.last_name ?? ""}`.trim() || "Coach"
@@ -284,32 +211,15 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
               })}
             </select>
           </Field>
-
           <Field label="URL de avatar (opcional)" htmlFor="avatar">
-            <input
-              id="avatar"
-              value={form.avatar}
-              onChange={(e) => set("avatar", e.target.value)}
-              placeholder="https://..."
-              className={inputCls()}
-            />
+            <input id="avatar" value={form.avatar} onChange={(e) => set("avatar", e.target.value)} placeholder="https://..." className={inputCls()} />
           </Field>
-
           <div className="sticky bottom-0 -mx-4 mt-2 flex items-center justify-end gap-3 border-t border-border bg-card px-4 py-3 sm:-mx-6 sm:px-6">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed rounded-none border border-border px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-foreground transition-colors hover:bg-secondary"
-            >
+            <button type="button" onClick={onClose} disabled={isSubmitting} className="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed rounded-none border border-border px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-foreground transition-colors hover:bg-secondary">
               Cancelar
             </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed items-center gap-2 rounded-none bg-primary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
-            >
-              {isSubmitting ? "Guardando..." : (isEdit ? "Guardar cambios" : "Crear miembro")}
+            <button type="submit" disabled={isSubmitting} className="flex cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed items-center gap-2 rounded-none bg-primary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90">
+              {isSubmitting ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear miembro"}
             </button>
           </div>
         </form>
@@ -318,22 +228,10 @@ export function UserFormDialog({ open, user, coaches = [], onClose, onSubmit }: 
   )
 }
 
-function Field({
-  label,
-  htmlFor,
-  error,
-  children,
-}: {
-  label: string
-  htmlFor: string
-  error?: string
-  children: React.ReactNode
-}) {
+function Field({ label, htmlFor, error, children }: { label: string; htmlFor: string; error?: string; children: React.ReactNode }) {
   return (
     <label htmlFor={htmlFor} className="flex flex-col gap-2 text-sm text-foreground">
-      <span className="font-sans text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        {label}
-      </span>
+      <span className="font-sans text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
       {children}
       {error ? <span className="text-xs text-destructive">{error}</span> : null}
     </label>
@@ -341,8 +239,5 @@ function Field({
 }
 
 function inputCls(error?: string) {
-  return [
-    "w-full rounded-md border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60",
-    error ? "border-destructive focus:border-destructive" : "border-border focus:border-primary focus:ring-2 focus:ring-primary/30",
-  ].join(" ")
+  return ["w-full rounded-md border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60", error ? "border-destructive focus:border-destructive" : "border-border focus:border-primary focus:ring-2 focus:ring-primary/30"].join(" ")
 }
