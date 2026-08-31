@@ -94,14 +94,16 @@ export default function Home() {
       <main className="min-h-screen bg-background text-foreground overflow-x-clip selection:bg-primary/30">
         <Hero5 />
 
-        {/* Cortina: el contenido sube tapando el hero sticky */}
-        <div className="relative z-10 rounded-t-[2.5rem] border-t border-border/60 bg-background">
+        {/* Cortina: el contenido sube tapando el hero sticky. Sin bg acá:
+            el redondeo vive en StoryText2 para que las esquinas dejen
+            ver el hero detrás (mismo lenguaje que la cortina del FinalCTA) */}
+        <div className="relative z-10">
           <StoryText2 />
           <FanDeckCards2 />
           <DifferencesSection />
 
           {/* Aire después de la secuencia pineada (no afecta la geometría del pin) */}
-          <div aria-hidden="true" className="h-16 md:h-24" />
+          <div aria-hidden="true" className="h-16 md:h-24 bg-background" />
 
           <Gallery />
           <CoachesSection />
@@ -110,7 +112,7 @@ export default function Home() {
 
           {/* Pausa antes de la cortina: el mapa sticky se queda fijo mientras
               el usuario recorre este tramo extra */}
-          <div aria-hidden="true" className="hidden lg:block h-[28vh]" />
+          <div aria-hidden="true" className="hidden lg:block h-[28vh] bg-background" />
 
           {/* Cortina final: el muro verde del CTA sube tapando el mapa sticky.
               Sin bg en el wrapper para que las esquinas del rounded-t

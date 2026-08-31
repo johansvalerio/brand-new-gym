@@ -219,3 +219,76 @@
     transition: none;
   }
 }
+
+/* --- Hover Glitch Effect --- */
+@keyframes text-glitch-main {
+  0% { transform: translate(0, 0) skewX(0); opacity: 1; }
+  5% { transform: translate(4px, 0) skewX(-8deg); opacity: 0.7; }
+  10% { transform: translate(0, 0) skewX(0); opacity: 1; }
+  15% { transform: translate(0, 0) skewX(-4deg); opacity: 1; }
+  20% { transform: translate(0, 0) skewX(0); opacity: 1; }
+  100% { transform: translate(0, 0) skewX(0); opacity: 1; }
+}
+
+@keyframes text-glitch-a {
+  0% { opacity: 0; transform: translate(0, 0); }
+  5% { opacity: 1; transform: translate(-8px, 0); }
+  10% { opacity: 0; transform: translate(0, 0); }
+  15% { opacity: 1; transform: translate(6px, 0); }
+  20% { opacity: 0; transform: translate(0, 0); }
+  100% { opacity: 0; transform: translate(0, 0); }
+}
+
+@keyframes text-glitch-b {
+  0% { opacity: 0; transform: translate(0, 0); }
+  5% { opacity: 1; transform: translate(8px, 0); }
+  10% { opacity: 0; transform: translate(0, 0); }
+  15% { opacity: 1; transform: translate(-6px, 0); }
+  20% { opacity: 0; transform: translate(0, 0); }
+  100% { opacity: 0; transform: translate(0, 0); }
+}
+
+.glitch-wrapper:hover .glitch-main {
+  animation: text-glitch-main 1.2s infinite;
+}
+
+.glitch-wrapper:hover .glitch-a {
+  animation: text-glitch-a 1.2s infinite;
+}
+
+.glitch-wrapper:hover .glitch-b {
+  animation: text-glitch-b 1.2s infinite;
+}
+
+/* Variante ambiental: misma ráfaga pero ciclo más pausado (~2.4s, como los stats del landing) */
+@media (prefers-reduced-motion: no-preference) {
+  .glitch-ambient .glitch-main {
+    animation: text-glitch-main 2.4s infinite;
+  }
+
+  .glitch-ambient .glitch-a {
+    animation: text-glitch-a 2.4s infinite;
+  }
+
+  .glitch-ambient .glitch-b {
+    animation: text-glitch-b 2.4s infinite;
+  }
+}
+
+.glitch-a {
+  color: var(--primary, #96d906);
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.glitch-b {
+  color: #ffffff;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+}

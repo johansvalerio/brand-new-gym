@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   User,
   CopyPlus,
+  Dumbbell,
 } from "lucide-react"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import {
@@ -226,17 +227,27 @@ function SharedRoutineCard({
   const ProvenanceIcon = PROVENANCE_META[provenance].icon
 
   return (
-    <article className="group relative overflow-hidden rounded-lg border border-border bg-card transition-colors duration-300 hover:border-primary/40">
-      <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
+    <article
+      className={`group relative overflow-hidden rounded-lg border transition-colors duration-300 ${
+        rank === 1
+          ? "border-primary/40 bg-gradient-to-b from-primary/[0.07] to-card shadow-[0_0_40px_-12px_rgba(150,217,6,0.28)]"
+          : "border-border bg-card hover:border-primary/40"
+      }`}
+    >
+      <div
+        className={`pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 blur-3xl transition-opacity duration-500 ${
+          rank === 1 ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+        }`}
+      />
 
       <header className="relative flex items-start gap-3 border-b border-border/60 p-4 sm:gap-4 sm:p-6">
-        {/* Ranking */}
+        {/* Ranking — podio: #1 sólido con glow, #2/#3 outline, resto muted */}
         <span
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md border font-sans text-base font-black sm:h-10 sm:w-10 ${
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border font-sans text-base font-black tabular-nums sm:h-10 sm:w-10 ${
             rank === 1
-              ? "border-primary bg-primary/20 text-primary"
+              ? "border-transparent bg-primary text-primary-foreground shadow-[0_0_16px_rgba(150,217,6,0.45)]"
               : rank <= 3
-                ? "border-primary/50 bg-primary/15 text-primary"
+                ? "border-primary/50 bg-primary/10 text-primary"
                 : "border-border bg-secondary text-muted-foreground"
           }`}
           aria-label={`Posición ${rank}`}
@@ -244,7 +255,7 @@ function SharedRoutineCard({
           {rank}
         </span>
 
-        <div className="min-w-0 flex-1 pr-14 sm:pr-0">
+        <div className="min-w-0 flex-1">
           {/* Autor: avatar + nombre + procedencia + fecha */}
           <div className="flex items-center gap-3">
             <AuthorAvatar author={routine.author} className="h-9 w-9 sm:h-10 sm:w-10" />
@@ -289,8 +300,8 @@ function SharedRoutineCard({
           </div>
         </div>
 
-        {/* Like estilo red social: flame relleno si ya voté. En móvil flota en
-            la esquina para que el header nunca dependa del ancho disponible. */}
+        {/* Like estilo red social: rail vertical a la derecha en todos los
+            tamaños — flame relleno si ya voté, conteo grande tabular. */}
         <button
           type="button"
           onClick={onVote}
@@ -306,21 +317,21 @@ function SharedRoutineCard({
           }
           aria-pressed={hasVoted}
           aria-label={hasVoted ? "Quitar voto" : "Votar esta rutina"}
-          className={`absolute right-4 top-4 flex shrink-0 cursor-pointer flex-col items-center gap-1 rounded-md border px-3 py-2 transition-all duration-200 disabled:cursor-not-allowed sm:static sm:px-3.5 ${
+          className={`flex w-14 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 self-center rounded-xl border py-2.5 transition-all duration-200 active:scale-90 disabled:cursor-not-allowed sm:w-16 ${
             hasVoted
               ? "border-primary/60 bg-primary/15"
               : "border-border bg-secondary/50 hover:border-primary/50 hover:bg-primary/10"
           } ${!canVote ? "opacity-70" : ""}`}
         >
           <Flame
-            className={`h-4 w-4 transition-colors duration-200 sm:h-5 sm:w-5 ${
+            className={`h-5 w-5 transition-colors duration-200 ${
               hasVoted
                 ? "fill-primary text-primary"
                 : "text-muted-foreground group-hover:text-primary/60"
             }`}
           />
           <span
-            className={`font-sans text-sm font-black tabular-nums ${
+            className={`font-sans text-base font-black leading-none tabular-nums sm:text-lg ${
               hasVoted ? "text-primary" : "text-foreground"
             }`}
           >
@@ -394,17 +405,19 @@ function TopCommunityAside({ routines }: { routines: SharedRoutine[] }) {
   return (
     <aside className="h-fit space-y-4 lg:sticky lg:top-8">
       {/* Stats del ranking */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="rounded-lg border border-border bg-card px-4 py-3">
-          <p className="font-sans text-2xl font-black leading-none text-foreground tabular-nums">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-lg border border-border bg-card px-4 py-3.5">
+          <Dumbbell className="h-4 w-4 text-muted-foreground" />
+          <p className="mt-2.5 font-sans text-2xl font-black leading-none text-foreground tabular-nums">
             {routines.length}
           </p>
           <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             Rutinas
           </p>
         </div>
-        <div className="rounded-lg border border-border bg-card px-4 py-3">
-          <p className="font-sans text-2xl font-black leading-none text-primary tabular-nums">
+        <div className="rounded-lg border border-border bg-card px-4 py-3.5">
+          <Flame className="h-4 w-4 fill-primary text-primary" />
+          <p className="mt-2.5 font-sans text-2xl font-black leading-none text-primary tabular-nums">
             {totalVotes}
           </p>
           <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -431,9 +444,13 @@ function TopCommunityAside({ routines }: { routines: SharedRoutine[] }) {
             {top.map((entry, i) => (
               <li
                 key={entry.id}
-                className={`flex items-center gap-3 px-4 py-3 ${
+                className={`flex items-center gap-3 px-4 py-3 transition-colors ${
                   i < top.length - 1 ? "border-b border-border/40" : ""
-                } ${i === 0 ? "bg-primary/5" : ""}`}
+                } ${
+                  i === 0
+                    ? "bg-primary/5 hover:bg-primary/10"
+                    : "hover:bg-secondary/40"
+                }`}
               >
                 <span
                   className={`w-4 shrink-0 text-center font-sans text-xs font-black ${

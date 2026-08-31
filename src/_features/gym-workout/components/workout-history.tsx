@@ -136,12 +136,14 @@ export function WorkoutHistory() {
           <div className="mt-4 flex items-end gap-1.5">
             {stats.volumeByDay.map((d) => {
               const max = Math.max(...stats.volumeByDay.map((x) => x.volume), 1)
-              const h = Math.max(6, Math.round((d.volume / max) * 40))
+              // Días sin volumen = marquita gris en la base, no pastilla verde
+              const isZero = d.volume <= 0
+              const h = isZero ? 2 : Math.max(8, Math.round((d.volume / max) * 40))
               const isToday = d.date === new Date().toISOString().slice(0, 10)
               return (
                 <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
                   <div
-                    className={`w-full rounded-full transition-all ${d.volume > 0 ? (isToday ? "bg-primary shadow-[0_0_8px_rgba(150,217,6,0.6)]" : "bg-primary/70") : "bg-muted"}`}
+                    className={`w-full rounded-t-sm transition-all ${isZero ? "bg-border/60" : (isToday ? "bg-primary shadow-[0_0_8px_rgba(150,217,6,0.6)]" : "bg-primary/70")}`}
                     style={{ height: h }}
                     title={`${d.date}: ${formatKg(d.volume)}`}
                   />

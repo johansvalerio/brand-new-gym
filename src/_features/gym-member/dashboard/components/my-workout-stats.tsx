@@ -98,12 +98,14 @@ export function MyWorkoutStats() {
         </p>
         <div className="flex items-end gap-1.5">
           {stats.volumeByDay.map((d) => {
-            const h = maxVol ? Math.max(4, Math.round((d.volume / maxVol) * 36)) : 4
+            // Días sin volumen = marquita gris pegada a la base (nada de píldora verde)
+            const isZero = d.volume <= 0
+            const h = isZero ? 2 : Math.max(6, Math.round((d.volume / maxVol) * 36))
             const isToday = d.date === new Date().toISOString().slice(0, 10)
             return (
               <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
                 <div
-                  className={`w-full rounded-sm transition-colors ${d.volume > 0 ? (isToday ? "bg-primary" : "bg-primary/60") : "bg-muted"}`}
+                  className={`w-full rounded-t-sm transition-colors ${isZero ? "bg-border/60" : (isToday ? "bg-primary" : "bg-primary/60")}`}
                   style={{ height: h }}
                   title={`${d.date}: ${formatKg(d.volume)}`}
                 />

@@ -26,6 +26,23 @@ export function StoryText2() {
       const mm = gsap.matchMedia();
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
+        /* Las esquinas redondeadas solo acompañan la subida de la cortina:
+           llegando al pin se cuadran y la sección queda full-bleed en negro.
+           Al volver para atrás el scrub restaura el redondeo. */
+        gsap.to(containerRef.current, {
+          borderRadius: "0rem",
+          borderColor: "transparent",
+          ease: "none",
+          scrollTrigger: {
+            trigger: containerRef.current,
+            // Solo el último ~10% de la subida: las esquinas viven casi todo
+            // el recorrido y se cuadran justo al llegar al pin
+            start: "top 10%",
+            end: "top top",
+            scrub: true,
+          },
+        });
+
         const phrases = gsap.utils.toArray<HTMLElement>(".phrase");
         const totalPhrases = phrases.length;
 
@@ -134,7 +151,7 @@ export function StoryText2() {
   );
 
   return (
-    <section ref={containerRef} className="relative bg-black overflow-hidden">
+    <section ref={containerRef} className="relative bg-black overflow-hidden rounded-t-[2.5rem] border-t border-border/60">
       <div className="h-screen flex flex-col items-center justify-center relative">
         <ConstellationBackground />
 

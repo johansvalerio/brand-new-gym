@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { PageTransitionOverlay } from "@/_features/shared/components/PageTransitionOverlay";
-import { QueryProvider } from "@/components/providers/query-provider";
-import { AppToaster } from "@/components/providers/app-toaster";
-import { AuthProvider } from "@/components/providers/auth-provider";
+import { QueryProvider } from "@/app/providers/query-provider";
+import { AppToaster } from "@/app/providers/app-toaster";
+import { AuthProvider } from "@/app/providers/auth-provider";
 import { FloatingNav } from "@/_features/shared/components/FloatingNav";
-import { AppShell } from "@/components/layout/app-sidebar";
+import { AppShell } from "@/_features/shared/layout/app-sidebar";
 import { createClient } from "@/lib/supabase/server";
 
 const geistSans = Geist({

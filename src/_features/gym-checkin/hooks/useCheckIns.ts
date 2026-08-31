@@ -11,6 +11,9 @@ export const checkInKeys = {
   all: (userId: string) => ["check-ins", userId] as const,
 }
 
+/** Días que merecen celebración: el toast de check-in cambia en estos hitos */
+const STREAK_MILESTONES = new Set([7, 14, 30, 60, 100])
+
 async function fetchCheckIns(userId: string): Promise<CheckInRow[]> {
   const supabase = createClient()
   const { data, error } = await supabase
@@ -47,7 +50,13 @@ export function useCreateCheckIn() {
       return data as CheckInRow
     },
     onSuccess: (row, userId) => {
-      toast.success("Entrenamiento registrado")
+      const rows = queryClient.getQueryData<CheckInRow[]>(checkInKeys.all(userId)) ?? []
+      const { count } = computeStreak([row, ...rows], new Date())
+      if (STREAK_MILESTONES.has(count)) {
+        toast.success(`¡Racha de ${count} días!`, { description: "No la rompas ahora." })
+      } else {
+        toast.success("Entrenamiento registrado")
+      }
       queryClient.invalidateQueries({ queryKey: checkInKeys.all(userId) })
     },
     onError: (error) => {
@@ -92,6 +101,60 @@ export function computeStreak(
   }
 
   return { count, lastDate }
+}
+
+/**
+ * Mayor racha histórica (para "Récord: X"). Puro.
+ */
+export function computeBestStreak(rows: Pick<CheckInRow, "check_in_date">[]): number {
+  const days = [...new Set(rows.map((r) => r.check_in_date.slice(0, 10)))].sort()
+  let best = 0
+  let run = 0
+  let prev: string | null = null
+  for (const key of days) {
+    if (prev) {
+      const next = new Date(prev)
+      next.setDate(next.getDate() + 1)
+      run = toKey(next) === key ? run + 1 : 1
+    } else {
+      run = 1
+    }
+    if (run > best) best = run
+    prev = key
+  }
+  return best
+}
+
+export type WeekDay = {
+  key: string
+  letter: string
+  trained: boolean
+  isToday: boolean
+}
+
+/** Últimos 7 días terminando en hoy, para la tira de puntitos de la card. */
+export function buildWeek(
+  rows: Pick<CheckInRow, "check_in_date">[],
+  today: Date,
+): WeekDay[] {
+  const days = new Set(rows.map((r) => r.check_in_date.slice(0, 10)))
+  const todayKey = toKey(today)
+  const out: WeekDay[] = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - i)
+    const key = toKey(d)
+    out.push({
+      key,
+      letter: d
+        .toLocaleDateString("es-CR", { weekday: "narrow" })
+        .replace(".", "")
+        .toUpperCase(),
+      trained: days.has(key),
+      isToday: key === todayKey,
+    })
+  }
+  return out
 }
 
 function toKey(d: Date): string {
