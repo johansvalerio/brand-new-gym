@@ -4,6 +4,7 @@ import FanDeckCards2 from "@/_features/gym-landing/components/FanDeckCards2";
 import { CoachesSection } from "@/_features/gym-landing/components/CoachesSection";
 import { MembershipSection } from "@/_features/gym-landing/components/MembershipSection";
 import { LocationHours } from "@/_features/gym-landing/components/LocationHours";
+import { FaqSection } from "@/_features/gym-landing/components/FaqSection";
 import { FinalCTA } from "@/_features/gym-landing/components/FinalCTA";
 import { Footer } from "@/_features/gym-landing/components/Footer";
 import { Hero5 } from "@/_features/gym-landing/components/Hero5";
@@ -109,6 +110,7 @@ export default function Home() {
           <CoachesSection />
           <MembershipSection />
           <LocationHours />
+          <FaqSection />
 
           {/* Pausa antes de la cortina: el mapa sticky se queda fijo mientras
               el usuario recorre este tramo extra */}
