@@ -8,7 +8,7 @@ import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { useUserNutrition, useCreateNutrition, useDeleteNutrition, useUpdateNutrition, type NutritionPlanRow } from "../hooks/useNutritionPlans"
 import { buildViewer, canCreateNutritionFor, canEditNutrition } from "../hooks/nutrition-helpers"
 import { Calendar } from "@/_features/shared/components/Calendar"
-import { NutritionFormDialog } from "./nutrition-form-dialog"
+import { NutritionFormDialog } from "./nutrition-form/dialog"
 import { ConfirmDeleteNutritionDialog } from "./confirm-delete-nutrition-dialog"
 
 type ProfileRow = Pick<Tables<"users">, "id" | "first_name" | "last_name" | "role" | "coach_id">
@@ -50,14 +50,15 @@ export function NutritionPlans({ profile }: { profile: ProfileRow }) {
     setFormOpen(true)
   }
 
-  const handleSubmit = async (payload: { name: string; goal: string; kcal_target: number | null; protein_target: number | null; notes: string | null }) => {
+  const handleSubmit = async (payload: { metadata: import("./nutrition-form/nutrition-form-types").NutritionFormPayload; days: import("./nutrition-form/nutrition-form-types").DayDraft[] }) => {
     if (editing) {
-      await updatePlan.mutateAsync({ id: editing.id, dto: payload as Tables<"nutrition_plans"> })
+      await updatePlan.mutateAsync({ id: editing.id, dto: payload.metadata as unknown as Record<string, unknown> })
+      // TODO: persist days/meals diff (update nutrition_days/meals) — por ahora solo metadata
     } else {
       if (!sessionProfile?.id) return
       await createPlan.mutateAsync({
-        metadata: payload as never,
-        days: [{ focus: "Dieta base", meals: [] }],
+        metadata: payload.metadata as never,
+        days: payload.days.map((d) => ({ focus: d.focus, meals: d.meals.map((m) => ({ food_id: m.food_id, grams: m.grams, meal: m.meal })) })),
         targetUserId: profile.id,
         authorId: sessionProfile.id,
       })
