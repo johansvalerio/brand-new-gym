@@ -1,28 +1,17 @@
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground";
-import { NutritionPlans } from "@/_features/gym-nutrition/components/NutritionPlans";
-import { createClient } from "@/lib/supabase/server";
+import { NutritionClient } from "./NutritionClient";
 
 export const metadata = {
   title: "Nutrición | Gymulate",
   description: "Planes de nutrición con comidas, macros y ficha técnica — comparte tus recetas con la comunidad.",
 };
 
-export default async function NutritionPage() {
+export default function NutritionPage() {
   const breadcrumbItems = [
     { name: "Inicio", item: "https://gymulate.vercel.app" },
     { name: "Nutrición", item: "https://gymulate.vercel.app/nutrition" },
   ];
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  let profile: { id: string; first_name: string | null; last_name: string | null; role: string | null; coach_id: string | null } | null = null;
-  if (user) {
-    const { data } = await supabase.from("users").select("id, first_name, last_name, role, coach_id").eq("auth_id", user.id).maybeSingle();
-    profile = data as typeof profile;
-  }
 
   return (
     <>
@@ -45,13 +34,7 @@ export default async function NutritionPage() {
             </p>
           </header>
 
-          {profile ? (
-            <NutritionPlans profile={profile as never} />
-          ) : (
-            <div className="rounded-lg border border-dashed border-border bg-card/50 px-6 py-12 text-center text-sm text-muted-foreground">
-              Inicia sesión para ver y crear planes.
-            </div>
-          )}
+          <NutritionClient />
         </div>
       </main>
     </>
