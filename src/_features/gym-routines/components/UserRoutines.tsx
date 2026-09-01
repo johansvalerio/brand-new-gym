@@ -10,7 +10,7 @@ import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
 import { useUserRoutines, type UserRoutine } from "../hooks/useUserRoutines"
 import { useCreateFullRoutine, useUpdateFullRoutine } from "../hooks/useFullRoutine"
 import { useDeleteRoutine, useUpdateRoutine } from "../hooks/useRoutines"
-import { buildViewer, canCreateRoutineFor, canEditRoutine, type RoutineRow } from "../hooks/routine-helpers"
+import { buildViewer, canCreateRoutineFor, canEditRoutine, dayLabel, type RoutineRow } from "../hooks/routine-helpers"
 import { RoutineFormDialog, type DayDraft } from "./routine-form-dialog"
 import { ConfirmDeleteRoutineDialog } from "./confirm-delete-routine-dialog"
 import { EmptyState } from "./user-routines/empty-state"
@@ -158,12 +158,16 @@ export function UserRoutines({ profile }: { profile: ProfileRow }) {
                 {entries.map(({ routine, day }) => (
                   <button
                     key={`${routine.id}-${day.id}`}
-                    onClick={() => canEditRoutine(routine, viewer) && openEdit(routine)}
+                    onClick={() => canEditRoutine(routine, viewer) && openEdit(routine as unknown as RoutineRow)}
                     className="w-full cursor-pointer rounded-md border border-border bg-card px-2 py-1.5 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 text-xs"
-                    title={`${routine.name} · ${day.focus}`}
+                    title={`${day.focus || dayLabel(day.day_index)} — ${routine.name}`}
                   >
-                    <p className="truncate font-sans text-[11px] font-bold uppercase tracking-wide text-foreground">{routine.name}</p>
-                    <p className="truncate font-mono text-[10px] text-muted-foreground">{day.focus} · {day.routine_exercises.length} ej.</p>
+                    <p className="truncate font-sans text-[11px] font-bold uppercase tracking-wide text-foreground">
+                      {day.focus?.trim() || dayLabel(day.day_index)}
+                    </p>
+                    <p className="truncate font-mono text-[10px] text-muted-foreground">
+                      {day.routine_exercises.length} ej. · <span className="text-[9px] uppercase">{routine.name}</span>
+                    </p>
                   </button>
                 ))}
               </div>
