@@ -176,6 +176,10 @@ opencode.json                 # MCP: supabase (project wknacbyqqpsvswjhwrbx), co
 
 `usePageTransition().navigate(href)` (`src/_features/shared/hooks/usePageTransition.ts`) con GSAP curtain `gsap-page-exit` + `TRANSITION_DURATION_MS+20`, no `router.push`. `FloatingNav` y `Breadcrumbs` usan este hook.
 
+**SEO Breadcrumbs (2026-09-01):** todas las `app/**/page.tsx` (`dashboard, products, plans, payments, routines, membership, workout/*, users, users/profile/[id], users/profile/[id]/routine`) renderizan `<BreadcrumbSchema items={[{name:"Inicio",item:"https://gymulate.vercel.app"},...]}>` `src/_features/shared/components/Breadcrumbs.tsx` JSON-LD `BreadcrumbList` para Google. Landing ya tenía `LocalBusiness` + `BreadcrumbSchema`.
+
+**Red offline (2026-09-01):** `src/lib/offline-queue.ts` `offline_product_sales` en `localStorage`; `useCreateSale` si `!navigator.onLine` → `queueSale()` + `toast info`; `useOfflineSalesSync` en `Products.tsx` escucha `online` y hace flush `INSERT pending` + `invalidateQueries`. `workout` mantiene `isOnline` + `syncMap offline` en `WorkoutSession.tsx:57` (B incremental offline, `localStorage` persistente para sets es siguiente paso).
+
 ---
 
 ## Routine Wizard — Flujo detallado

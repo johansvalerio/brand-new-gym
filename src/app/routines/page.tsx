@@ -1,4 +1,5 @@
 import { SharedRoutines } from "@/_features/gym-routines/components/SharedRoutines"
+import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground"
 
 export const metadata = {
@@ -8,8 +9,21 @@ export const metadata = {
 }
 
 export default function SharedRoutinesPage() {
+  const breadcrumbItems = [
+  {
+    "name": "Inicio",
+    "item": "https://gymulate.vercel.app"
+  },
+  {
+    "name": "Ranking",
+    "item": "https://gymulate.vercel.app/routines"
+  }
+];
+
  return (
- <main className="relative min-h-screen overflow-x-hidden bg-background py-16 text-foreground selection:bg-primary/30">
+    <>
+      <BreadcrumbSchema items={breadcrumbItems} />
+      <main className="relative min-h-screen overflow-x-hidden bg-background py-16 text-foreground selection:bg-primary/30">
  <div className="opacity-40">
  <ConstellationBackground />
  </div>
@@ -32,5 +46,6 @@ export default function SharedRoutinesPage() {
  <SharedRoutines />
  </div>
  </main>
- )
+    </>
+  )
 }

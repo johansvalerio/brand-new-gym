@@ -1,10 +1,12 @@
 "use client"
 
+import { useEffect } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import type { Tables } from "@/types/database.types"
 import { productKeys } from "./useProducts"
+import { queueSale, peekQueue, clearQueue } from "@/lib/offline-queue"
 
 export type ProductSaleRow = Tables<"product_sales"> & {
   buyer: { id: string; first_name: string | null; last_name: string | null; email: string | null } | null
@@ -120,6 +122,12 @@ export function useCreateSale() {
         throw new Error("Cantidad debe ser un entero mayor a 0.")
       }
       if (input.unitPrice < 0) throw new Error("Precio inválido.")
+      // Red offline: si no hay conexión, encola en localStorage (B incremental offline)
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        queueSale(input)
+        // Devuelve un stub para que onSuccess muestre toast offline y no falle
+        throw new Error("OFFLINE_QUEUED")
+      }
       const supabase = createClient()
       const { data, error } = await supabase
         .from("product_sales")
@@ -151,6 +159,12 @@ export function useCreateSale() {
       })
     },
     onError: (error) => {
+      if (error.message === "OFFLINE_QUEUED") {
+        toast.info("Sin conexión — solicitud guardada", {
+          description: "Se enviará automáticamente al reconectar.",
+        })
+        return
+      }
       toast.error("No se pudo registrar la solicitud", {
         description: error.message,
       })
@@ -159,6 +173,47 @@ export function useCreateSale() {
       queryClient.invalidateQueries({ queryKey: salesKeys.all })
     },
   })
+}
+
+export function useOfflineSalesSync() {
+  const queryClient = useQueryClient()
+  useEffect(() => {
+    const flush = async () => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) return
+      const queued = peekQueue()
+      if (queued.length === 0) return
+      const supabase = createClient()
+      let sent = 0
+      for (const q of queued) {
+        const { error } = await supabase.from("product_sales").insert({
+          product_id: q.productId,
+          buyer_id: q.buyerId,
+          sold_by: q.soldBy,
+          quantity: q.quantity,
+          unit_price: q.unitPrice,
+          total: q.unitPrice * q.quantity,
+          notes: q.notes ?? null,
+          status: "pending",
+        })
+        if (!error) sent++
+        else break
+      }
+      if (sent > 0) {
+        // conserva los no enviados
+        if (sent < queued.length) {
+          const remaining = queued.slice(sent)
+          if (typeof window !== "undefined") localStorage.setItem("offline_product_sales", JSON.stringify(remaining))
+        } else {
+          clearQueue()
+          toast.success(`Sincronizadas ${sent} solicitudes offline`)
+        }
+        queryClient.invalidateQueries({ queryKey: salesKeys.all })
+      }
+    }
+    window.addEventListener("online", flush)
+    flush()
+    return () => window.removeEventListener("online", flush)
+  }, [queryClient])
 }
 
 export function useDecideSale() {

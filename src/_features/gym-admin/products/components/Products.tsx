@@ -20,11 +20,12 @@ import { ProductsToolbar } from "./products-toolbar"
 import { ProductDetailModal } from "@/components/ui/product-detail-modal"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProductSalesTab } from "./product-sales-tab"
-import { useCreateSale } from "../hooks/useProductSales"
+import { useCreateSale, useOfflineSalesSync } from "../hooks/useProductSales"
 
 type ViewMode = "cards" | "table"
 
 export function Products() {
+  useOfflineSalesSync()
   const { data: products = [], isLoading } = useProducts()
   const { data: categories = [] } = useCategories()
   const createProduct = useCreateProduct()

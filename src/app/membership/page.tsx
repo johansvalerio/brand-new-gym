@@ -1,4 +1,5 @@
 import { MyMembership } from "@/_features/gym-admin/membership/components/MyMembership";
+import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground";
 
 export const metadata = {
@@ -8,8 +9,21 @@ export const metadata = {
 };
 
 export default function MyMembershipPage() {
+  const breadcrumbItems = [
+  {
+    "name": "Inicio",
+    "item": "https://gymulate.vercel.app"
+  },
+  {
+    "name": "Membresía",
+    "item": "https://gymulate.vercel.app/membership"
+  }
+];
+
  return (
- <main className="relative min-h-screen py-16 bg-background text-foreground overflow-x-hidden selection:bg-primary/30">
+    <>
+      <BreadcrumbSchema items={breadcrumbItems} />
+      <main className="relative min-h-screen py-16 bg-background text-foreground overflow-x-hidden selection:bg-primary/30">
  <div className="opacity-40">
  <ConstellationBackground />
  </div>
@@ -31,5 +45,6 @@ export default function MyMembershipPage() {
  <MyMembership />
  </div>
  </main>
- );
+    </>
+  );
 }

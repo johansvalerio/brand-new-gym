@@ -1,5 +1,6 @@
 import { WorkoutCharts } from "@/_features/gym-workout/components/workout-charts"
 import { WorkoutHistory } from "@/_features/gym-workout/components/workout-history"
+import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground"
 
 export const metadata = {
@@ -8,8 +9,25 @@ export const metadata = {
 }
 
 export default function WorkoutHistoryPage() {
+  const breadcrumbItems = [
+  {
+    "name": "Inicio",
+    "item": "https://gymulate.vercel.app"
+  },
+  {
+    "name": "Entrenar",
+    "item": "https://gymulate.vercel.app/workout"
+  },
+  {
+    "name": "Historial",
+    "item": "https://gymulate.vercel.app/workout/history"
+  }
+];
+
  return (
- <main className="relative min-h-screen bg-background py-16 text-foreground selection:bg-primary/30">
+    <>
+      <BreadcrumbSchema items={breadcrumbItems} />
+      <main className="relative min-h-screen bg-background py-16 text-foreground selection:bg-primary/30">
  <div className="opacity-40">
  <ConstellationBackground />
  </div>
@@ -30,5 +48,6 @@ export default function WorkoutHistoryPage() {
  </div>
  </div>
  </main>
- )
+    </>
+  )
 }
