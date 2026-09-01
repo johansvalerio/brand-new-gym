@@ -7,7 +7,7 @@ import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
 import { createClient } from "@/lib/supabase/client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LayoutDashboard, UserCircle, Dumbbell, Flame, Trophy, CreditCard, Package, Users, Banknote, LogOut, Menu, X, CalendarDays, Home, Bell } from "lucide-react"
+import { LayoutDashboard, UserCircle, Dumbbell, Flame, Trophy, CreditCard, Package, Users, Banknote, LogOut, Menu, X, CalendarDays, Home, Bell, Utensils } from "lucide-react"
 import { useNotifications, useMarkAllNotificationsRead, useMarkNotificationRead } from "@/_features/shared/hooks/useNotifications"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 
@@ -27,7 +27,8 @@ const navSections: { title: string; items: NavItem[] }[] = [
     items: [
       { label: "Entrenar", href: "/workout", icon: Dumbbell },
       { label: "Histórico", href: "/workout/history", icon: CalendarDays },
-      { label: "Mis Rutinas", href: "/users/profile/me/routine", icon: Flame },
+      { label: "Rutinas", href: "/users/profile/me/routine", icon: Flame },
+      { label: "Nutrición", href: "/nutrition", icon: Utensils },
       { label: "Ranking", href: "/routines", icon: Trophy },
     ],
   },
@@ -133,7 +134,7 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(true)
 
   const isAppRoute = useMemo(
-    () => ["/dashboard", "/users", "/workout", "/routines", "/membership", "/products", "/payments", "/plans"].some((p) => pathname.startsWith(p)),
+    () => ["/dashboard", "/users", "/workout", "/routines", "/membership", "/products", "/payments", "/plans", "/nutrition"].some((p) => pathname.startsWith(p)),
     [pathname],
   )
 
@@ -333,7 +334,7 @@ export function AppSidebar() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isAppRoute = ["/dashboard", "/users", "/workout", "/routines", "/membership", "/products", "/payments", "/plans"].some((p) => pathname.startsWith(p))
+  const isAppRoute = ["/dashboard", "/users", "/workout", "/routines", "/membership", "/products", "/payments", "/plans", "/nutrition"].some((p) => pathname.startsWith(p))
   if (!isAppRoute) return <>{children}</>
   return (
     <div className="flex min-h-screen bg-background">
