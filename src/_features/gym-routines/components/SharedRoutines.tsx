@@ -228,7 +228,7 @@ function SharedRoutineCard({
 
   return (
     <article
-      className={`group relative overflow-hidden rounded-lg border transition-colors duration-300 ${
+      className={`group relative w-full min-w-0 max-w-full overflow-hidden rounded-lg border transition-colors duration-300 ${
         rank === 1
           ? "border-primary/40 bg-gradient-to-b from-primary/[0.07] to-card shadow-[0_0_40px_-12px_rgba(150,217,6,0.28)]"
           : "border-border bg-card hover:border-primary/40"
@@ -240,10 +240,10 @@ function SharedRoutineCard({
         }`}
       />
 
-      <header className="relative flex items-start gap-3 border-b border-border/60 p-4 sm:gap-4 sm:p-6">
-        {/* Ranking — podio: #1 sólido con glow, #2/#3 outline, resto muted */}
+      <header className="relative flex items-start gap-2 border-b border-border/60 p-3 sm:gap-4 sm:p-6">
+        {/* Ranking badge — compacto en mobile para no desbordar viewport */}
         <span
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border font-sans text-base font-black tabular-nums sm:h-10 sm:w-10 ${
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border font-sans text-sm font-black tabular-nums sm:h-10 sm:w-10 sm:text-base ${
             rank === 1
               ? "border-transparent bg-primary text-primary-foreground shadow-[0_0_16px_rgba(150,217,6,0.45)]"
               : rank <= 3
@@ -256,26 +256,26 @@ function SharedRoutineCard({
         </span>
 
         <div className="min-w-0 flex-1">
-          {/* Autor: avatar + nombre + procedencia + fecha */}
-          <div className="flex items-center gap-3">
-            <AuthorAvatar author={routine.author} className="h-9 w-9 sm:h-10 sm:w-10" />
-            <div className="min-w-0">
-              <p className="flex items-center gap-2 truncate font-sans text-sm font-bold text-foreground">
-                {authorName(routine)}
+          {/* Autor: avatar + nombre + procedencia + fecha — wrap en mobile */}
+          <div className="flex items-start gap-2 sm:items-center sm:gap-3">
+            <AuthorAvatar author={routine.author} className="h-8 w-8 shrink-0 sm:h-10 sm:w-10" />
+            <div className="min-w-0 flex-1">
+              <p className="flex flex-wrap items-center gap-1.5 font-sans text-[13px] font-bold text-foreground sm:gap-2 sm:text-sm">
+                <span className="truncate">{authorName(routine)}</span>
                 {isViewerOwner && (
-                  <span className="shrink-0 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 font-sans text-[9px] font-black uppercase tracking-wider text-primary">
+                  <span className="shrink-0 rounded-full border border-primary/40 bg-primary/10 px-1.5 py-0.5 font-sans text-[8px] font-black uppercase tracking-wider text-primary sm:px-2 sm:text-[9px]">
                     Es tuya
                   </span>
                 )}
               </p>
-              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] text-muted-foreground">
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[10px] text-muted-foreground sm:gap-x-2 sm:text-[11px]">
                 <span
-                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-wider ${PROVENANCE_META[provenance].className}`}
+                  className={`inline-flex max-w-full items-center gap-1 truncate rounded-full border px-1.5 py-0.5 font-sans text-[8px] font-bold uppercase tracking-wider sm:px-2 sm:text-[9px] ${PROVENANCE_META[provenance].className}`}
                 >
-                  <ProvenanceIcon className="h-3 w-3" />
-                  {PROVENANCE_META[provenance].label}
+                  <ProvenanceIcon className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{PROVENANCE_META[provenance].label}</span>
                 </span>
-                <span>
+                <span className="shrink-0">
                   {new Date(routine.created_at).toLocaleDateString("es-CR", {
                     year: "numeric",
                     month: "short",
@@ -286,22 +286,21 @@ function SharedRoutineCard({
             </div>
           </div>
 
-          <h2 className="mt-3 font-sans text-xl font-black uppercase leading-tight tracking-tight text-foreground line-clamp-2 sm:truncate sm:text-2xl">
+          <h2 className="mt-2.5 line-clamp-2 font-sans text-[17px] font-black uppercase leading-tight tracking-tight text-foreground sm:mt-3 sm:truncate sm:text-2xl">
             {routine.name}
           </h2>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-wider text-muted-foreground sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-[10px]">
               <Sparkles className="h-3 w-3" />
               {goalLabel(routine.goal)}
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              {routine.days_per_week} días/semana
+            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-wider text-muted-foreground sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-[10px]">
+              {routine.days_per_week} días/sem
             </span>
           </div>
         </div>
 
-        {/* Like estilo red social: rail vertical a la derecha en todos los
-            tamaños — flame relleno si ya voté, conteo grande tabular. */}
+        {/* Like — más compacto en mobile */}
         <button
           type="button"
           onClick={onVote}
@@ -317,21 +316,19 @@ function SharedRoutineCard({
           }
           aria-pressed={hasVoted}
           aria-label={hasVoted ? "Quitar voto" : "Votar esta rutina"}
-          className={`flex w-14 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 self-center rounded-xl border py-2.5 transition-all duration-200 active:scale-90 disabled:cursor-not-allowed sm:w-16 ${
+          className={`flex w-12 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 self-center rounded-xl border py-2 transition-all duration-200 active:scale-90 disabled:cursor-not-allowed sm:w-16 sm:gap-1 sm:py-2.5 ${
             hasVoted
               ? "border-primary/60 bg-primary/15"
               : "border-border bg-secondary/50 hover:border-primary/50 hover:bg-primary/10"
           } ${!canVote ? "opacity-70" : ""}`}
         >
           <Flame
-            className={`h-5 w-5 transition-colors duration-200 ${
-              hasVoted
-                ? "fill-primary text-primary"
-                : "text-muted-foreground group-hover:text-primary/60"
+            className={`h-4 w-4 transition-colors duration-200 sm:h-5 sm:w-5 ${
+              hasVoted ? "fill-primary text-primary" : "text-muted-foreground group-hover:text-primary/60"
             }`}
           />
           <span
-            className={`font-sans text-base font-black leading-none tabular-nums sm:text-lg ${
+            className={`font-sans text-sm font-black leading-none tabular-nums sm:text-lg ${
               hasVoted ? "text-primary" : "text-foreground"
             }`}
           >

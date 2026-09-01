@@ -301,6 +301,77 @@ export type Database = {
           },
         ]
       }
+      product_sales: {
+        Row: {
+          id: number
+          product_id: number
+          buyer_id: string
+          quantity: number
+          unit_price: number
+          total: number
+          sold_by: string | null
+          payment_id: string | null
+          sold_at: string
+          notes: string | null
+          status: string
+        }
+        Insert: {
+          id?: number
+          product_id: number
+          buyer_id: string
+          quantity: number
+          unit_price: number
+          total: number
+          sold_by?: string | null
+          payment_id?: string | null
+          sold_at?: string
+          notes?: string | null
+          status?: string
+        }
+        Update: {
+          id?: number
+          product_id?: number
+          buyer_id?: string
+          quantity?: number
+          unit_price?: number
+          total?: number
+          sold_by?: string | null
+          payment_id?: string | null
+          sold_at?: string
+          notes?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "product_sales_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_sales_sold_by_fkey"
+            columns: ["sold_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_sales_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -649,6 +720,29 @@ export type Database = {
           p_notes: string | null
           p_sets: Json
         }
+        Returns: Database["public"]["Tables"]["workout_logs"]["Row"]
+      }
+      start_workout: {
+        Args: { p_routine_id: number | null; p_routine_day_id: number | null }
+        Returns: Database["public"]["Tables"]["workout_logs"]["Row"]
+      }
+      save_set: {
+        Args: {
+          p_workout_log_id: number
+          p_exercise_id: number
+          p_set_number: number
+          p_weight: number
+          p_reps: number
+          p_is_warmup: boolean
+        }
+        Returns: Database["public"]["Tables"]["set_logs"]["Row"]
+      }
+      finish_workout: {
+        Args: { p_workout_log_id: number; p_notes: string | null }
+        Returns: Database["public"]["Tables"]["workout_logs"]["Row"]
+      }
+      get_or_create_active_workout: {
+        Args: { p_routine_id: number | null; p_routine_day_id: number | null }
         Returns: Database["public"]["Tables"]["workout_logs"]["Row"]
       }
     }

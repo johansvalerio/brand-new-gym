@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Dumbbell, Pencil, Trash2 } from "lucide-react"
+import { Dumbbell, Pencil, Trash2, ShoppingCart } from "lucide-react"
 import type { ProductRow } from "@/_features/gym-admin/products/hooks/useProducts"
 import { currency } from "./utils"
 import { cn } from "@/lib/utils"
@@ -100,11 +100,16 @@ function InteractiveCard({
 
         {/* Bottom actions */}
         <div className="mt-auto flex items-center justify-between gap-2">
-          <div className="flex gap-1.5">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <span key={i} className={cn("h-1.5 w-1.5 rounded-full", i === 0 ? "bg-white" : "bg-white/30")} />
-            ))}
-          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onSelect?.(product)
+            }}
+            aria-label={`Ver ${product.product_name}`}
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur transition-all hover:border-primary hover:bg-primary hover:text-black hover:shadow-[0_0_12px_rgba(150,217,6,0.6)]"
+          >
+            <ShoppingCart className="h-3.5 w-3.5" />
+          </button>
           {canManage ? (
             <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
               <button

@@ -26,12 +26,14 @@ export function SetLogInputs({
   onRemove,
   restSeconds = 60,
   onStartRest,
+  onSetCommitted,
 }: {
   entry: ExerciseEntry
   onChange: (key: string, updater: (e: ExerciseEntry) => ExerciseEntry) => void
   onRemove: (key: string) => void
   restSeconds?: number
   onStartRest?: (seconds: number) => void
+  onSetCommitted?: (entryKey: string, setIndex: number, draft: { exercise_id: number; weight: number; reps: number; is_warmup: boolean }) => void
 }) {
   const { data: catalog = [] } = useExerciseCatalog()
   const exercise = catalog.find((e) => e.id === entry.exercise_id) ?? null
@@ -43,10 +45,25 @@ export function SetLogInputs({
   }, [restSeconds])
 
   const updateSet = (i: number, field: "weight" | "reps" | "is_warmup", value: string | boolean) => {
-    onChange(entry.key, (e) => ({
-      ...e,
-      sets: e.sets.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)),
-    }))
+    onChange(entry.key, (e) => {
+      const nextSets = e.sets.map((s, idx) => (idx === i ? { ...s, [field]: value } : s))
+      // Si la serie quedó "completa" (peso y reps reales, no warmup),
+      // notifica al padre para que dispare el guardado incremental.
+      if (onSetCommitted) {
+        const updated = nextSets[i]
+        const w = typeof updated.weight === "string" ? parseFloat(updated.weight) : updated.weight
+        const r = typeof updated.reps === "string" ? parseInt(updated.reps, 10) : updated.reps
+        if (!updated.is_warmup && (w ?? 0) > 0 && (r ?? 0) > 0) {
+          onSetCommitted(entry.key, i, {
+            exercise_id: e.exercise_id,
+            weight:      w,
+            reps:        r,
+            is_warmup:   updated.is_warmup,
+          })
+        }
+      }
+      return { ...e, sets: nextSets }
+    })
   }
 
   const addSet = () => {

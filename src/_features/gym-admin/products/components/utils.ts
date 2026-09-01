@@ -9,7 +9,7 @@ export type StockLevel = "out" | "low" | "ok"
 
 export function stockLevel(stock: number): StockLevel {
   if (stock <= 0) return "out"
-  if (stock <= 10) return "low"
+  if (stock <= 3) return "low"
   return "ok"
 }
 

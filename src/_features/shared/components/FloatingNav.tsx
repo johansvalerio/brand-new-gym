@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, Settings, LogOut, UserCircle, Trophy, Bell, Banknote, LayoutDashboard, CalendarDays } from 'lucide-react';
+import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, LogOut, UserCircle, Trophy, Bell, Banknote, LayoutDashboard, CalendarDays } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { usePageTransition } from '@/_features/shared/hooks/usePageTransition';
 import { usePathname } from 'next/navigation';
@@ -262,10 +262,6 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
               Planes
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primar">
-            <Settings className="h-4 w-4 mr-1" />
-            Configuración
-          </DropdownMenuItem>
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator className="my-2" />

@@ -18,6 +18,9 @@ import { ConfirmDeleteDialog } from "./confirm-delete-dialog"
 import { ProductsStats } from "./products-stats"
 import { ProductsToolbar } from "./products-toolbar"
 import { ProductDetailModal } from "@/components/ui/product-detail-modal"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ProductSalesTab } from "./product-sales-tab"
+import { useCreateSale } from "../hooks/useProductSales"
 
 type ViewMode = "cards" | "table"
 
@@ -27,7 +30,9 @@ export function Products() {
   const createProduct = useCreateProduct()
   const updateProduct = useUpdateProduct()
   const deleteProduct = useDeleteProduct()
-  const { isAdmin, loading: authLoading } = useAuthSession()
+  const createSale = useCreateSale()
+  const { isAdmin, isCoach, profile, loading: authLoading } = useAuthSession()
+  const isStaff = isAdmin || isCoach
 
   const [view, setView] = useState<ViewMode>("cards")
   const [query, setQuery] = useState("")
@@ -92,6 +97,20 @@ export function Products() {
     setDeleting(null)
   }
 
+  // Compra self-service: cualquier usuario autenticado compra para sí mismo.
+  // Admin puede seguir comprando (queda registrado como buyer=sold_by=admin).
+  // Futuro: selector de miembro para venta mostrador (buyerId distinto).
+  const handlePurchase = async (product: ProductRow, quantity: number) => {
+    if (!profile) return
+    await createSale.mutateAsync({
+      productId: product.product_id,
+      buyerId:   profile.id,
+      soldBy:    profile.id,
+      unitPrice: product.product_price,
+      quantity,
+    })
+  }
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -128,51 +147,69 @@ export function Products() {
         {/* Stats */}
         <ProductsStats isAdmin={isAdmin} count={stats.count} units={stats.units} revenue={stats.revenue} />
 
-        {/* Toolbar */}
-        <ProductsToolbar
-          query={query}
-          onQueryChange={setQuery}
-          categoryFilter={categoryFilter}
-          onCategoryFilterChange={setCategoryFilter}
-          categories={categories}
-          view={view}
-          onViewChange={setView}
-          canCreate={isAdmin}
-          onCreate={openCreate}
-        />
+        <Tabs defaultValue="inventory" className="flex flex-col gap-4">
+          <TabsList className="self-start">
+            <TabsTrigger value="inventory">Inventario</TabsTrigger>
+            <TabsTrigger value="sales">{isStaff ? "Ventas" : "Mis compras"}</TabsTrigger>
+          </TabsList>
 
-        {/* Content — contenedor para cards 3D sobre constellation */}
-        {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 py-20 text-center">
-            <PackageOpen className="h-10 w-10 text-muted-foreground/40" />
-            <p className="mt-4 font-sans text-lg font-bold text-foreground">Sin resultados</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {query ? "Prueba con otro término de búsqueda." : "Agrega tu primer producto."}
-            </p>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-border/60 bg-card/40 p-4 sm:p-6 backdrop-blur supports-[backdrop-filter]:bg-card/30">
-            {/* Mobile: siempre tarjetas; la tabla solo existe ≥sm */}
-            <div className={view === "table" ? "sm:hidden" : undefined}>
-              <ProductsCards products={filtered} onEdit={openEdit} onDelete={setDeleting} onSelect={setSelected} canManage={isAdmin} />
-            </div>
-            {view === "table" && (
-              <div className="hidden sm:block">
-                <ProductsTable
-                  products={filtered}
-                  onEdit={openEdit}
-                  onDelete={setDeleting}
-                  onSelect={setSelected}
-                  canManage={isAdmin}
-                />
+          <TabsContent value="inventory" className="mt-0">
+            {/* Toolbar (filtros arriba de la lista de productos) */}
+            <ProductsToolbar
+              query={query}
+              onQueryChange={setQuery}
+              categoryFilter={categoryFilter}
+              onCategoryFilterChange={setCategoryFilter}
+              categories={categories}
+              view={view}
+              onViewChange={setView}
+              canCreate={isAdmin}
+              onCreate={openCreate}
+            />
+
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 py-20 text-center">
+                <PackageOpen className="h-10 w-10 text-muted-foreground/40" />
+                <p className="mt-4 font-sans text-lg font-bold text-foreground">Sin resultados</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {query ? "Prueba con otro término de búsqueda." : "Agrega tu primer producto."}
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-border/60 bg-card/40 p-4 sm:p-6 backdrop-blur supports-[backdrop-filter]:bg-card/30">
+                {/* Mobile: siempre tarjetas; la tabla solo existe ≥sm */}
+                <div className={view === "table" ? "sm:hidden" : undefined}>
+                  <ProductsCards products={filtered} onEdit={openEdit} onDelete={setDeleting} onSelect={setSelected} canManage={isAdmin} />
+                </div>
+                {view === "table" && (
+                  <div className="hidden sm:block">
+                    <ProductsTable
+                      products={filtered}
+                      onEdit={openEdit}
+                      onDelete={setDeleting}
+                      onSelect={setSelected}
+                      canManage={isAdmin}
+                    />
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
+          </TabsContent>
+
+          <TabsContent value="sales" className="mt-0">
+            <ProductSalesTab />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Dialogs */}
-      <ProductDetailModal product={selected} open={Boolean(selected)} onClose={() => setSelected(null)} />
+      <ProductDetailModal
+        product={selected}
+        open={Boolean(selected)}
+        onClose={() => setSelected(null)}
+        onPurchase={profile ? handlePurchase : undefined}
+        purchasePending={createSale.isPending}
+      />
       <ProductFormDialog
         open={formOpen}
         product={editing}

@@ -217,8 +217,6 @@ export function UserProfile({ id }: { id: string }) {
         icon={<UserSearch className="h-10 w-10 text-muted-foreground/40" />}
         title="Miembro no encontrado"
         description="Este perfil no existe o fue eliminado."
-        actionLabel="Volver"
-        onAction={() => navigate(isAdmin ? "/users" : "/")}
       />
     )
   }
@@ -229,8 +227,6 @@ export function UserProfile({ id }: { id: string }) {
         icon={<ShieldAlert className="h-10 w-10 text-muted-foreground/40" />}
         title="Acceso restringido"
         description="Solo puedes ver tu propio perfil. Los perfiles de otros miembros están disponibles para administradores."
-        actionLabel="Volver al inicio"
-        onAction={() => navigate("/")}
       />
     )
   }
@@ -253,14 +249,6 @@ export function UserProfile({ id }: { id: string }) {
         ref={sectionRef}
         className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8"
       >
-        <button
-          onClick={() => navigate(isAdmin ? "/users" : "/")}
-          className="flex cursor-pointer items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver
-        </button>
-
         {/* Header */}
         <header data-profile-section className="mb-10 mt-8">
           <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.2em] text-primary">

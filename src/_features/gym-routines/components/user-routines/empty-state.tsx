@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, CalendarRange } from "lucide-react"
+import { CalendarRange } from "lucide-react"
 import type { Tables } from "@/types/database.types"
 
 type ProfileRow = Pick<Tables<"users">, "id" | "first_name" | "last_name" | "role" | "coach_id">
@@ -28,13 +28,7 @@ export function EmptyState({
         <p className="font-mono text-sm leading-relaxed text-muted-foreground">
           {viewerId === profile.id ? "Tu coach aún no te ha asignado una rutina. Cuando lo haga, aparecerá aquí." : "Este miembro no tiene rutinas asignadas por ahora."}
         </p>
-        <button
-          onClick={() => navigate(`/users/profile/${profile.id}`)}
-          className="mt-2 flex cursor-pointer items-center gap-2 rounded-none border border-border px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-foreground transition-colors hover:bg-secondary"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver al perfil
-        </button>
+
       </div>
     </div>
   )

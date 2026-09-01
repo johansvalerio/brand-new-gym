@@ -7,7 +7,7 @@ import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
 import { createClient } from "@/lib/supabase/client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LayoutDashboard, UserCircle, Dumbbell, Flame, Trophy, CreditCard, Package, Users, Banknote, Settings, LogOut, Menu, X, CalendarDays, Home, Bell } from "lucide-react"
+import { LayoutDashboard, UserCircle, Dumbbell, Flame, Trophy, CreditCard, Package, Users, Banknote, LogOut, Menu, X, CalendarDays, Home, Bell } from "lucide-react"
 import { useNotifications, useMarkAllNotificationsRead, useMarkNotificationRead } from "@/_features/shared/hooks/useNotifications"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 
@@ -252,22 +252,6 @@ export function AppSidebar() {
 
         {/* Footer: profile + actions */}
         <div className="shrink-0 border-t border-border/50 px-2 py-2">
-          {/* Settings */}
-          <button
-            onClick={() => navigate("/settings")}
-            className={cn(
-              "flex w-full cursor-pointer items-center overflow-hidden rounded-full py-2 font-sans text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
-              !isMobile && collapsed ? "justify-center px-0" : "gap-3 px-3",
-            )}
-          >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center">
-              <Settings className="h-5 w-5" />
-            </span>
-            <span className={cn("whitespace-nowrap transition-opacity duration-200", showLabel ? "opacity-100" : "pointer-events-none w-0 opacity-0")}>
-              Configuración
-            </span>
-          </button>
-
           {/* Profile card */}
           {profile && (
             <div className={cn("mt-1 flex items-center overflow-hidden rounded-full py-2 transition-all duration-200", !isMobile && collapsed ? "justify-center px-0" : "gap-3 px-3")}>

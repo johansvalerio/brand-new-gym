@@ -36,7 +36,7 @@ src/
 │   ├── gym-routines/         # rutinas
 │   │   ├── components/routine-form/  # dialog.tsx, shell.tsx, chrome.tsx, form-body.tsx, context.tsx (wizard)
 │   │   │   └── routine-form-types.ts + routine-form-data.ts + routine.schema.ts
-│   │   ├── components/user-routines/ # index.tsx, routine-card.tsx, day-panel.tsx, card-menu.tsx, empty-state.tsx
+│   │   ├── components/user-routines/ # UserRoutines.tsx (assembly PascalCase al lado de user-routines/ routine-card.tsx, day-panel.tsx, card-menu.tsx, empty-state.tsx), index.tsx eliminado 2026-09-01
 │   │   └── lib/              # routine.schema.ts (zod) — metadata/structure/full + zodToWizardErrors
 │   ├── gym-checkin/          # check-in diario
 │   ├── gym-workout/          # registro entrenamientos (workout_logs/set_logs via RPC save_workout)
@@ -52,7 +52,7 @@ opencode.json                 # MCP: supabase (project wknacbyqqpsvswjhwrbx), co
 
 **Rules:**
 - New feature → new folder under `_features/<name>/` with `components/` and `hooks/` + `lib/*.schema.ts` for zod. `shared/` only for cross-feature code.
-- **Component granularity (2026-08-31, applies to ALL):** one concern per file. Monolitos eliminados: `routine-form-dialog.tsx:510` → `routine-form/dialog|shell|chrome|form-body|context`, `user-routines.tsx:707` → `user-routines/index|routine-card|day-panel|card-menu|empty-state`. `dashboard/components/` ya cumplía (`Dashboard.tsx` router → `admin-dashboard.tsx` orquestador → `dashboard-stats` etc.). Barrels `src/_features/gym-routines/components/routine-form-dialog.tsx:1` y `user-routines.tsx:1` solo re-exportan para compatibilidad — nuevo código importa desde `routine-form/*` y `user-routines/*`.
+- **Component granularity (2026-09-01, applies to ALL):** one concern per file. Monolitos eliminados: `routine-form-dialog.tsx:510` → `routine-form/dialog|shell|chrome|form-body|context`, `user-routines.tsx:707` → `UserRoutines.tsx` + `user-routines/routine-card|day-panel|card-menu|empty-state`. `shared-routines.tsx` → `SharedRoutines.tsx`, `workout-session.tsx` → `WorkoutSession.tsx`, `user-profile.tsx` → `UserProfile.tsx` (todos PascalCase assembly al lado de granulares kebab). `dashboard/components/` ya cumplía (`Dashboard.tsx` router → `admin-dashboard.tsx` orquestador → `dashboard-stats` etc.). Barrels `routine-form-dialog.tsx` solo re-exporta — nuevo código importa desde `UserRoutines.tsx`/`SharedRoutines.tsx`/`WorkoutSession.tsx`.
 - **Body scroll lock en diálogos:** todo dialog llama `useBodyScrollLock(open)` (`shared/hooks/useBodyScrollLock.ts`) — congela scroll fondo. Confirm-deletes con `Boolean(entity)`.
 - **Z-index global (2026-08-31):** `FloatingNav` `z-90` → **todos los modals/dialogs `z-[100]`** (`routine-form/form-body.tsx:95` `fixed inset-0 z-[100]`, `chrome.tsx:18` loader `z-[100]`, `user-form-dialog.tsx:53`, `product-form-dialog`, `confirm-delete-dialog`, `own-profile-dialog.tsx:39` + `Dialog` primitives `dialog.tsx:26` `z-[100]` + `product-detail-modal.tsx:71` `Dialog z-[100]`) → `PageTransitionOverlay` `z-[9999]`. Nunca `z-50` para modals o quedan debajo del nav. Product detail modal también respeta `z-[100]` para quedar por encima del nav como rutinas.
 - **Anti set-state-in-effect:** nunca `useEffect(()=> setState(...),[open,product])` para sync form. Usar `key={entity?.id ?? "new"}` que remonta `Inner` con `useState(()=> entity ? {...} : emptyForm)` lazy. Únicos effects permitidos: `Escape` listener, `focus` timeout, `auth.onAuthStateChange` suscripción. `carousel.tsx` `onSelect(api)` es excepción documentada con `eslint-disable`.
@@ -81,6 +81,7 @@ opencode.json                 # MCP: supabase (project wknacbyqqpsvswjhwrbx), co
 | `public.check_ins` | `id`, `user_id` FK `CASCADE`, `check_in_date` (tz CR), `checked_in_at` | unique(user_id, check_in_date) |
 | `public.workout_logs` | `id`, `user_id` FK `CASCADE`, `routine_id` FK `SET NULL`, `routine_day_id` FK `SET NULL`, `started_at`, `completed_at` | `completed_at=NULL` = en curso |
 | `public.set_logs` | `id`, `workout_log_id` FK `CASCADE`, `exercise_id` FK, `set_number`, `weight` kg, `reps`, `is_warmup` | Hereda RLS del `workout_log` padre |
+| `public.product_sales` | `id`, `product_id` FK `RESTRICT`, `buyer_id` FK `RESTRICT`, `quantity`, `unit_price`, `total=unit_price*qty` CHECK, `status` pending/approved/rejected, `sold_by`, `payment_id` | Flujo mostrador: `pending` no descuenta stock; `approved` descuenta via `handle_product_sale_stock` BEFORE; RLS `self pending INSERT` + `admin ALL`. Stats solo `approved`. |
 
 **Environment:** `.env.local` → `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (`sb_publishable_...` nuevo) + `SUPABASE_ACCESS_TOKEN` `sbp_...` para MCP. Browser via `createBrowserClient`, Server via `createServerClient` (`lib/supabase/server.ts` con `cookies()` `next/headers`).
 
@@ -230,8 +231,9 @@ Base 375px, `sm:` restaura desktop. Dialogs `max-h-[85vh]` `overflow-y-auto`, st
 **Regla global para TODAS las `src/app/**/page.tsx` (mobile y desktop):**
 
 ```tsx
-// shell canónico — no usar py-16 / py-8 / py-10
-<main className="relative min-h-screen bg-background py-20 sm:py-24 text-foreground overflow-x-hidden selection:bg-primary/30">
+// shell canónico — 2026-09-01: py-16 unificado mobile+desktop (antes py-20 sm:py-24)
+// evita choque con Aside/FloatingNav en mobile y desalineación entre pages
+<main className="relative min-h-screen bg-background py-16 text-foreground overflow-x-hidden selection:bg-primary/30">
   <ConstellationBackground /> {/* opcional solo en app pages con fondo oscuro */}
   <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
     <header className="mb-10"> {/* header 40px, no mb-6 */}
@@ -244,11 +246,12 @@ Base 375px, `sm:` restaura desktop. Dialogs `max-h-[85vh]` `overflow-y-auto`, st
 </main>
 ```
 
-- `py-20` (80px) base + `sm:py-24` (96px) en `main` — más aire que `py-16` (64px) que hacía todo apretado. Nunca `py-16`/`py-8` en page shells.
+- `py-16` (64px) unificado `mobile + desktop` en `main` — evita choque con `Aside` en mobile y desalineación vertical entre pages (antes `py-20 sm:py-24` 80/96px). Nunca `py-20`/`py-8` en page shells.
 - `max-w-6xl` para dashboards/admin, `max-w-2xl` solo para flujos focales (`workout`, `auth/login`). `history/success` ya usan `max-w-2xl`/`max-w-lg` correcto.
 - `mb-10` para header de página (no `mb-6`), `gap-6`/`gap-8` entre secciones (no `gap-3` en page root).
-- `ConstellationBackground` opacity: `app/page.tsx` (landing) `opacity-100` (hero), **todas las `app/**/page.tsx` de features `opacity-40`** (`<div className="opacity-40"><ConstellationBackground/></div>`) para no competir con cards/tablas. Migrado 2026-08-31: `dashboard, membership, payments, plans, products, routines, users, workout/*`.
-- Pre-delivery: verificar `py-20 sm:py-24` + `opacity-40` en toda nueva app page. Migrado 2026-08-31: `dashboard, users, products, plans, payments, workout/*` de `py-16` → `py-20 sm:py-24`.
+- `ConstellationBackground` opacity: `app/page.tsx` (landing) `opacity-100` (hero), **todas las `app/**/page.tsx` de features `opacity-40`** (`<div className="opacity-40"><ConstellationBackground/></div>`) para no competir con cards/tablas. Migrado 2026-09-01: `dashboard, membership, payments, plans, products, routines, users, workout/*` de `py-20 sm:py-24` → `py-16`.
+- Navegación sin `Volver`: desde `2026-09-01` las pages `profile`, `user-routines`, `workout-session` no llevan botón `Volver` — se navega por `Aside`/`FloatingNav`.
+- Pre-delivery: verificar `py-16` + `opacity-40` en toda nueva app page.
 
 ---
 

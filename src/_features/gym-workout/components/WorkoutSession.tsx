@@ -1,14 +1,19 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { ArrowLeft, Dumbbell, Loader2, Plus, Zap } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { ArrowLeft, Check, Dumbbell, Loader2, Plus, RefreshCw, Wifi, WifiOff, X, Zap } from "lucide-react"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { useUserRoutines } from "@/_features/gym-routines/hooks/useUserRoutines"
 import { dayLabel } from "@/_features/gym-routines/hooks/routine-helpers"
 import {
+  useAbortWorkout,
+  useActiveWorkout,
   useExerciseCatalog,
-  useSaveWorkout,
+  useFinishWorkout,
+  useSaveSet,
+  useStartWorkout,
   type ExerciseRow,
+  type SetSyncStatus,
 } from "../hooks/useWorkoutSession"
 import {
   SetLogInputs,
@@ -29,7 +34,13 @@ export function WorkoutSession() {
   const { navigate } = usePageTransition()
   const { data: routines = [] } = useUserRoutines(profile?.id ?? null)
   const { data: catalog = [] } = useExerciseCatalog()
-  const saveWorkout = useSaveWorkout()
+
+  // Mutaciones incrementales (B + red A en paso posterior).
+  const startWorkout = useStartWorkout()
+  const saveSet = useSaveSet()
+  const finishWorkout = useFinishWorkout()
+  const abortWorkout = useAbortWorkout()
+  const { data: orphanWorkout, isLoading: orphanLoading } = useActiveWorkout(profile?.id ?? null)
 
   const [mode, setMode] = useState<Mode>("routine")
   const [selectedDayId, setSelectedDayId] = useState<number | null>(null)
@@ -37,6 +48,23 @@ export function WorkoutSession() {
   const [notes, setNotes] = useState("")
   const [chooserOpen, setChooserOpen] = useState(false)
   const [restSeconds, setRestSeconds] = useState<number | null>(null)
+  const [workoutLogId, setWorkoutLogId] = useState<number | null>(null)
+  const [syncMap, setSyncMap] = useState<Record<string, SetSyncStatus>>({})
+  const [syncingCount, setSyncingCount] = useState(0)
+  const [isOnline, setIsOnline] = useState(true)
+
+  // Detectar online/offline (para el indicador de la cabecera)
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const updateOnline  = () => setIsOnline(navigator.onLine)
+    updateOnline()
+    window.addEventListener("online",  updateOnline)
+    window.addEventListener("offline", updateOnline)
+    return () => {
+      window.removeEventListener("online",  updateOnline)
+      window.removeEventListener("offline", updateOnline)
+    }
+  }, [])
 
   // Rutina activa (o la primera disponible).
   const activeRoutine = useMemo(
@@ -120,19 +148,87 @@ export function WorkoutSession() {
     setEntries((prev) => prev.filter((e) => e.key !== key))
   }
 
+  /**
+   * Abre la sesión (si no hay una ya abierta). Devuelve el workout_log_id
+   * para que saveSet pueda persistir cada serie contra la sesión.
+   */
+  const ensureSession = async (): Promise<number | null> => {
+    if (!profile) return null
+    if (workoutLogId) return workoutLogId
+    const log = await startWorkout.mutateAsync({
+      routineId:    isFree ? null : (activeRoutine?.id ?? null),
+      routineDayId: isFree ? null : selectedDayId,
+    })
+    setWorkoutLogId(log.id)
+    return log.id
+  }
+
+  /**
+   * Persiste cada serie que el usuario completa de forma incremental
+   * (estilo Hevy/Strong). El trigger es: la serie tiene weight y reps
+   * reales, distintos del valor previo (no spameamos RPCs).
+   */
+  const syncSet = async (
+    entryKey: string,
+    setIndex: number,
+    draft: { exercise_id: number; weight: number; reps: number; is_warmup: boolean },
+  ) => {
+    const syncKey = `${entryKey}-${setIndex}`
+    if (!isOnline) {
+      setSyncMap((m) => ({ ...m, [syncKey]: "offline" }))
+      return
+    }
+    setSyncMap((m) => ({ ...m, [syncKey]: "pending" }))
+    setSyncingCount((n) => n + 1)
+    try {
+      const logId = await ensureSession()
+      if (!logId) throw new Error("No se pudo abrir la sesión")
+      await saveSet.mutateAsync({
+        workoutLogId: logId,
+        exerciseId:   draft.exercise_id,
+        setNumber:    setIndex + 1,
+        weight:       draft.weight,
+        reps:         draft.reps,
+        isWarmup:     draft.is_warmup,
+      })
+      setSyncMap((m) => ({ ...m, [syncKey]: "saved" }))
+    } catch {
+      setSyncMap((m) => ({ ...m, [syncKey]: "offline" }))
+    } finally {
+      setSyncingCount((n) => Math.max(0, n - 1))
+    }
+  }
+
   const handleSave = async () => {
     if (!profile) return
     const sets = entriesToSetDrafts(entries)
     if (sets.length === 0) return
 
-    await saveWorkout.mutateAsync({
-      userId: profile.id,
-      routineId: isFree ? null : (activeRoutine?.id ?? null),
-      routineDayId: isFree ? null : selectedDayId,
-      notes: notes.trim() || null,
+    // Garantiza que la sesión esté abierta antes de sellarla
+    const logId = workoutLogId ?? await ensureSession()
+    if (!logId) return
+
+    // Sella (completed_at + nota). finishWorkout calcula PRs en onSuccess.
+    await finishWorkout.mutateAsync({
+      userId:       profile.id,
+      workoutLogId: logId,
+      notes:        notes.trim() || null,
       sets,
     })
     navigate("/workout/success")
+  }
+
+  /** Modal: continuar con la sesión huérfana o cancelarla y empezar nueva. */
+  const handleResumeOrphan = async () => {
+    if (!orphanWorkout || !profile) return
+    setWorkoutLogId(orphanWorkout.id)
+  }
+  const handleAbandonOrphan = async () => {
+    if (!orphanWorkout || !profile) return
+    await abortWorkout.mutateAsync({
+      userId: profile.id,
+      workoutLogId: orphanWorkout.id,
+    })
   }
 
   if (authLoading) {
@@ -162,23 +258,93 @@ export function WorkoutSession() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:max-w-4xl">
-      <button
-        onClick={() => navigate("/dashboard")}
-        className="flex cursor-pointer items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Volver
-      </button>
+      <header className="mb-6 flex items-start justify-between gap-3">
+        <div>
+          <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+            Sesión
+          </span>
+          <h1 className="font-sans text-4xl font-black uppercase leading-[0.95] tracking-tighter text-foreground text-balance md:text-5xl">
+            Entrenar <span className="text-primary">hoy</span>
+          </h1>
+        </div>
 
-      <header className="mb-6 mt-4">
-        <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-          Sesión
-        </span>
-        <h1 className="font-sans text-4xl font-black uppercase leading-[0.95] tracking-tighter text-foreground text-balance md:text-5xl">
-          Entrenar <span className="text-primary">hoy</span>
-        </h1>
+        {/* Indicador de sync (online + series pendientes) */}
+        <div className="mt-1 flex shrink-0 flex-col items-end gap-1">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider ${
+              isOnline
+                ? "border-primary/30 bg-primary/10 text-primary"
+                : "border-destructive/40 bg-destructive/10 text-destructive"
+            }`}
+            title={isOnline ? "Conectado" : "Sin conexión — guardando en local"}
+          >
+            {isOnline ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+            {isOnline ? "Online" : "Offline"}
+          </span>
+          {(syncingCount > 0 || Object.values(syncMap).some((s) => s === "offline")) && (
+            <span className="inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+              {syncingCount > 0 ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" /> Sincronizando {syncingCount}
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-3 w-3" /> Reintentar al volver online
+                </>
+              )}
+            </span>
+          )}
+        </div>
       </header>
+
+      {/* Modal de sesión huérfana detectada */}
+      {orphanLoading ? null : orphanWorkout ? (
+        <div className="mb-6 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
+              <RefreshCw className="h-4 w-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-sans text-sm font-black uppercase tracking-wider text-foreground">
+                Sesión sin terminar
+              </p>
+              <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                Empezaste el{" "}
+                {new Date(orphanWorkout.started_at).toLocaleString("es-CR", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+                . ¿Querés continuarla o empezar una nueva?
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleResumeOrphan}
+                  className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-3 py-2.5 font-sans text-xs font-bold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
+                >
+                  <Check className="h-4 w-4" /> Continuar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAbandonOrphan}
+                  disabled={abortWorkout.isPending}
+                  className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-background px-3 py-2.5 font-sans text-xs font-bold uppercase tracking-wider text-foreground transition-colors hover:bg-secondary disabled:opacity-60"
+                >
+                  {abortWorkout.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <X className="h-4 w-4" />
+                  )}
+                  Empezar nueva
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Selector de modo */}
       <div className="mb-6 grid grid-cols-2 gap-2">
@@ -284,6 +450,7 @@ export function WorkoutSession() {
               onRemove={removeEntry}
               restSeconds={restMap.get(entry.exercise_id) ?? 60}
               onStartRest={(sec) => setRestSeconds(sec)}
+              onSetCommitted={syncSet}
             />
           ))}
         </div>
@@ -326,10 +493,10 @@ export function WorkoutSession() {
       <div className="mt-6 flex justify-end pb-16">
         <button
           onClick={() => void handleSave()}
-          disabled={saveWorkout.isPending || !hasRealSet}
+          disabled={finishWorkout.isPending || !hasRealSet}
           className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-6 py-3 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {saveWorkout.isPending ? (
+          {finishWorkout.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Dumbbell className="h-4 w-4" />

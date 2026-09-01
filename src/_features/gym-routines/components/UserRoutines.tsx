@@ -7,14 +7,14 @@ import { ArrowLeft, Loader2, Plus, ShieldAlert } from "lucide-react"
 import type { Tables } from "@/types/database.types"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
-import { useUserRoutines } from "../../hooks/useUserRoutines"
-import { useCreateFullRoutine, useUpdateFullRoutine } from "../../hooks/useFullRoutine"
-import { useDeleteRoutine, useUpdateRoutine } from "../../hooks/useRoutines"
-import { buildViewer, canCreateRoutineFor, canEditRoutine, type RoutineRow } from "../../hooks/routine-helpers"
-import { RoutineFormDialog, type DayDraft } from "../routine-form-dialog"
-import { ConfirmDeleteRoutineDialog } from "../confirm-delete-routine-dialog"
-import { EmptyState } from "./empty-state"
-import { RoutineCard } from "./routine-card"
+import { useUserRoutines } from "../hooks/useUserRoutines"
+import { useCreateFullRoutine, useUpdateFullRoutine } from "../hooks/useFullRoutine"
+import { useDeleteRoutine, useUpdateRoutine } from "../hooks/useRoutines"
+import { buildViewer, canCreateRoutineFor, canEditRoutine, type RoutineRow } from "../hooks/routine-helpers"
+import { RoutineFormDialog, type DayDraft } from "./routine-form-dialog"
+import { ConfirmDeleteRoutineDialog } from "./confirm-delete-routine-dialog"
+import { EmptyState } from "./user-routines/empty-state"
+import { RoutineCard } from "./user-routines/routine-card"
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger)
@@ -66,9 +66,6 @@ export function UserRoutines({ profile }: { profile: ProfileRow }) {
           </span>
           <p className="font-sans text-xl font-black uppercase tracking-tight text-foreground">Acceso restringido</p>
           <p className="mt-2 text-sm text-muted-foreground">Solo el miembro, su coach o un administrador pueden ver esta rutina.</p>
-          <button onClick={() => navigate("/")} className="mt-6 cursor-pointer rounded-none bg-primary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90">
-            Volver al inicio
-          </button>
         </div>
       </div>
     )
@@ -84,7 +81,7 @@ export function UserRoutines({ profile }: { profile: ProfileRow }) {
     setEditing(routine)
     setFormOpen(true)
   }
-  const handleSubmit = async ({ metadata, days }: { metadata: import("../routine-form-dialog").RoutineFormPayload; days: DayDraft[] }) => {
+  const handleSubmit = async ({ metadata, days }: { metadata: import("./routine-form-dialog").RoutineFormPayload; days: DayDraft[] }) => {
     if (editing) {
       await updateRoutine.mutateAsync({ routineId: editing.id, metadata, days, userId: profile.id })
     } else {
@@ -126,11 +123,7 @@ export function UserRoutines({ profile }: { profile: ProfileRow }) {
 
   return (
     <div ref={sectionRef} className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <button onClick={() => navigate(`/users/profile/${profile.id}`)} className="flex cursor-pointer items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary">
-          <ArrowLeft className="h-4 w-4" />
-          Volver al perfil
-        </button>
+      <div className="flex flex-wrap items-center justify-end gap-3">
         {canCreate ? (
           <button onClick={openCreate} className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90">
             <Plus className="h-4 w-4" />
