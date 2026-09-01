@@ -87,7 +87,7 @@ export function FaqSection() {
   }
 
   return (
-    <section id="faq" className="relative z-0 bg-background px-6 py-16 sm:py-20 lg:sticky lg:top-0 lg:min-h-[100svh] lg:flex lg:flex-col lg:justify-center lg:py-14">
+    <section id="faq" className="relative bg-background px-6 py-16 sm:py-20">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
       <div className="absolute inset-0 pointer-events-none">
