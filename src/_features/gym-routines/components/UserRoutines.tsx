@@ -7,14 +7,14 @@ import { ArrowLeft, Loader2, Plus, ShieldAlert } from "lucide-react"
 import type { Tables } from "@/types/database.types"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
-import { useUserRoutines } from "../hooks/useUserRoutines"
+import { useUserRoutines, type UserRoutine } from "../hooks/useUserRoutines"
 import { useCreateFullRoutine, useUpdateFullRoutine } from "../hooks/useFullRoutine"
 import { useDeleteRoutine, useUpdateRoutine } from "../hooks/useRoutines"
 import { buildViewer, canCreateRoutineFor, canEditRoutine, type RoutineRow } from "../hooks/routine-helpers"
 import { RoutineFormDialog, type DayDraft } from "./routine-form-dialog"
 import { ConfirmDeleteRoutineDialog } from "./confirm-delete-routine-dialog"
 import { EmptyState } from "./user-routines/empty-state"
-import { RoutineCard } from "./user-routines/routine-card"
+import { Calendar } from "@/_features/shared/components/Calendar"
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger)
@@ -121,11 +121,24 @@ export function UserRoutines({ profile }: { profile: ProfileRow }) {
       </div>
     )
 
+  // Agrupa días por day_index para el calendario semanal (Drive-style 7 cols)
+  const daysByIndex = new Map<number, Array<{ routine: UserRoutine; day: UserRoutine["routine_days"][number] }>>()
+  for (const r of routines as UserRoutine[]) {
+    for (const d of r.routine_days) {
+      const arr = daysByIndex.get(d.day_index) ?? []
+      arr.push({ routine: r, day: d })
+      daysByIndex.set(d.day_index, arr)
+    }
+  }
+
   return (
     <div ref={sectionRef} className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-end gap-3">
         {canCreate ? (
-          <button onClick={openCreate} className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90">
+          <button
+            onClick={openCreate}
+            className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
+          >
             <Plus className="h-4 w-4" />
             Nueva rutina
           </button>
@@ -134,20 +147,67 @@ export function UserRoutines({ profile }: { profile: ProfileRow }) {
       {routines.length === 0 ? (
         <EmptyState profile={profile} viewerId={viewerId} navigate={navigate} />
       ) : (
-        routines.map((routine) => (
-          <RoutineCard
-            key={routine.id}
-            routine={routine}
-            viewerId={viewerId}
-            canEdit={canEditRoutine(routine, viewer)}
-            onEdit={() => openEdit(routine)}
-            onDelete={() => setDeleting(routine)}
-            onToggleActive={() => handleToggleActive(routine)}
-            toggleActivePending={toggleActive.isPending}
-            onToggleShared={() => handleToggleShared(routine)}
-            toggleSharedPending={toggleShared.isPending}
-          />
-        ))
+        <Calendar
+          renderDay={(dayIndex) => {
+            const entries = daysByIndex.get(dayIndex) ?? []
+            if (entries.length === 0) {
+              return <span className="flex h-full items-center justify-center font-mono text-[11px] text-muted-foreground/30">—</span>
+            }
+            return (
+              <div className="flex flex-col gap-1.5">
+                {entries.map(({ routine, day }) => (
+                  <button
+                    key={`${routine.id}-${day.id}`}
+                    onClick={() => canEditRoutine(routine, viewer) && openEdit(routine)}
+                    className="w-full cursor-pointer rounded-md border border-border bg-card px-2 py-1.5 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 text-xs"
+                    title={`${routine.name} · ${day.focus}`}
+                  >
+                    <p className="truncate font-sans text-[11px] font-bold uppercase tracking-wide text-foreground">{routine.name}</p>
+                    <p className="truncate font-mono text-[10px] text-muted-foreground">{day.focus} · {day.routine_exercises.length} ej.</p>
+                  </button>
+                ))}
+              </div>
+            )
+          }}
+        />
+      )}
+      {/* Lista detallada se mantiene colapsada bajo calendario para acciones (activar/compartir/borrar) */}
+      {routines.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {routines.map((routine) => (
+            <div key={`actions-${routine.id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2">
+              <span className="truncate font-sans text-xs font-bold text-foreground">{routine.name}</span>
+              <span className="flex items-center gap-1">
+                <button
+                  onClick={() => handleToggleActive(routine)}
+                  disabled={!canEditRoutine(routine, viewer) || toggleActive.isPending}
+                  className="rounded-md border border-border px-2 py-1 font-mono text-[10px] uppercase text-muted-foreground hover:border-primary/40 hover:text-primary disabled:opacity-50"
+                >
+                  {routine.is_active ? "Desactivar" : "Activar"}
+                </button>
+                <button
+                  onClick={() => handleToggleShared(routine)}
+                  disabled={routine.created_by !== viewer.id || toggleShared.isPending}
+                  className="rounded-md border border-border px-2 py-1 font-mono text-[10px] uppercase text-muted-foreground hover:border-primary/40 hover:text-primary disabled:opacity-50"
+                >
+                  {routine.is_shared ? "Privar" : "Compartir"}
+                </button>
+                <button
+                  onClick={() => canEditRoutine(routine, viewer) && openEdit(routine)}
+                  className="rounded-md bg-primary px-2 py-1 font-mono text-[10px] uppercase text-primary-foreground hover:opacity-90"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => canEditRoutine(routine, viewer) && setDeleting(routine)}
+                  className="rounded-md border border-destructive/40 px-2 py-1 font-mono text-[10px] uppercase text-destructive hover:bg-destructive/10"
+                >
+                  Borrar
+                </button>
+              </span>
+            </div>
+          ))}
+        </div>
       )}
       <RoutineFormDialog open={formOpen} routine={editing} targetUserId={profile.id} onClose={() => { setFormOpen(false); setEditing(null) }} onSubmit={handleSubmit} />
       <ConfirmDeleteRoutineDialog routine={deleting} onCancel={() => setDeleting(null)} onConfirm={handleDelete} />
