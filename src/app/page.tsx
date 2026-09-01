@@ -109,8 +109,8 @@ export default function Home() {
           <Gallery />
           <CoachesSection />
           <MembershipSection />
-          <FaqSection />
           <LocationHours />
+          <FaqSection />
 
           {/* Pausa antes de la cortina: el mapa sticky se queda fijo mientras
               el usuario recorre este tramo extra */}
