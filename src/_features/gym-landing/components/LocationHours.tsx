@@ -143,7 +143,7 @@ export function LocationHours() {
     <section
       id="location"
       ref={sectionRef}
-      className="relative z-0 py-28 bg-background px-6 overflow-hidden border-t border-border/60 lg:sticky lg:top-0 lg:min-h-[100svh] lg:flex lg:flex-col lg:justify-center lg:py-14"
+      className="relative z-0 py-28 bg-background px-6 overflow-hidden border-t border-border/60 lg:min-h-[100svh] lg:flex lg:flex-col lg:justify-center lg:py-14"
     >
       {/* ░░ Background — a soft "beacon" spotlight, no grid ░░ */}
       <div className="absolute inset-0 pointer-events-none">
