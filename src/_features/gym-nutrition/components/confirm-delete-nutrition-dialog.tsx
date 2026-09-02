@@ -1,21 +1,94 @@
 "use client"
 
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
+import { AlertTriangle, Loader2 } from "lucide-react"
 import type { NutritionPlanRow } from "../hooks/useNutritionPlans"
+import { useBodyScrollLock } from "@/_features/shared/hooks/useBodyScrollLock"
 
-export function ConfirmDeleteNutritionDialog({ plan, onCancel, onConfirm }: { plan: NutritionPlanRow | null; onCancel: () => void; onConfirm: () => void }) {
+interface ConfirmDeleteNutritionDialogProps {
+  plan: NutritionPlanRow | null
+  onCancel: () => void
+  onConfirm: () => Promise<void>
+}
+
+export function ConfirmDeleteNutritionDialog({
+  plan,
+  onCancel,
+  onConfirm,
+}: ConfirmDeleteNutritionDialogProps) {
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  useEffect(() => {
+    if (!plan) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [plan, onCancel])
+
+  useBodyScrollLock(Boolean(plan))
+
   if (!plan) return null
+
   return (
-    <Dialog open={Boolean(plan)} onOpenChange={(o) => !o && onCancel()}>
-      <DialogContent className="max-w-sm">
-        <DialogTitle>Eliminar {plan.name}?</DialogTitle>
-        <p className="text-sm text-muted-foreground">Se borrarán sus días y comidas.</p>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onCancel}>Cancelar</Button>
-          <Button variant="destructive" onClick={onConfirm}>Eliminar</Button>
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="confirm-delete-nutrition-title"
+    >
+      <button
+        aria-label="Cancelar"
+        onClick={onCancel}
+        className="absolute inset-0 cursor-pointer bg-black/70 backdrop-blur-sm"
+      />
+      <div className="relative z-10 max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-lg border border-border bg-card p-4 shadow-2xl sm:p-6">
+        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-md bg-destructive/15 text-destructive">
+          <AlertTriangle className="h-6 w-6" />
         </div>
-      </DialogContent>
-    </Dialog>
+        <h2
+          id="confirm-delete-nutrition-title"
+          className="font-sans text-lg font-black uppercase tracking-tight text-foreground"
+        >
+          Eliminar plan
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          ¿Seguro que deseas eliminar{" "}
+          <span className="font-semibold text-foreground">{plan.name}</span>?
+          Se eliminarán también todos sus días y comidas asociados.
+        </p>
+        <div className="mt-6 flex items-center justify-end gap-3">
+          <button
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="cursor-pointer rounded-none border border-border px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            disabled={isDeleting}
+            onClick={async () => {
+              setIsDeleting(true)
+              try {
+                await onConfirm()
+              } finally {
+                setIsDeleting(false)
+              }
+            }}
+            className="flex cursor-pointer items-center gap-2 rounded-none bg-destructive px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-white transition-all hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isDeleting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Eliminando…
+              </>
+            ) : (
+              "Eliminar"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }

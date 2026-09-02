@@ -22,6 +22,7 @@ export type NutritionFormPayload = {
   kcal_target: number | null
   protein_target: number | null
   notes: string | null
+  is_active: boolean
 }
 
 export const emptyMeal = (order: number): MealDraft => ({

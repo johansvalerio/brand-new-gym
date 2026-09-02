@@ -27,9 +27,9 @@ const navSections: { title: string; items: NavItem[] }[] = [
     items: [
       { label: "Entrenar", href: "/workout", icon: Dumbbell },
       { label: "Histórico", href: "/workout/history", icon: CalendarDays },
-      { label: "Rutinas", href: "/users/profile/me/routine", icon: Flame },
+      { label: "Rutinas", href: "/routine", icon: Flame },
       { label: "Nutrición", href: "/nutrition", icon: Utensils },
-      { label: "Ranking", href: "/routines", icon: Trophy },
+      { label: "Ranking", href: "/ranking", icon: Trophy },
     ],
   },
   {
@@ -134,7 +134,7 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(true)
 
   const isAppRoute = useMemo(
-    () => ["/dashboard", "/users", "/workout", "/routines", "/membership", "/products", "/payments", "/plans", "/nutrition"].some((p) => pathname.startsWith(p)),
+    () => ["/dashboard", "/users", "/workout", "/ranking", "/routine", "/membership", "/products", "/payments", "/plans", "/nutrition"].some((p) => pathname.startsWith(p)),
     [pathname],
   )
 
@@ -143,11 +143,8 @@ export function AppSidebar() {
   const profileHref = profile?.id ? `/users/profile/${profile.id}` : "/dashboard"
 
   /* ─── Resolve href for profile-based links ─── */
-  const resolveHref = (item: NavItem) => {
-    if (item.href === "/users/profile/me") return profileHref
-    if (item.href === "/users/profile/me/routine") return profileHref + "/routine"
-    return item.href
-  }
+  const resolveHref = (item: NavItem) =>
+    item.href.replace("/users/profile/me", profileHref)
 
   /* ─── Nav link component ─── */
   const NavLink = ({ item, isMobile = false }: { item: NavItem; isMobile?: boolean }) => {
@@ -199,7 +196,7 @@ export function AppSidebar() {
     .filter((section) => section.items.length > 0)
 
   /* ─── Sidebar inner content ─── */
-  const SidebarInner = ({ isMobile = false }: { isMobile?: boolean }) => {
+  const renderSidebarInner = (isMobile = false) => {
     const showLabel = isMobile || !collapsed
     return (
       <div className="flex h-full flex-col">
@@ -312,7 +309,7 @@ export function AppSidebar() {
             <button onClick={() => setMobileOpen(false)} className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-muted-foreground">
               <X className="h-4 w-4" />
             </button>
-            <SidebarInner isMobile />
+            {renderSidebarInner(true)}
           </div>
         </div>
       )}
@@ -326,7 +323,7 @@ export function AppSidebar() {
           collapsed ? "w-[60px]" : "w-[240px]",
         )}
       >
-        <SidebarInner />
+        {renderSidebarInner(false)}
       </aside>
     </>
   )
@@ -334,7 +331,7 @@ export function AppSidebar() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isAppRoute = ["/dashboard", "/users", "/workout", "/routines", "/membership", "/products", "/payments", "/plans", "/nutrition"].some((p) => pathname.startsWith(p))
+  const isAppRoute = ["/dashboard", "/users", "/workout", "/ranking", "/routine", "/membership", "/products", "/payments", "/plans", "/nutrition"].some((p) => pathname.startsWith(p))
   if (!isAppRoute) return <>{children}</>
   return (
     <div className="flex min-h-screen bg-background">

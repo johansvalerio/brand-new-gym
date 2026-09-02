@@ -6,6 +6,7 @@ export const nutritionMetadataSchema = z.object({
   kcal_target: z.coerce.number().int().min(800).max(6000).nullable(),
   protein_target: z.coerce.number().int().min(30).max(400).nullable(),
   notes: z.string().trim().nullable(),
+  is_active: z.boolean(),
 })
 
 export const nutritionDaySchema = z.object({

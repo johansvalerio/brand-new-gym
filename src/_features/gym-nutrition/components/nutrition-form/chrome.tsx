@@ -8,44 +8,64 @@ import { FormBody } from "./form-body"
 import { useNutritionDispatch } from "./context"
 import type { DayDraft, NutritionFormPayload } from "./nutrition-form-types"
 
-export function ShellChrome({
-  plan,
-  isEdit,
-  firstFieldRef,
-  onClose,
-  onSubmit,
-}: {
+interface ShellChromeProps {
   plan: NutritionPlanRow | null
+  targetUserId: string
   isEdit: boolean
   firstFieldRef: React.RefObject<HTMLInputElement | null>
   onClose: () => void
   onSubmit: (payload: { metadata: NutritionFormPayload; days: DayDraft[] }) => Promise<void>
-}) {
+}
+
+export function ShellChrome({
+  plan,
+  targetUserId,
+  isEdit,
+  firstFieldRef,
+  onClose,
+  onSubmit,
+}: ShellChromeProps) {
   const dispatch = useNutritionDispatch()
-  const [hydrated, setHydrated] = useState(false)
+  const [hydratedDays, setHydratedDays] = useState<boolean>(false)
 
   useEffect(() => {
     if (!plan) {
-      setHydrated(true)
+      setHydratedDays(true)
       return
     }
-    const days = initialDaysFromPlan(plan)
-    dispatch({ type: "set_days", days })
-    setHydrated(true)
+    dispatch({ type: "set_days", days: initialDaysFromPlan(plan) })
+    setHydratedDays(true)
   }, [plan, dispatch])
 
-  if (plan && !hydrated) {
+  if (plan && !hydratedDays) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-        <button type="button" aria-label="Cerrar" onClick={onClose} className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-        <div className="relative z-10 flex min-h-[200px] w-full max-w-5xl items-center justify-center rounded-lg border border-border bg-card">
-          <span className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Cargando plan…
-          </span>
+      <div
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="nutrition-form-title"
+      >
+        <button type="button" aria-label="Cerrar" onClick={onClose} className="absolute inset-0 cursor-pointer bg-black/70 backdrop-blur-sm" />
+        <div className="relative z-10 flex min-w-0 max-h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
+          <div className="flex flex-1 items-center justify-center py-20">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Cargando plan…
+            </div>
+          </div>
         </div>
       </div>
     )
   }
 
-  return <FormBody plan={plan} isEdit={isEdit} firstFieldRef={firstFieldRef} onClose={onClose} onSubmit={onSubmit} />
+  return (
+    <FormBody
+      plan={plan}
+      targetUserId={targetUserId}
+      isEdit={isEdit}
+      firstFieldRef={firstFieldRef}
+      onClose={onClose}
+      onSubmit={onSubmit}
+    />
+  )
 }

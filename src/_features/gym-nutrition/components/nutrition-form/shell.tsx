@@ -13,19 +13,24 @@ const EMPTY_META: NutritionFormPayload = {
   kcal_target: null,
   protein_target: null,
   notes: null,
+  is_active: true,
 }
 
 const createEmptyDays = (): DayDraft[] => [emptyDay(1), emptyDay(2), emptyDay(3)]
 
-export function NutritionFormShell({
-  plan,
-  onClose,
-  onSubmit,
-}: {
+interface NutritionFormShellProps {
   plan: NutritionPlanRow | null
+  targetUserId: string
   onClose: () => void
   onSubmit: (payload: { metadata: NutritionFormPayload; days: DayDraft[] }) => Promise<void>
-}) {
+}
+
+export function NutritionFormShell({
+  plan,
+  targetUserId,
+  onClose,
+  onSubmit,
+}: NutritionFormShellProps) {
   const isEdit = Boolean(plan)
   const firstFieldRef = useRef<HTMLInputElement>(null)
   return (
@@ -38,12 +43,13 @@ export function NutritionFormShell({
               kcal_target: plan.kcal_target,
               protein_target: plan.protein_target,
               notes: plan.notes,
+              is_active: plan.is_active,
             }
           : EMPTY_META
       }
       initialDays={() => createEmptyDays()}
     >
-      <ShellChrome plan={plan} isEdit={isEdit} firstFieldRef={firstFieldRef} onClose={onClose} onSubmit={onSubmit} />
+      <ShellChrome plan={plan} targetUserId={targetUserId} isEdit={isEdit} firstFieldRef={firstFieldRef} onClose={onClose} onSubmit={onSubmit} />
     </NutritionFormProvider>
   )
 }

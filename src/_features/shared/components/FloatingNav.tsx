@@ -94,7 +94,7 @@ export function FloatingNav() {
   if (loading) return null;
 
   // En rutas app (/dashboard, /workout...) el sidebar reemplaza al floating nav — después de todos los hooks
-  if (["/dashboard", "/users", "/workout", "/routines", "/membership", "/products", "/payments", "/plans", "/nutrition"].some((p) => pathname.startsWith(p))) {
+  if (["/dashboard", "/users", "/workout", "/ranking", "/routine", "/membership", "/products", "/payments", "/plans", "/nutrition"].some((p) => pathname.startsWith(p))) {
     return null;
   }
 
@@ -221,17 +221,17 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
             <CalendarDays className="h-4 w-4 mr-1" />
             Histórico
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate(`/users/profile/${user.profileId}/routine`)}
+          <DropdownMenuItem onClick={() => navigate('/routine')}
             className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
             <Flame className="h-4 w-4 mr-1" />
             Rutinas
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/nutrition')}
+          <DropdownMenuItem onClick={() => navigate(`/nutrition`)}
             className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
             <Utensils className="h-4 w-4 mr-1" />
             Nutrición
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/routines')}
+          <DropdownMenuItem onClick={() => navigate('/ranking')}
             className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
             <Trophy className="h-4 w-4 mr-1" />
             Ranking de rutinas

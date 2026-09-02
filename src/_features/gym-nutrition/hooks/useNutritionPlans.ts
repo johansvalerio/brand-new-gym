@@ -82,7 +82,7 @@ export function useCreateNutrition() {
       targetUserId,
       authorId,
     }: {
-      metadata: { name: string; goal: string; kcal_target: number | null; protein_target: number | null; notes: string | null }
+      metadata: { name: string; goal: string; kcal_target: number | null; protein_target: number | null; notes: string | null; is_active: boolean }
       days: { focus: string; meals: { food_id: number; grams: number; meal: string }[] }[]
       targetUserId: string
       authorId: string
@@ -100,6 +100,7 @@ export function useCreateNutrition() {
           kcal_target: metadata.kcal_target,
           protein_target: metadata.protein_target,
           notes: metadata.notes,
+          is_active: metadata.is_active,
         })
         .select("id")
         .single()
