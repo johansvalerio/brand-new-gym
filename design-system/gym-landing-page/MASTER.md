@@ -82,6 +82,11 @@ opencode.json                 # MCP: supabase (project wknacbyqqpsvswjhwrbx), co
 | `public.workout_logs` | `id`, `user_id` FK `CASCADE`, `routine_id` FK `SET NULL`, `routine_day_id` FK `SET NULL`, `started_at`, `completed_at` | `completed_at=NULL` = en curso |
 | `public.set_logs` | `id`, `workout_log_id` FK `CASCADE`, `exercise_id` FK, `set_number`, `weight` kg, `reps`, `is_warmup` | Hereda RLS del `workout_log` padre |
 | `public.product_sales` | `id`, `product_id` FK `RESTRICT`, `buyer_id` FK `RESTRICT`, `quantity`, `unit_price`, `total=unit_price*qty` CHECK, `status` pending/approved/rejected, `sold_by`, `payment_id` | Flujo mostrador: `pending` no descuenta stock; `approved` descuenta via `handle_product_sale_stock` BEFORE; RLS `self pending INSERT` + `admin ALL`. Stats solo `approved`. |
+| `public.foods` | `id`, `name`, `kcal/protein/carbs/fat_100`, `image_url` local `/foods/*.jpg` | Catálogo 12 alimentos USDA dominio público; mismo patrón que `exercises` + `import-food-images.js` |
+| `public.nutrition_plans` | `user_id` FK `CASCADE`, `created_by` FK `SET NULL`, `goal` volumen/definición/mantenimiento, `is_shared` | Igual que `routines`: RLS share/owner, coach/admin crean para users, `prevent_unauthorized_share` |
+| `public.nutrition_days` | `plan_id` FK `CASCADE`, `day_index` 1-7, `focus` | Igual `routine_days` — unique(plan_id, day_index) |
+| `public.nutrition_meals` | `day_id`, `food_id` FK `RESTRICT`, `grams`, `meal desayuno/almuerzo/cena/snack`, `order_index` | Igual `routine_exercises` |
+| `public.nutrition_votes` | `plan_id`, `user_id` unique | 1 voto por usuario, autor no vota (RLS) |
 
 **Environment:** `.env.local` → `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (`sb_publishable_...` nuevo) + `SUPABASE_ACCESS_TOKEN` `sbp_...` para MCP. Browser via `createBrowserClient`, Server via `createServerClient` (`lib/supabase/server.ts` con `cookies()` `next/headers`).
 
