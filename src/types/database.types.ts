@@ -372,6 +372,56 @@ export type Database = {
           },
         ]
       }
+      foods: {
+        Row: {
+          carbs_100: number
+          created_at: string
+          fat_100: number
+          id: number
+          image_url: string | null
+          kcal_100: number
+          name: string
+          protein_100: number
+        }
+        Insert: { carbs_100: number; created_at?: string; fat_100: number; id?: never; image_url?: string | null; kcal_100: number; name: string; protein_100: number }
+        Update: { carbs_100?: number; created_at?: string; fat_100?: number; id?: never; image_url?: string | null; kcal_100?: number; name?: string; protein_100?: number }
+        Relationships: []
+      }
+      nutrition_days: {
+        Row: { day_index: number; focus: string; id: number; plan_id: number }
+        Insert: { day_index: number; focus: string; id?: never; plan_id: number }
+        Update: { day_index?: number; focus?: string; id?: never; plan_id?: number }
+        Relationships: [
+          { foreignKeyName: 'nutrition_days_plan_id_fkey'; columns: ['plan_id']; isOneToOne: false; referencedRelation: 'nutrition_plans'; referencedColumns: ['id'] },
+        ]
+      }
+      nutrition_meals: {
+        Row: { day_id: number; food_id: number; grams: number; id: number; meal: string; order_index: number }
+        Insert: { day_id: number; food_id: number; grams: number; id?: never; meal: string; order_index?: number }
+        Update: { day_id?: number; food_id?: number; grams?: number; id?: never; meal?: string; order_index?: number }
+        Relationships: [
+          { foreignKeyName: 'nutrition_meals_day_id_fkey'; columns: ['day_id']; isOneToOne: false; referencedRelation: 'nutrition_days'; referencedColumns: ['id'] },
+          { foreignKeyName: 'nutrition_meals_food_id_fkey'; columns: ['food_id']; isOneToOne: false; referencedRelation: 'foods'; referencedColumns: ['id'] },
+        ]
+      }
+      nutrition_plans: {
+        Row: { created_at: string; created_by: string | null; goal: string; id: number; is_active: boolean; is_shared: boolean; kcal_target: number | null; name: string; notes: string | null; protein_target: number | null; updated_at: string; user_id: string }
+        Insert: { created_at?: string; created_by?: string | null; goal: string; id?: never; is_active?: boolean; is_shared?: boolean; kcal_target?: number | null; name: string; notes?: string | null; protein_target?: number | null; updated_at?: string; user_id: string }
+        Update: { created_at?: string; created_by?: string | null; goal?: string; id?: never; is_active?: boolean; is_shared?: boolean; kcal_target?: number | null; name?: string; notes?: string | null; protein_target?: number | null; updated_at?: string; user_id?: string }
+        Relationships: [
+          { foreignKeyName: 'nutrition_plans_created_by_fkey'; columns: ['created_by']; isOneToOne: false; referencedRelation: 'users'; referencedColumns: ['id'] },
+          { foreignKeyName: 'nutrition_plans_user_id_fkey'; columns: ['user_id']; isOneToOne: false; referencedRelation: 'users'; referencedColumns: ['id'] },
+        ]
+      }
+      nutrition_votes: {
+        Row: { created_at: string; id: number; plan_id: number; user_id: string }
+        Insert: { created_at?: string; id?: never; plan_id: number; user_id: string }
+        Update: { created_at?: string; id?: never; plan_id?: number; user_id?: string }
+        Relationships: [
+          { foreignKeyName: 'nutrition_votes_plan_id_fkey'; columns: ['plan_id']; isOneToOne: false; referencedRelation: 'nutrition_plans'; referencedColumns: ['id'] },
+          { foreignKeyName: 'nutrition_votes_user_id_fkey'; columns: ['user_id']; isOneToOne: false; referencedRelation: 'users'; referencedColumns: ['id'] },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -736,6 +786,10 @@ export type Database = {
           p_is_warmup: boolean
         }
         Returns: Database["public"]["Tables"]["set_logs"]["Row"]
+      }
+      copy_shared_nutrition_plan: {
+        Args: { source_plan_id: number }
+        Returns: Database['public']['Tables']['nutrition_plans']['Row']
       }
       finish_workout: {
         Args: { p_workout_log_id: number; p_notes: string | null }
