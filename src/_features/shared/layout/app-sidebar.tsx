@@ -7,7 +7,7 @@ import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
 import { createClient } from "@/lib/supabase/client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LayoutDashboard, UserCircle, Dumbbell, Flame, Trophy, CreditCard, Package, Users, Banknote, LogOut, Menu, X, CalendarDays, Home, Bell, Utensils } from "lucide-react"
+import { LayoutDashboard, Dumbbell, Flame, Trophy, CreditCard, Package, Users, Banknote, LogOut, Menu, X, CalendarDays, Home, Bell, Utensils } from "lucide-react"
 import { useNotifications, useMarkAllNotificationsRead, useMarkNotificationRead } from "@/_features/shared/hooks/useNotifications"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 
@@ -19,7 +19,6 @@ const navSections: { title: string; items: NavItem[] }[] = [
     items: [
       { label: "Inicio", href: "/", icon: Home },
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { label: "Mi perfil", href: "/users/profile/me", icon: UserCircle },
     ],
   },
   {
@@ -250,20 +249,32 @@ export function AppSidebar() {
 
         {/* Footer: profile + actions */}
         <div className="shrink-0 border-t border-border/50 px-2 py-2">
-          {/* Profile card */}
+          {/* Profile card — click abre el perfil del usuario logueado */}
           {profile && (
-            <div className={cn("mt-1 flex items-center overflow-hidden rounded-full py-2 transition-all duration-200", !isMobile && collapsed ? "justify-center px-0" : "gap-3 px-3")}>
+            <button
+              type="button"
+              onClick={() => {
+                navigate(profileHref)
+                setMobileOpen(false)
+              }}
+              aria-label="Ir a mi perfil"
+              title="Mi perfil"
+              className={cn(
+                "mt-1 flex w-full cursor-pointer items-center overflow-hidden rounded-full py-2 transition-all duration-200 hover:bg-secondary hover:text-foreground",
+                !isMobile && collapsed ? "justify-center px-0" : "gap-3 px-3",
+              )}
+            >
               <Avatar className="h-8 w-8 shrink-0 border border-primary/20">
                 <AvatarImage src={profile.avatar ?? undefined} alt={profile.first_name ?? "U"} />
                 <AvatarFallback className="bg-primary/15 text-xs font-black text-primary">
                   {(profile.first_name?.[0] ?? "U").toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className={cn("min-w-0 flex-1 transition-opacity duration-200", showLabel ? "opacity-100" : "pointer-events-none hidden w-0 opacity-0")}>
+              <div className={cn("min-w-0 flex-1 text-left transition-opacity duration-200", showLabel ? "opacity-100" : "pointer-events-none hidden w-0 opacity-0")}>
                 <p className="truncate text-sm font-semibold text-foreground">{[profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Usuario"}</p>
                 <p className="truncate text-[11px] text-muted-foreground">{profile.email}</p>
               </div>
-            </div>
+            </button>
           )}
 
           {/* Logout */}
