@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { PackageOpen, Loader2 } from "lucide-react"
+import { PackageOpen, Loader2, Package, ShoppingBag } from "lucide-react"
 import type { CreateProductDto, ProductRow } from "../hooks/useProducts"
 import {
   useProducts,
@@ -150,8 +150,12 @@ export function Products() {
 
         <Tabs defaultValue="inventory" className="flex flex-col gap-4">
           <TabsList className="self-start">
-            <TabsTrigger value="inventory">Inventario</TabsTrigger>
-            <TabsTrigger value="sales">{isStaff ? "Ventas" : "Mis compras"}</TabsTrigger>
+            <TabsTrigger value="inventory">
+              <Package /> Inventario
+            </TabsTrigger>
+            <TabsTrigger value="sales">
+              <ShoppingBag /> {isStaff ? "Ventas" : "Mis compras"}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="inventory" className="mt-0">
