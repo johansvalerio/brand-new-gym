@@ -105,25 +105,16 @@ export function useCreateNutrition() {
         .select("id")
         .single()
       if (planErr) throw new Error(planErr.message)
-      for (let i = 0; i < days.length; i++) {
-        const d = days[i]
-        const { data: dayRow, error: dayErr } = await supabase
-          .from("nutrition_days")
-          .insert({ plan_id: plan.id, day_index: i + 1, focus: d.focus || `Día ${i + 1}` })
-          .select("id")
-          .single()
-        if (dayErr) throw new Error(dayErr.message)
-        for (let j = 0; j < d.meals.length; j++) {
-          const m = d.meals[j]
-          const { error: mealErr } = await supabase.from("nutrition_meals").insert({
-            day_id: dayRow.id,
-            food_id: m.food_id,
-            grams: m.grams,
-            meal: m.meal,
-            order_index: j,
-          })
-          if (mealErr) throw new Error(mealErr.message)
-        }
+      // persistDays con rollback: si un día/comida falla, borra el plan huérfano (patrón useCreateFullRoutine)
+      try {
+        await persistNutritionDays(
+          supabase,
+          plan.id,
+          days.map((d, i) => ({ day_index: i + 1, focus: d.focus || `Día ${i + 1}`, meals: d.meals })),
+        )
+      } catch (e) {
+        await supabase.from("nutrition_plans").delete().eq("id", plan.id)
+        throw e
       }
       return plan as { id: number }
     },
@@ -157,6 +148,71 @@ export function useUpdateNutrition() {
       qc.invalidateQueries({ queryKey: nutritionKeys.shared })
     },
     onError: (e: Error) => toast.error(e.message),
+  })
+}
+
+/** Persiste días + comidas completos: borra y recrea (patrón persistDays de rutinas, con delete validado). */
+async function persistNutritionDays(
+  supabase: ReturnType<typeof createClient>,
+  planId: number,
+  days: { day_index: number; focus: string; meals: { food_id: number; grams: number; meal: string }[] }[],
+): Promise<void> {
+  const { error: delErr } = await supabase.from("nutrition_days").delete().eq("plan_id", planId)
+  if (delErr) throw new Error(delErr.message)
+
+  for (const day of days) {
+    const { data: insertedDay, error: dayErr } = await supabase
+      .from("nutrition_days")
+      .insert({ plan_id: planId, day_index: day.day_index, focus: day.focus.trim() })
+      .select("id")
+      .single()
+    if (dayErr) throw new Error(dayErr.message)
+
+    const meals = day.meals.filter((m) => m.food_id > 0 && m.grams > 0)
+    if (insertedDay && meals.length > 0) {
+      const { error: mealErr } = await supabase.from("nutrition_meals").insert(
+        meals.map((m, j) => ({
+          day_id: insertedDay.id,
+          food_id: m.food_id,
+          grams: m.grams,
+          meal: m.meal,
+          order_index: j,
+        })),
+      )
+      if (mealErr) throw new Error(mealErr.message)
+    }
+  }
+}
+
+export function useUpdateFullNutrition() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      planId,
+      metadata,
+      days,
+    }: {
+      planId: number
+      metadata: { name: string; goal: string; kcal_target: number | null; protein_target: number | null; notes: string | null }
+      days: { day_index: number; focus: string; meals: { food_id: number; grams: number; meal: string }[] }[]
+    }) => {
+      const supabase = createClient()
+      const { data: plan, error } = await supabase
+        .from("nutrition_plans")
+        .update({ ...metadata, updated_at: new Date().toISOString() })
+        .eq("id", planId)
+        .select()
+        .single()
+      if (error) throw new Error(error.message)
+      await persistNutritionDays(supabase, planId, days)
+      return plan as unknown as NutritionPlanRow
+    },
+    onSuccess: (plan) => {
+      toast.success(`Plan "${plan.name}" actualizado`)
+      qc.invalidateQueries({ queryKey: nutritionKeys.byUser(plan.user_id) })
+      qc.invalidateQueries({ queryKey: nutritionKeys.shared })
+    },
+    onError: (e: Error) => toast.error("No se pudo actualizar el plan", { description: e.message }),
   })
 }
 

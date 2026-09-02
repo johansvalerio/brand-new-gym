@@ -6,7 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { Loader2, Plus, ShieldAlert } from "lucide-react"
 import type { Tables } from "@/types/database.types"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
-import { useUserNutrition, useCreateNutrition, useDeleteNutrition, useUpdateNutrition, type NutritionPlanRow, type NutritionDayRow } from "../hooks/useNutritionPlans"
+import { useUserNutrition, useCreateNutrition, useDeleteNutrition, useUpdateNutrition, useUpdateFullNutrition, type NutritionPlanRow, type NutritionDayRow } from "../hooks/useNutritionPlans"
 import { buildViewer, canCreateNutritionFor, canEditNutrition, dayLabel } from "../hooks/nutrition-helpers"
 import { Calendar } from "@/_features/shared/components/Calendar"
 import { NutritionFormDialog } from "./nutrition-form/dialog"
@@ -26,6 +26,7 @@ export function NutritionPlans({ profile }: { profile: ProfileRow }) {
   const { data: plans = [], isLoading, error } = useUserNutrition(profile.id)
   const createPlan = useCreateNutrition()
   const updatePlan = useUpdateNutrition()
+  const updateFullPlan = useUpdateFullNutrition()
   const deletePlan = useDeleteNutrition()
   const toggleActive = useUpdateNutrition()
   const toggleShared = useUpdateNutrition()
@@ -79,13 +80,21 @@ export function NutritionPlans({ profile }: { profile: ProfileRow }) {
   }
   const handleSubmit = async ({ metadata, days }: { metadata: import("./nutrition-form/nutrition-form-types").NutritionFormPayload; days: import("./nutrition-form/nutrition-form-types").DayDraft[] }) => {
     if (editing) {
-      await updatePlan.mutateAsync({ id: editing.id, dto: metadata as unknown as Record<string, unknown> })
-      // TODO: persist days/meals diff (update nutrition_days/meals) — por ahora solo metadata
+      // full update: metadata + días + comidas (persistNutritionDays delete+recreate, patrón rutinas)
+      await updateFullPlan.mutateAsync({
+        planId: editing.id,
+        metadata,
+        days: days.map((d, i) => ({
+          day_index: d.day_index || i + 1,
+          focus: d.focus,
+          meals: d.meals.map((m) => ({ food_id: m.food_id, grams: m.grams, meal: m.meal })),
+        })),
+      })
     } else {
       if (!sessionProfile?.id) return
       await createPlan.mutateAsync({
         metadata,
-        days: days.map((d) => ({ focus: d.focus, meals: d.meals.map((m) => ({ food_id: m.food_id, grams: m.grams, meal: m.meal })) })),
+        days: days.map((d, i) => ({ focus: d.focus, day_index: d.day_index || i + 1, meals: d.meals.map((m) => ({ food_id: m.food_id, grams: m.grams, meal: m.meal })) })),
         targetUserId: profile.id,
         authorId: sessionProfile.id,
       })
