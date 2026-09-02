@@ -62,15 +62,16 @@ export function ProductsToolbar({
       <div className="flex items-center justify-end gap-3">
         <ViewToggle value={view} onChange={onViewChange} />
 
-        <button
-          onClick={onCreate}
-          disabled={!canCreate}
-          aria-label="Nuevo producto"
-          className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-4 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Nuevo</span>
-        </button>
+        {canCreate ? (
+          <button
+            onClick={onCreate}
+            aria-label="Nuevo producto"
+            className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-4 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Nuevo</span>
+          </button>
+        ) : null}
       </div>
     </div>
   )
