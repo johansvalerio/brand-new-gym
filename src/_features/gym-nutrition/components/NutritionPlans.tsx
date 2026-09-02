@@ -11,6 +11,7 @@ import { buildViewer, canCreateNutritionFor, canEditNutrition, dayLabel } from "
 import { Calendar } from "@/_features/shared/components/Calendar"
 import { NutritionFormDialog } from "./nutrition-form/dialog"
 import { ConfirmDeleteNutritionDialog } from "./confirm-delete-nutrition-dialog"
+import { DayMealsDialog } from "./nutrition-plans/day-meals-dialog"
 import { EmptyState } from "./nutrition-plans/empty-state"
 
 if (typeof window !== "undefined") {
@@ -33,6 +34,8 @@ export function NutritionPlans({ profile }: { profile: ProfileRow }) {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<NutritionPlanRow | null>(null)
   const [deleting, setDeleting] = useState<NutritionPlanRow | null>(null)
+  // Vista de solo-lectura al click en una celda del calendario
+  const [viewingDay, setViewingDay] = useState<{ day: NutritionDayRow; planName: string } | null>(null)
   const sectionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -170,7 +173,7 @@ export function NutritionPlans({ profile }: { profile: ProfileRow }) {
                   <button
                     key={`${plan.id}-${day.id}`}
                     data-plan-card
-                    onClick={() => canEditNutrition(plan, viewer) && openEdit(plan)}
+                    onClick={() => setViewingDay({ day, planName: plan.name })}
                     className="w-full cursor-pointer rounded-md border border-border bg-card px-2 py-1.5 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 text-xs"
                     title={`${day.focus || dayLabel(day.day_index)} — ${plan.name}`}
                   >
@@ -227,6 +230,7 @@ export function NutritionPlans({ profile }: { profile: ProfileRow }) {
       )}
       <NutritionFormDialog open={formOpen} plan={editing} targetUserId={profile.id} onClose={() => { setFormOpen(false); setEditing(null) }} onSubmit={handleSubmit} />
       <ConfirmDeleteNutritionDialog plan={deleting} onCancel={() => setDeleting(null)} onConfirm={handleDelete} />
+      <DayMealsDialog day={viewingDay?.day ?? null} planName={viewingDay?.planName ?? ""} onClose={() => setViewingDay(null)} />
     </div>
   )
 }
