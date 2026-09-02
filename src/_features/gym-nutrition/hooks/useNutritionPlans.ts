@@ -13,7 +13,7 @@ export type NutritionMealRow = {
   grams: number
   meal: string
   order_index: number
-  food: { id: number; name: string; kcal_100: number; protein_100: number } | null
+  food: { id: number; name: string; kcal_100: number; protein_100: number; carbs_100: number; fat_100: number; image_url: string | null } | null
 }
 
 export type NutritionDayRow = {
@@ -54,7 +54,7 @@ async function fetchUserNutrition(userId: string): Promise<NutritionPlanRow[]> {
       `
         id, name, goal, kcal_target, protein_target, notes, is_active, is_shared, user_id, created_by, created_at,
         author:created_by (id, first_name, last_name, avatar, role),
-        nutrition_days (id, day_index, focus, nutrition_meals (id, food_id, grams, meal, order_index, food:food_id (id, name, kcal_100, protein_100))),
+        nutrition_days (id, day_index, focus, nutrition_meals (id, food_id, grams, meal, order_index, food:food_id (id, name, kcal_100, protein_100, carbs_100, fat_100, image_url))),
         votes:nutrition_votes (user_id)
       `
     )
