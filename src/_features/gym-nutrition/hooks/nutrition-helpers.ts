@@ -6,7 +6,7 @@ export type NutritionGoal = (typeof NUTRITION_GOALS)[number]
 export const NUTRITION_MEALS = ["desayuno", "almuerzo", "cena", "snack"] as const
 export type NutritionMeal = (typeof NUTRITION_MEALS)[number]
 
-export const DAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] as const
+export const DAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"] as const
 
 export function nutritionGoalLabel(g: string): string {
   switch (g) {
