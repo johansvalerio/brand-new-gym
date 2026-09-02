@@ -2,6 +2,7 @@
 
 import { MembershipBanner } from "./membership-banner"
 import { MyRoutineCard } from "./my-routine-card"
+import { MyNutritionCard } from "./my-nutrition-card"
 import { MyPaymentStatus } from "./my-payment-status"
 import { RecentNotifications } from "./recent-notifications"
 import { RankingPreview } from "./ranking-preview"
@@ -19,6 +20,7 @@ export function MemberDashboard({ profileId }: { profileId: string }) {
       <MembershipBanner profileId={profileId} />
 
       <MyRoutineCard userId={profileId} />
+      <MyNutritionCard userId={profileId} />
       <MyWorkoutStats />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
