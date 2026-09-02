@@ -44,37 +44,65 @@ export function DayEditor({
 
   return (
     <div className="overflow-hidden rounded-md border border-border bg-secondary/30">
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 bg-secondary/60 px-3 py-2.5">
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{dayLabel(day.day_index)}</span>
+      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border/60 bg-secondary/60 px-3 py-2.5 sm:px-4 sm:py-3">
+        <div className="flex min-w-0 flex-1 basis-full items-center gap-2 sm:basis-auto">
+          <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            {dayLabel(day.day_index)}
+          </span>
           <input
+            type="text"
             value={day.focus}
             onChange={(e) => onUpdate({ focus: e.target.value })}
-            placeholder="Ej: Alta proteína"
-            className={`w-full rounded-md border bg-background px-2 py-1 text-sm font-semibold outline-none sm:w-48 ${error ? "border-destructive" : "border-border focus:border-primary"}`}
+            placeholder="Alta proteína · Keto · etc."
+            className={`w-full min-w-0 rounded-md border bg-background px-3 py-1.5 font-sans text-sm font-semibold uppercase tracking-tight text-foreground outline-none transition-colors focus:border-primary sm:w-48 ${
+              error ? "border-destructive" : "border-border"
+            }`}
           />
         </div>
-        <div className="flex items-center gap-1">
-          <button type="button" onClick={onMoveUp} disabled={isFirst} className="flex h-7 w-7 items-center justify-center rounded-md border border-border disabled:opacity-30">
+        <div className="ml-auto flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onMoveUp}
+            disabled={isFirst}
+            aria-label="Mover arriba"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-30 sm:h-7 sm:w-7"
+          >
             <ChevronUp className="h-3.5 w-3.5" />
           </button>
-          <button type="button" onClick={onMoveDown} disabled={isLast} className="flex h-7 w-7 items-center justify-center rounded-md border border-border disabled:opacity-30">
+          <button
+            type="button"
+            onClick={onMoveDown}
+            disabled={isLast}
+            aria-label="Mover abajo"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-30 sm:h-7 sm:w-7"
+          >
             <ChevronDown className="h-3.5 w-3.5" />
           </button>
-          <button type="button" onClick={onRemove} className="flex h-7 w-7 items-center justify-center rounded-md border border-border hover:border-destructive">
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label="Eliminar día"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive hover:text-destructive sm:h-7 sm:w-7"
+          >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
       </header>
 
-      {error && <p className="px-3 py-1 text-[10px] uppercase text-destructive">{error}</p>}
+      {error ? (
+        <p className="border-b border-border/40 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-destructive">
+          {error}
+        </p>
+      ) : null}
 
-      <div className="flex flex-col gap-2 p-3">
+      <div className="flex flex-col gap-3 p-4">
         <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
           {Math.round(kcal)} kcal · {Math.round(protein)}g proteína · {day.meals.length} comidas
         </p>
         {day.meals.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Sin comidas. Agrega la primera.</p>
+          <p className="font-mono text-xs text-muted-foreground">
+            Sin comidas. Agrega la primera abajo.
+          </p>
         ) : (
           day.meals.map((meal, i) => (
             <MealEditor key={meal.id} meal={meal} onUpdate={(p) => updateMeal(i, p)} onRemove={() => removeMeal(i)} />
@@ -83,9 +111,10 @@ export function DayEditor({
         <button
           type="button"
           onClick={addMeal}
-          className="flex items-center justify-center gap-2 rounded-md border border-dashed border-border bg-background/30 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:border-primary"
+          className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-border bg-background/30 px-3 py-2 font-mono text-xs uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary hover:text-primary"
         >
-          <Plus className="h-3 w-3" /> Agregar comida
+          <Plus className="h-3 w-3" />
+          Agregar comida
         </button>
       </div>
     </div>
