@@ -141,14 +141,22 @@ export function useUpdateNutrition() {
   return useMutation({
     mutationFn: async ({ id, dto }: { id: number; dto: Record<string, unknown> }) => {
       const supabase = createClient()
-      const { error } = await supabase.from("nutrition_plans").update({ ...(dto as Record<string, unknown>), updated_at: new Date().toISOString() } as never).eq("id", id)
+      // .select() para recuperar user_id y invalidar byUser exacto (patrón useUpdateFullRoutine)
+      const { data, error } = await supabase
+        .from("nutrition_plans")
+        .update({ ...(dto as Record<string, unknown>), updated_at: new Date().toISOString() } as never)
+        .eq("id", id)
+        .select()
+        .single()
       if (error) throw new Error(error.message)
+      return data as unknown as NutritionPlanRow
     },
-    onSuccess: () => toast.success("Plan actualizado"),
+    onSuccess: (plan) => {
+      toast.success(`Plan "${plan.name}" actualizado`)
+      qc.invalidateQueries({ queryKey: nutritionKeys.byUser(plan.user_id) })
+      qc.invalidateQueries({ queryKey: nutritionKeys.shared })
+    },
     onError: (e: Error) => toast.error(e.message),
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: nutritionKeys.all })
-    },
   })
 }
 
