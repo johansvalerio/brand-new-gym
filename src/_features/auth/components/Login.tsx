@@ -24,8 +24,8 @@ export function Login() {
       });
 
       if (error) throw error;
-    } catch (error: any) {
-      setError(error.message || "Error al conectar con Google");
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "Error al conectar con Google");
       setOAuthLoading(null);
     }
   };
@@ -43,8 +43,8 @@ export function Login() {
       });
 
       if (error) throw error;
-    } catch (error: any) {
-      setError(error.message || "Error al conectar con Facebook");
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "Error al conectar con Facebook");
       setOAuthLoading(null);
     }
   };

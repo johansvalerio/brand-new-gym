@@ -101,9 +101,13 @@ export function useMembershipClock(
   const [now, setNow] = useState<number | null>(null)
 
   useEffect(() => {
-    setNow(Date.now())
+    // Primer tick diferido (no setState síncrono en el body del effect)
+    const first = setTimeout(() => setNow(Date.now()), 0)
     const t = setInterval(() => setNow(Date.now()), 30_000)
-    return () => clearInterval(t)
+    return () => {
+      clearTimeout(first)
+      clearInterval(t)
+    }
   }, [])
 
   return useMemo(() => computeMembershipClock(start, end, now), [start, end, now])

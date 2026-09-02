@@ -8,8 +8,6 @@ import { ExerciseVisual } from "./exercise-picker"
 
 type ExerciseRow = Tables<"exercises">
 
-const GROUPS = ["pecho", "espalda", "hombros", "brazos", "piernas", "core"] as const
-
 /**
  * Overlay dedicado para elegir un ejercicio: pantalla grande, grid de FOTOS,
  * búsqueda, chips por grupo muscular y filtro por equipo. Se abre encima del

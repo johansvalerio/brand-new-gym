@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { User as UserIcon, Loader2 } from "lucide-react"
 import {
   useUsers,
@@ -13,7 +13,8 @@ import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { useCoaches } from "../hooks/useCoaches"
 import { usePlans } from "@/_features/gym-admin/plans/hooks/usePlans"
 import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
-import { ViewToggle, type ViewMode } from "@/_features/shared/components/view-toggle"
+import type { ViewMode } from "@/_features/shared/components/view-toggle"
+import { useNow } from "@/_features/shared/hooks/useNow"
 import { UsersCards } from "./users-card"
 import { UsersTable } from "./users-table"
 import { UsersToolbar, type MembershipFilter } from "./users-toolbar"
@@ -32,6 +33,7 @@ export function Users() {
   const { data: coaches = [] } = useCoaches()
   const { data: plans = [] } = usePlans()
   const { navigate } = usePageTransition()
+  const now = useNow() // timestamp compartido (tick 30s) — evita Date.now() impuro en useMemo
 
   const [view, setView] = useState<ViewMode>("cards")
   const [query, setQuery] = useState("")
@@ -49,8 +51,9 @@ export function Users() {
     let result = users
 
     if (membershipFilter !== "all") {
-      const now = Date.now()
+      // Si now==null (pre-hidratación), no filtramos por tiempo todavía.
       result = result.filter((user) => {
+        if (now === null) return true
         const end = user.membership_end ? new Date(user.membership_end).getTime() : null
         switch (membershipFilter) {
           case "active":
@@ -96,7 +99,7 @@ export function Users() {
         (user.phone ?? "").toLowerCase().includes(q)
       )
     })
-  }, [users, query, membershipFilter, planSlugFilter])
+  }, [users, query, membershipFilter, planSlugFilter, now])
 
   const stats = useMemo(() => {
     const active = users.filter((u) => u.membership_status === "active").length

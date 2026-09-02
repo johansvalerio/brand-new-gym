@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { PackageOpen, Loader2, Package, ShoppingBag } from "lucide-react"
 import type { CreateProductDto, ProductRow } from "../hooks/useProducts"
 import {
@@ -26,7 +26,7 @@ type ViewMode = "cards" | "table"
 
 export function Products() {
   useOfflineSalesSync()
-  const { data: products = [], isLoading } = useProducts()
+  const { data: products = [] } = useProducts()
   const { data: categories = [] } = useCategories()
   const createProduct = useCreateProduct()
   const updateProduct = useUpdateProduct()

@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
@@ -19,8 +18,8 @@ export const foodKeys = {
 }
 
 async function fetchFoods(): Promise<FoodRow[]> {
-  const supabase = createClient() as unknown as { from: (t: string) => never } as unknown as ReturnType<typeof createClient>
-  const { data, error } = await (supabase as never as { from: (t:string)=>{select:(q:string)=>{order:(c:string)=>Promise<{data:FoodRow[]|null,error:{message:string}|null}>}} }).from("foods").select("*").order("name")
+  const supabase = createClient()
+  const { data, error } = await supabase.from("foods").select("*").order("name")
   if (error) throw new Error(error.message)
   return (data ?? []) as FoodRow[]
 }

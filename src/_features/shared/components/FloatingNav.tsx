@@ -234,7 +234,7 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
           <DropdownMenuItem onClick={() => navigate('/ranking')}
             className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
             <Trophy className="h-4 w-4 mr-1" />
-            Ranking de rutinas
+            Ranking
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate('/membership')}
             className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">

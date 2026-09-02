@@ -68,7 +68,6 @@ export function ExerciseVisual({
   className?: string
 }) {
   if (exercise?.image_url) {
-    // eslint-disable-next-line @next/next/no-img-element
     return (
       <img
         src={exercise.image_url}

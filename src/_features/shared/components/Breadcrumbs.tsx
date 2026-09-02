@@ -1,5 +1,3 @@
-import type { Metadata } from "next";
-
 interface BreadcrumbItem {
   name: string;
   item: string;

@@ -4,17 +4,13 @@ import { useEffect, useRef, useState } from "react"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import {
-  ArrowLeft,
   BadgeCheck,
-  CalendarDays,
   CalendarRange,
   Clock3,
   Dumbbell,
   Loader2,
   Mail,
-  MapPin,
   Pencil,
-  Phone,
   ShieldAlert,
   Trash2,
   User as UserIcon,
@@ -30,7 +26,6 @@ import {
   type UserRow,
 } from "@/_features/gym-admin/users/hooks/useUsers"
 import { useCoaches, coachDisplayName } from "@/_features/gym-admin/users/hooks/useCoaches"
-import { usePlans } from "@/_features/gym-admin/plans/hooks/usePlans"
 import { MembershipCountdown } from "@/_features/gym-admin/users/components/MembershipCountdown"
 import {
   UserFormDialog,
@@ -101,7 +96,6 @@ export function UserProfile({ id }: { id: string }) {
   const { data: profile, isLoading: dataLoading, error } = useUser(id)
   const { user: sessionUser, isAdmin, loading: authLoading } = useAuthSession()
   const { data: coaches = [] } = useCoaches()
-  const { data: plans = [] } = usePlans()
   const { navigate } = usePageTransition()
 
   const [formOpen, setFormOpen] = useState(false)

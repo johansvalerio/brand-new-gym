@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { ArrowLeft, Check, Dumbbell, Loader2, Plus, RefreshCw, Wifi, WifiOff, X, Zap } from "lucide-react"
+import { Check, Dumbbell, Loader2, Plus, RefreshCw, Wifi, WifiOff, X, Zap } from "lucide-react"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { useUserRoutines } from "@/_features/gym-routines/hooks/useUserRoutines"
 import { dayLabel } from "@/_features/gym-routines/hooks/routine-helpers"
@@ -71,12 +71,6 @@ export function WorkoutSession() {
     () => routines.find((r) => r.is_active) ?? routines[0] ?? null,
     [routines],
   )
-  const selectedDay = useMemo(
-    () =>
-      activeRoutine?.routine_days.find((d) => d.id === selectedDayId) ?? null,
-    [activeRoutine, selectedDayId],
-  )
-
   const isFree = mode === "free"
   // Al menos una serie con peso o reps reales (habilita "Terminar").
   const hasRealSet = entriesToSetDrafts(entries).length > 0
@@ -231,19 +225,11 @@ export function WorkoutSession() {
     })
   }
 
-  if (authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Cargando...
-      </div>
-    )
-  }
-
   const availableCatalog = catalog.filter(
     (e) => !entries.some((entry) => entry.exercise_id === e.id),
   )
 
+  // Hooks SIEMPRE en el mismo orden: el classNamei "authLoading" va al final, nunca entre hooks.
   const restMap = useMemo(() => {
     const m = new Map<number, number>()
     if (!isFree && activeRoutine) {
@@ -255,6 +241,15 @@ export function WorkoutSession() {
     }
     return m
   }, [activeRoutine, isFree])
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Cargando...
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:max-w-4xl">

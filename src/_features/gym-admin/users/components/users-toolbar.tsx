@@ -7,8 +7,6 @@ import { ViewToggle, type ViewMode } from "@/_features/shared/components/view-to
 
 export type MembershipFilter = "all" | "active" | "expiring" | "expired" | "none"
 
-const DAY_MS = 86_400_000
-
 export function UsersToolbar({
   query,
   onQueryChange,

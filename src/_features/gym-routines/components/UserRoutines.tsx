@@ -3,10 +3,9 @@
 import { useEffect, useRef, useState } from "react"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
-import { ArrowLeft, Loader2, Plus, ShieldAlert } from "lucide-react"
+import { Loader2, Plus, ShieldAlert } from "lucide-react"
 import type { Tables } from "@/types/database.types"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
-import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
 import { useUserRoutines, type UserRoutine } from "../hooks/useUserRoutines"
 import { useCreateFullRoutine, useUpdateFullRoutine } from "../hooks/useFullRoutine"
 import { useDeleteRoutine, useUpdateRoutine } from "../hooks/useRoutines"
@@ -25,7 +24,6 @@ type ProfileRow = Pick<Tables<"users">, "id" | "first_name" | "last_name" | "rol
 
 export function UserRoutines({ profile }: { profile: ProfileRow }) {
   const { profile: sessionProfile } = useAuthSession()
-  const { navigate } = usePageTransition()
   const viewerId = sessionProfile?.id ?? null
   const viewer = buildViewer(sessionProfile)
   const { data: routines = [], isLoading, error } = useUserRoutines(profile.id)
@@ -148,7 +146,7 @@ export function UserRoutines({ profile }: { profile: ProfileRow }) {
         ) : null}
       </div>
       {routines.length === 0 ? (
-        <EmptyState profile={profile} viewerId={viewerId} navigate={navigate} />
+        <EmptyState profile={profile} viewerId={viewerId} />
       ) : (
         <Calendar
           renderDay={(dayIndex) => {

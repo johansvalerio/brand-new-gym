@@ -111,7 +111,6 @@ export function FoodChooser({
                   <button
                     key={food.id}
                     type="button"
-                    aria-selected={isSel}
                     onClick={() => {
                       onSelect(food.id)
                       onClose()

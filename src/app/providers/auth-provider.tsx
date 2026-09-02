@@ -78,8 +78,8 @@ export function AuthProvider({
       })
     } else {
       // si ya tenemos user validado del server, solo asegura perfil
+      // (loading ya era false desde el lazy init — setState síncrono aquí era no-op redundante)
       void syncProfile(resolvedInitialUser.id)
-      setLoading(false)
     }
 
     return () => subscription.unsubscribe()

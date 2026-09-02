@@ -126,7 +126,6 @@ export function useCopySharedRoutine() {
   return useMutation({
     mutationFn: async ({
       routineId,
-      viewerId,
     }: {
       routineId: number
       viewerId: string

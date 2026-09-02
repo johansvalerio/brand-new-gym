@@ -22,12 +22,12 @@ export function ProductDetailModal({ product, open, onClose, onPurchase, purchas
   const [quantity, setQuantity] = React.useState(1)
   useBodyScrollLock(open)
 
-  React.useEffect(() => {
-    if (open) {
-      setPurchasing(false)
-      setQuantity(1)
-    }
-  }, [open, product?.product_id])
+  // Reset al cerrar (no an effect sync de props) — MASTER.md anti set-state-in-effect.
+  const handleClose = () => {
+    setPurchasing(false)
+    setQuantity(1)
+    onClose()
+  }
 
   if (!product) return null
 
@@ -36,7 +36,7 @@ export function ProductDetailModal({ product, open, onClose, onPurchase, purchas
   const canPurchase = Boolean(onPurchase) && !isOutOfStock
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
@@ -45,7 +45,7 @@ export function ProductDetailModal({ product, open, onClose, onPurchase, purchas
         <DialogTitle className="sr-only">{product.product_name}</DialogTitle>
 
         <button
-          onClick={onClose}
+          onClick={handleClose}
           aria-label="Cerrar"
           className="absolute right-3 top-3 z-20 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-background/80 text-muted-foreground backdrop-blur transition-colors hover:bg-secondary hover:text-foreground"
         >

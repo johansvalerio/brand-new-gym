@@ -14,10 +14,15 @@ export function RestTimerBar({
 }) {
   const [remaining, setRemaining] = useState<number>(seconds ?? 0)
   const intervalRef = useRef<number | null>(null)
+  // Reset al cambiar seconds: prevState pattern en vez de setState en effect
+  const [prevSeconds, setPrevSeconds] = useState(seconds)
+  if (seconds !== prevSeconds) {
+    setPrevSeconds(seconds)
+    if (seconds !== null) setRemaining(seconds)
+  }
 
   useEffect(() => {
     if (seconds === null || seconds === undefined) return
-    setRemaining(seconds)
     if (intervalRef.current) window.clearInterval(intervalRef.current)
     intervalRef.current = window.setInterval(() => {
       setRemaining((prev) => {

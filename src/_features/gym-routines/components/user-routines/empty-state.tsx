@@ -8,11 +8,9 @@ type ProfileRow = Pick<Tables<"users">, "id" | "first_name" | "last_name" | "rol
 export function EmptyState({
   profile,
   viewerId,
-  navigate,
 }: {
   profile: ProfileRow
   viewerId: string | null | undefined
-  navigate: (href: string) => void
 }) {
   return (
     <div className="relative overflow-hidden rounded-lg border border-dashed border-border bg-card/50 px-6 py-16 text-center">

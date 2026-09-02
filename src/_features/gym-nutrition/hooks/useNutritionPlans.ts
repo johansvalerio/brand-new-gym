@@ -1,10 +1,8 @@
-// @ts-nocheck
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import type { Tables } from "@/types/database.types"
 import { nutritionMetadataSchema } from "../lib/nutrition.schema"
 
 export type NutritionMealRow = {

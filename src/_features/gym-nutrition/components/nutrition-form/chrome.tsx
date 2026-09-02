@@ -26,15 +26,14 @@ export function ShellChrome({
   onSubmit,
 }: ShellChromeProps) {
   const dispatch = useNutritionDispatch()
-  const [hydratedDays, setHydratedDays] = useState<boolean>(false)
+  // Sin setState sincrono en el effect: lazy init para el caso !plan (crear), effect solo para editar.
+  const [hydratedDays, setHydratedDays] = useState(!plan)
 
   useEffect(() => {
-    if (!plan) {
-      setHydratedDays(true)
-      return
-    }
+    if (!plan) return // ya hidratado por lazy init
     dispatch({ type: "set_days", days: initialDaysFromPlan(plan) })
-    setHydratedDays(true)
+    const t = setTimeout(() => setHydratedDays(true), 0)
+    return () => clearTimeout(t)
   }, [plan, dispatch])
 
   if (plan && !hydratedDays) {

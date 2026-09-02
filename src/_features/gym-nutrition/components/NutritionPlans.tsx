@@ -26,7 +26,6 @@ export function NutritionPlans({ profile }: { profile: ProfileRow }) {
   const viewer = buildViewer(sessionProfile)
   const { data: plans = [], isLoading, error } = useUserNutrition(profile.id)
   const createPlan = useCreateNutrition()
-  const updatePlan = useUpdateNutrition()
   const updateFullPlan = useUpdateFullNutrition()
   const deletePlan = useDeleteNutrition()
   const toggleActive = useUpdateNutrition()

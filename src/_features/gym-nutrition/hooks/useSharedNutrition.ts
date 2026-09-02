@@ -142,7 +142,7 @@ export function useCopySharedNutritionPlan() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ planId, viewerId }: { planId: number; viewerId: string }) => {
+    mutationFn: async ({ planId }: { planId: number; viewerId: string }) => {
       const supabase = createClient()
       const { data, error } = await supabase.rpc("copy_shared_nutrition_plan", { source_plan_id: planId })
       if (error) throw new Error(error.message)

@@ -25,13 +25,11 @@ export function ShellChrome({
   onSubmit,
 }: ShellChromeProps) {
   const dispatch = useWizardDispatch()
-  const [hydratedDays, setHydratedDays] = useState<boolean>(false)
+  // Crear plan: ya hidratado desde lazy init. Editar: hidrata días vía fetch y marca cuando termina.
+  const [hydratedDays, setHydratedDays] = useState(!routine)
 
   useEffect(() => {
-    if (!routine) {
-      setHydratedDays(true)
-      return
-    }
+    if (!routine) return // ya hidratado en lazy init
     let cancelled = false
     void hydrateDaysFromRoutine(routine.id).then((d) => {
       if (!cancelled) {

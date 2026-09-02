@@ -1,11 +1,7 @@
 import type { NutritionPlanRow } from "../../hooks/useNutritionPlans"
 import type { DayDraft } from "./nutrition-form-types"
 
-export async function hydrateDaysFromPlan(planId: number): Promise<DayDraft[]> {
-  // usa fetchUserNutrition ya normalizado; aquí solo para chrome hydrate
-  // fallback vacío si no hay plan
-  return []
-}
+// hydrateDaysFromPlan no se usa (el wizard hidrata desde el prop plan) — remover si aparece de nuevo.
 
 export function initialDaysFromPlan(plan: NutritionPlanRow | null): DayDraft[] {
   if (!plan) return []

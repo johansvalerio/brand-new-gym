@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { ChevronDown, Plus, Trash2, Timer, Play } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { SetDraft } from "../hooks/useWorkoutSession"
@@ -39,10 +39,12 @@ export function SetLogInputs({
   const exercise = catalog.find((e) => e.id === entry.exercise_id) ?? null
   const [pickerOpen, setPickerOpen] = useState(false)
   const [restChoice, setRestChoice] = useState(restSeconds)
-
-  useEffect(() => {
+  const [prevRestSeconds, setPrevRestSeconds] = useState(restSeconds)
+  // Reset al cambiar restSeconds: derived state pattern (sin setState síncrono en effect)
+  if (restSeconds !== prevRestSeconds) {
+    setPrevRestSeconds(restSeconds)
     setRestChoice(restSeconds)
-  }, [restSeconds])
+  }
 
   const updateSet = (i: number, field: "weight" | "reps" | "is_warmup", value: string | boolean) => {
     onChange(entry.key, (e) => {

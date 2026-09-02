@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { CalendarDays, Dumbbell, Loader2, ChevronDown, ChevronUp, Weight, Hash, StickyNote, Flame, Trophy, TrendingUp, Clock, Filter, Trash2, Pencil, Check, X } from "lucide-react"
+import { CalendarDays, Dumbbell, ChevronDown, ChevronUp, Weight, Hash, StickyNote, Flame, Trophy, TrendingUp, Clock, Filter, Trash2, Pencil } from "lucide-react"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { useWorkoutHistory, computeWorkoutStats, useDeleteWorkout, useUpdateWorkoutNote } from "../hooks/useWorkoutHistory"
 import { ExerciseVisual } from "@/_features/gym-routines/components/exercise-picker"

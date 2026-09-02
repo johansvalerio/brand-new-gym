@@ -1,6 +1,6 @@
 "use client"
 
-import { Banknote, Smartphone } from "lucide-react"
+import { Smartphone } from "lucide-react"
 import { currency } from "@/_features/gym-admin/products/components/utils"
 import type { PlanRow } from "@/_features/gym-admin/plans/hooks/usePlans"
 

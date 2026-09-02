@@ -119,10 +119,14 @@ const CarouselStacked = () => {
   }, [scrollProgress, total]);
 
   React.useEffect(() => {
-    setWindowWidth(window.innerWidth);
+    // Primer tick diferido (no setState síncrono en el body del effect)
+    const first = window.setTimeout(() => setWindowWidth(window.innerWidth), 0)
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      clearTimeout(first)
+      window.removeEventListener("resize", handleResize)
+    };
   }, []);
 
   const config = React.useMemo(

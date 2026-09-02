@@ -78,8 +78,6 @@ export function computeStreak(
   const days = new Set(rows.map((r) => r.check_in_date.slice(0, 10)))
   if (days.size === 0) return { count: 0, lastDate: null }
 
-  // Índice de días consecutivos: hoy o ayer como ancla.
-  const anchor = new Date(today)
   let count = 0
   let lastDate: string | null = null
 

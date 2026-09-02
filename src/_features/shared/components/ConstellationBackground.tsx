@@ -73,7 +73,7 @@ export default function ConstellationBackground() {
             l: parseFloat(match[2]),
           };
         }
-      } catch (_) {
+      } catch {
         /* noop */
       }
       return fallback;
