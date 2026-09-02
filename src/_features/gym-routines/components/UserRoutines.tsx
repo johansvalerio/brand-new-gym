@@ -14,6 +14,7 @@ import { buildViewer, canCreateRoutineFor, canEditRoutine, dayLabel, type Routin
 import { RoutineFormDialog, type DayDraft } from "./routine-form-dialog"
 import { ConfirmDeleteRoutineDialog } from "./confirm-delete-routine-dialog"
 import { EmptyState } from "./user-routines/empty-state"
+import { DayExercisesDialog } from "./user-routines/day-exercises-dialog"
 import { Calendar } from "@/_features/shared/components/Calendar"
 
 if (typeof window !== "undefined") {
@@ -36,6 +37,8 @@ export function UserRoutines({ profile }: { profile: ProfileRow }) {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<RoutineRow | null>(null)
   const [deleting, setDeleting] = useState<RoutineRow | null>(null)
+  // Vista de solo-lectura: ejercicios del día al click en la celda del calendario
+  const [viewingDay, setViewingDay] = useState<{ day: UserRoutine["routine_days"][number]; routineName: string } | null>(null)
   const sectionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -158,7 +161,7 @@ export function UserRoutines({ profile }: { profile: ProfileRow }) {
                 {entries.map(({ routine, day }) => (
                   <button
                     key={`${routine.id}-${day.id}`}
-                    onClick={() => canEditRoutine(routine, viewer) && openEdit(routine as unknown as RoutineRow)}
+                    onClick={() => setViewingDay({ day, routineName: routine.name })}
                     className="w-full cursor-pointer rounded-md border border-border bg-card px-2 py-1.5 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 text-xs"
                     title={`${day.focus || dayLabel(day.day_index)} — ${routine.name}`}
                   >
@@ -215,6 +218,7 @@ export function UserRoutines({ profile }: { profile: ProfileRow }) {
       )}
       <RoutineFormDialog open={formOpen} routine={editing} targetUserId={profile.id} onClose={() => { setFormOpen(false); setEditing(null) }} onSubmit={handleSubmit} />
       <ConfirmDeleteRoutineDialog routine={deleting} onCancel={() => setDeleting(null)} onConfirm={handleDelete} />
+      <DayExercisesDialog day={viewingDay?.day ?? null} routineName={viewingDay?.routineName ?? ""} onClose={() => setViewingDay(null)} />
     </div>
   )
 }

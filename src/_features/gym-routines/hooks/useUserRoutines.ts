@@ -9,6 +9,7 @@ export type ExerciseRow = {
   name: string
   muscle_group: string
   equipment: string | null
+  image_url: string | null
 }
 
 export type RoutineExerciseRow = {
@@ -98,7 +99,8 @@ async function fetchUserRoutines(userId: string): Promise<UserRoutine[]> {
               id,
               name,
               muscle_group,
-              equipment
+              equipment,
+              image_url
             )
           )
         )
