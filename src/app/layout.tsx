@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import "./globals.css";
 import { PageTransitionOverlay } from "@/_features/shared/components/PageTransitionOverlay";
 import { QueryProvider } from "@/app/providers/query-provider";
 import { AppToaster } from "@/app/providers/app-toaster";
 import { AuthProvider } from "@/app/providers/auth-provider";
+import { GymProvider } from "@/app/providers/gym-provider";
 import { FloatingNav } from "@/_features/shared/components/FloatingNav";
 import { AppShell } from "@/_features/shared/layout/app-sidebar";
 import { createClient } from "@/lib/supabase/server";
@@ -84,16 +86,31 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     profile = data ?? null
   }
 
+  // Gym por slug de URL (el proxy lo pone en x-gym-slug). Null en rutas globales (/auth/*).
+  const headerList = await headers();
+  const gymSlug = headerList.get("x-gym-slug");
+  let gym: import("@/types/database.types").Tables<"gyms"> | null = null;
+  if (gymSlug) {
+    const { data } = await supabase.from("gyms").select("*").eq("slug", gymSlug).eq("is_active", true).maybeSingle();
+    gym = data ?? null;
+  }
+
   return (
     <html lang="es" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+      <body
+        className="min-h-full flex flex-col"
+        // White-label por gym: todo `bg-primary/text-primary/border-primary` usa var(--primary).
+        style={gym?.primary_color ? ({ "--primary": gym.primary_color } as React.CSSProperties) : undefined}
+      >
         <AuthProvider initialUser={user} initialProfile={profile}>
+          <GymProvider gym={gym}>
           <QueryProvider>
             <FloatingNav />
             <PageTransitionOverlay />
             <AppShell>{children}</AppShell>
             <AppToaster />
           </QueryProvider>
+          </GymProvider>
         </AuthProvider>
       </body>
     </html>

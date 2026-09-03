@@ -1,12 +1,13 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Banknote, Loader2, Search, Smartphone, X } from "lucide-react"
+import { Banknote, Check, Loader2, Search, Smartphone, X } from "lucide-react"
 import { toast } from "sonner"
 import { useUsers } from "@/_features/gym-admin/users/hooks/useUsers"
 import { usePlans } from "@/_features/gym-admin/plans/hooks/usePlans"
 import { currency } from "@/_features/gym-admin/products/components/utils"
 import { useBodyScrollLock } from "@/_features/shared/hooks/useBodyScrollLock"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { walkInPaymentSchema, zodToFormErrors } from "../../lib/payment.schema"
 import { useCreateWalkInPayment, useUpdatePayment, type PaymentRow } from "../hooks/usePayments"
 
@@ -50,9 +51,11 @@ function WalkInInner({ payment, onClose }: { payment: PaymentRow | null | undefi
     return base.filter((u) => `${u.first_name ?? ""} ${u.last_name ?? ""}`.toLowerCase().includes(q) || (u.email ?? "").toLowerCase().includes(q))
   }, [users, search, userId, isEdit])
 
+  const selectedMember = members.find((m) => m.id === userId) ?? null
+
   const selectedPlan = plans.find((p) => p.id === planId) ?? null
   const memberName = isEdit ? `${payment?.user?.first_name ?? ""} ${payment?.user?.last_name ?? ""}`.trim() || "Miembro" : ""
-  const canSubmit = Boolean(planId) && !(isEdit ? updatePayment.isPending : createWalkIn.isPending)
+  const canSubmit = Boolean(userId) && Boolean(planId) && !(isEdit ? updatePayment.isPending : createWalkIn.isPending)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,7 +76,7 @@ function WalkInInner({ payment, onClose }: { payment: PaymentRow | null | undefi
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="walkin-title">
       <button aria-label="Cerrar" onClick={onClose} className="absolute inset-0 cursor-pointer bg-black/70 backdrop-blur-sm" />
-      <form onSubmit={handleSubmit} className="relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
+      <form onSubmit={handleSubmit} className="relative z-10 flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
         <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary">
@@ -97,25 +100,90 @@ function WalkInInner({ payment, onClose }: { payment: PaymentRow | null | undefi
               <p className="text-sm font-medium text-foreground">{memberName}</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <label htmlFor="member-search" className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                 Miembro
               </label>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input id="member-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nombre o email..." aria-label="Buscar miembro" className={`${inputCls} pl-9`} />
+                <input
+                  id="member-search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por nombre o email..."
+                  aria-label="Buscar miembro"
+                  className={`${inputCls} pl-9`}
+                />
               </div>
-              <select value={userId} onChange={(e) => setUserId(e.target.value)} aria-label="Seleccionar miembro" required className={`${inputCls} cursor-pointer`}>
-                <option value="">Selecciona miembro…</option>
-                {members.map((u) => {
-                  const name = `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() || u.email
-                  return (
-                    <option key={u.id} value={u.id}>
-                      {name} · {u.email}
-                    </option>
-                  )
-                })}
-              </select>
+
+              {/* Selección actual — chip con X para quitar */}
+              {selectedMember && (
+                <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-2">
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={selectedMember.avatar ?? undefined} alt={selectedMember.first_name ?? "?"} />
+                    <AvatarFallback className="bg-primary/20 text-xs font-bold text-primary">
+                      {`${(selectedMember.first_name ?? "?")[0]}${(selectedMember.last_name ?? "")[0] ?? ""}`.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-sans text-xs font-bold text-foreground">
+                      {`${selectedMember.first_name ?? ""} ${selectedMember.last_name ?? ""}`.trim() || selectedMember.email}
+                    </p>
+                    <p className="truncate font-mono text-[10px] text-muted-foreground">{selectedMember.email}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setUserId("")}
+                    aria-label="Quitar selección"
+                    className="ml-auto flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:bg-primary/20 hover:text-primary"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Grid de círculos — mismo patrón que exercise/food chooser. En 2col usa todo el ancho. */}
+              <div className="grid max-h-none grid-cols-5 gap-2 overflow-y-auto rounded-md border border-border/60 bg-background/40 p-2.5 md:grid-cols-6">
+                {members.length === 0 ? (
+                  <p className="col-span-full py-6 text-center font-mono text-xs text-muted-foreground">
+                    Sin resultados
+                  </p>
+                ) : (
+                  members.map((u) => {
+                    const isSel = u.id === userId
+                    const fullName = `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() || u.email
+                    return (
+                      <button
+                        key={u.id}
+                        type="button"
+                        onClick={() => setUserId(isSel ? "" : u.id)}
+                        aria-pressed={isSel}
+                        aria-label={`Seleccionar ${fullName}`}
+                        className={`group relative flex cursor-pointer flex-col items-center gap-1 rounded-md border px-1 pb-2 pt-2 transition-all ${
+                          isSel
+                            ? "border-primary bg-primary/10"
+                            : "border-transparent hover:border-primary/40 hover:bg-secondary/40"
+                        }`}
+                      >
+                        <span className="relative">
+                          <Avatar className="h-11 w-11">
+                            <AvatarImage src={u.avatar ?? undefined} alt={fullName} />
+                            <AvatarFallback className="bg-secondary text-sm font-bold text-foreground">
+                              {`${(u.first_name ?? "?")[0]}${(u.last_name ?? "")[0] ?? ""}`.toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          {isSel ? (
+                            <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-card">
+                              <Check className="h-2.5 w-2.5" strokeWidth={3} />
+                            </span>
+                          ) : null}
+                        </span>
+                        <p className="max-w-full truncate font-sans text-[10px] font-medium text-foreground">{fullName.split(" ")[0]}</p>
+                      </button>
+                    )
+                  })
+                )}
+              </div>
             </div>
           )}
           <div className="flex flex-col gap-1.5">

@@ -5,12 +5,26 @@ import { Loader2, ShieldAlert } from "lucide-react"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { useUsers } from "@/_features/gym-admin/users/hooks/useUsers"
 import { usePayments } from "@/_features/gym-admin/payments/hooks/usePayments"
+import { useMonthProductSales } from "../hooks/useAdminCharts"
+// Reuso de queries ligeras (mismo cache que el dashboard del coach, sin queries extra).
+import { useRoutinesLite, useNutritionLite } from "@/_features/gym-coach/dashboard/hooks/useCoachDashboard"
 import { useNow } from "@/_features/shared/hooks/useNow"
+import { useRecentSales } from "@/_features/gym-admin/products/hooks/useProductSales"
 import { DashboardStats, type DashboardStatsData } from "./dashboard-stats"
 import { ExpiringMembers } from "./expiring-members"
 import { PendingPayments } from "./pending-payments"
+import { PendingSales } from "./pending-sales"
+import { AdminCharts } from "./AdminCharts"
 
 const DAY_MS = 86_400_000
+
+/** Mes corto en español con mayúscula ("Sep") para labels como "Ingresos (Sep)". */
+function monthShortEs(ts: number): string {
+  const raw = new Date(ts)
+    .toLocaleDateString("es-CR", { month: "short" })
+    .replace(".", "")
+  return raw.charAt(0).toUpperCase() + raw.slice(1)
+}
 
 export function AdminDashboard() {
   const { isAdmin, loading: authLoading } = useAuthSession()
@@ -24,6 +38,14 @@ export function AdminDashboard() {
     isLoading: paymentsLoading,
     error: paymentsError,
   } = usePayments()
+  const { data: monthProductSales = 0 } = useMonthProductSales()
+  const { data: routinesLite = [], isLoading: routinesLoading } = useRoutinesLite()
+  const { data: nutritionLite = [], isLoading: nutritionLoading } = useNutritionLite()
+  const {
+    data: recentSales = [],
+    isLoading: salesLoading,
+    error: salesError,
+  } = useRecentSales(50)
   const now = useNow()
 
   const stats = useMemo(() => {
@@ -53,8 +75,11 @@ export function AdminDashboard() {
           new Date(a.requested_at).getTime() - new Date(b.requested_at).getTime(),
       )
 
+    // Cola del mostrador: ventas pendientes de entrega (también son "solicitudes").
+    const pendingSalesRows = recentSales.filter((s) => s.status === "pending")
+
     const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime()
-    const revenueMonth = payments
+    const monthRevenue = payments
       .filter(
         (p) =>
           p.status === "approved" &&
@@ -62,17 +87,30 @@ export function AdminDashboard() {
           new Date(p.decided_at).getTime() >= monthStart,
       )
       .reduce((sum, p) => sum + p.amount, 0)
+    const revenueMonth = monthRevenue + monthProductSales
+
+    // Adopción global: miembros con al menos una rutina / plan nutricional activo.
+    const withRoutine = new Set(
+      routinesLite.filter((r) => r.is_active).map((r) => r.user_id),
+    ).size
+    const withNutrition = new Set(
+      nutritionLite.filter((p) => p.is_active).map((p) => p.user_id),
+    ).size
 
     return {
       totalMembers: users.length,
       activeMembers: active.length,
       expiring: expiringRows.length,
-      pendingRequests: pendingRows.length,
+      pendingRequests: pendingRows.length + pendingSalesRows.length,
       revenueMonth,
+      revenueLabel: `Ingresos (${monthShortEs(now ?? new Date().getTime())})`,
+      withRoutine,
+      withNutrition,
       expiringRows,
       pendingRows,
+      pendingSalesRows,
     }
-  }, [users, payments, now])
+  }, [users, payments, now, monthProductSales, routinesLite, nutritionLite, recentSales])
 
   if (authLoading) {
     return (
@@ -105,11 +143,16 @@ export function AdminDashboard() {
     expiring: stats.expiring,
     pendingRequests: stats.pendingRequests,
     revenueMonth: stats.revenueMonth,
+    revenueLabel: stats.revenueLabel,
+    withRoutine: stats.withRoutine,
+    withNutrition: stats.withNutrition,
   }
 
   return (
     <div className="flex flex-col gap-8">
-      <DashboardStats data={statsData} loading={usersLoading || paymentsLoading} />
+      <DashboardStats data={statsData} loading={usersLoading || paymentsLoading || routinesLoading || nutritionLoading || salesLoading} />
+
+      <AdminCharts />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <ExpiringMembers
@@ -117,11 +160,18 @@ export function AdminDashboard() {
           loading={usersLoading}
           error={usersError instanceof Error ? usersError.message : null}
         />
-        <PendingPayments
-          rows={stats.pendingRows}
-          loading={paymentsLoading}
-          error={paymentsError instanceof Error ? paymentsError.message : null}
-        />
+        <div className="flex flex-col gap-6">
+          <PendingPayments
+            rows={stats.pendingRows}
+            loading={paymentsLoading}
+            error={paymentsError instanceof Error ? paymentsError.message : null}
+          />
+          <PendingSales
+            rows={stats.pendingSalesRows}
+            loading={salesLoading}
+            error={salesError instanceof Error ? salesError.message : null}
+          />
+        </div>
       </div>
     </div>
   )

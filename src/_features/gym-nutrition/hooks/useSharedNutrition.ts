@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
+import { useGym } from "@/app/providers/gym-provider"
 
 export type SharedPlanAuthor = {
   id: string
@@ -56,9 +57,11 @@ export function planDailyMacros(plan: Pick<SharedNutritionPlan, "nutrition_days"
 
 export const sharedNutritionKeys = {
   all: ["nutrition", "shared"] as const,
+  /** Ranking por gym: sin gym en la key, el caché anónimo mezclaría gyms. */
+  byGym: (gymId: string) => ["nutrition", "shared", gymId] as const,
 }
 
-async function fetchSharedNutrition(): Promise<SharedNutritionPlan[]> {
+async function fetchSharedNutrition(gymId: string): Promise<SharedNutritionPlan[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from("nutrition_plans")
@@ -69,6 +72,7 @@ async function fetchSharedNutrition(): Promise<SharedNutritionPlan[]> {
        nutrition_days (id, day_index, focus, nutrition_meals (grams, food:food_id (kcal_100, protein_100)))`,
     )
     .eq("is_shared", true)
+    .eq("gym_id", gymId)
 
   if (error) throw new Error(error.message)
 
@@ -80,9 +84,12 @@ async function fetchSharedNutrition(): Promise<SharedNutritionPlan[]> {
 }
 
 export function useSharedNutrition() {
+  const gym = useGym()
+  const gymId = gym?.id ?? "none"
   return useQuery({
-    queryKey: sharedNutritionKeys.all,
-    queryFn: fetchSharedNutrition,
+    queryKey: sharedNutritionKeys.byGym(gymId),
+    queryFn: () => fetchSharedNutrition(gymId),
+    enabled: !!gym?.id,
   })
 }
 
@@ -95,6 +102,8 @@ type ToggleVoteInput = {
 /** Like con optimistic update (patrón useToggleVote de rutinas). */
 export function useToggleNutritionVote() {
   const queryClient = useQueryClient()
+  const gym = useGym()
+  const key = sharedNutritionKeys.byGym(gym?.id ?? "none")
 
   return useMutation({
     mutationFn: async ({ planId, voterProfileId, wasVoted }: ToggleVoteInput): Promise<void> => {
@@ -108,10 +117,10 @@ export function useToggleNutritionVote() {
       if (error) throw new Error(error.message)
     },
     onMutate: async ({ planId, voterProfileId, wasVoted }) => {
-      await queryClient.cancelQueries({ queryKey: sharedNutritionKeys.all })
-      const previous = queryClient.getQueryData<SharedNutritionPlan[]>(sharedNutritionKeys.all)
+      await queryClient.cancelQueries({ queryKey: key })
+      const previous = queryClient.getQueryData<SharedNutritionPlan[]>(key)
 
-      queryClient.setQueryData<SharedNutritionPlan[]>(sharedNutritionKeys.all, (old) =>
+      queryClient.setQueryData<SharedNutritionPlan[]>(key, (old) =>
         old?.map((plan) => {
           if (plan.id !== planId) return plan
           return {
@@ -126,13 +135,13 @@ export function useToggleNutritionVote() {
       return { previous }
     },
     onError: (error, _input, context) => {
-      if (context?.previous) queryClient.setQueryData(sharedNutritionKeys.all, context.previous)
+      if (context?.previous) queryClient.setQueryData(key, context.previous)
       toast.error("No se pudo registrar tu voto", {
         description: error instanceof Error ? error.message : String(error),
       })
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: sharedNutritionKeys.all })
+      queryClient.invalidateQueries({ queryKey: key })
     },
   })
 }

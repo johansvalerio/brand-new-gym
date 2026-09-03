@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowRight, Loader2, ShieldAlert, User as UserIcon, Users } from "lucide-react"
+import { ArrowRight, Dumbbell, Loader2, ShieldAlert, User as UserIcon, Users, Utensils } from "lucide-react"
 import type { CoachMemberRow } from "../hooks/useCoachDashboard"
 import { MembershipChip } from "@/_features/gym-admin/users/components/MembershipCountdown"
 import { membershipLabel } from "@/_features/gym-admin/users/components/utils"
@@ -10,10 +10,16 @@ export function MyMembers({
   rows,
   loading,
   error,
+  routineIds,
+  nutritionIds,
 }: {
   rows: CoachMemberRow[]
   loading: boolean
   error: string | null
+  /** ids de miembros con rutina activa */
+  routineIds: Set<string>
+  /** ids de miembros con plan nutricional activo */
+  nutritionIds: Set<string>
 }) {
   const { navigate } = usePageTransition()
 
@@ -88,6 +94,24 @@ export function MyMembers({
                       </span>
                       <span className="block truncate font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                         {membershipLabel(member.plan)}
+                      </span>
+                      <span className="mt-1 flex items-center gap-1">
+                        {routineIds.has(member.id) ? (
+                          <span
+                            title="Tiene rutina activa"
+                            className="flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-primary"
+                          >
+                            <Dumbbell className="h-3 w-3" />
+                          </span>
+                        ) : null}
+                        {nutritionIds.has(member.id) ? (
+                          <span
+                            title="Tiene nutrición activa"
+                            className="flex h-5 w-5 items-center justify-center rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-500"
+                          >
+                            <Utensils className="h-3 w-3" />
+                          </span>
+                        ) : null}
                       </span>
                     </span>
                   </span>

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { AlertTriangle, Home, RefreshCw, Zap } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Error({
   error,
@@ -14,6 +15,9 @@ export default function Error({
   useEffect(() => {
     console.error(error);
   }, [error]);
+
+  const segs = usePathname().split("/").filter(Boolean);
+  const slug = segs[0] === "auth" || segs.length === 0 ? "gym-ulate" : segs[0];
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6 relative overflow-hidden">
@@ -88,7 +92,7 @@ export default function Error({
             <span className="relative z-10">Recuperar Sistema</span>
           </button>
           <Link
-            href="/"
+            href={`/${slug}`}
             className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 bg-transparent border-2 border-primary text-primary font-heading font-black uppercase tracking-widest text-sm hover:bg-primary hover:text-primary-foreground transition-all duration-200 overflow-hidden"
           >
             <span className="absolute inset-0 bg-primary/10 translate-x-full group-hover:translate-x-0 transition-transform duration-300" />

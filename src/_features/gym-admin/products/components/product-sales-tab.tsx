@@ -38,49 +38,51 @@ export function ProductSalesTab() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Resumen del mes — para member es personal por RLS, para staff es global */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-border bg-card px-4 py-3.5">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              {isStaff ? "Ingresos mes" : "Gastado este mes"}
+      {/* Resumen del mes — solo admin (dinero global). Staff coach no ve finanzas, member ve "Gastado". */}
+      {isAdmin ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border border-border bg-card px-4 py-3.5">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Ingresos mes
+              </p>
+            </div>
+            <p className="mt-2 font-sans text-2xl font-black tabular-nums text-foreground">
+              {stats ? currency(stats.totalRevenueMonth) : "—"}
             </p>
           </div>
-          <p className="mt-2 font-sans text-2xl font-black tabular-nums text-foreground">
-            {stats ? currency(stats.totalRevenueMonth) : "—"}
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-card px-4 py-3.5">
-          <div className="flex items-center gap-2">
-            <Package className="h-4 w-4 text-muted-foreground" />
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Unidades mes</p>
-          </div>
-          <p className="mt-2 font-sans text-2xl font-black tabular-nums text-foreground">
-            {stats?.unitsMonth ?? 0}
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-card px-4 py-3.5">
-          <div className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-primary" />
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              {isStaff ? "Top del mes" : "Tu top del mes"}
+          <div className="rounded-lg border border-border bg-card px-4 py-3.5">
+            <div className="flex items-center gap-2">
+              <Package className="h-4 w-4 text-muted-foreground" />
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Unidades mes</p>
+            </div>
+            <p className="mt-2 font-sans text-2xl font-black tabular-nums text-foreground">
+              {stats?.unitsMonth ?? "—"}
             </p>
           </div>
-          {stats?.topProduct ? (
-            <>
-              <p className="mt-2 truncate font-sans text-sm font-bold text-foreground">
-                {stats.topProduct.product_name}
+          <div className="rounded-lg border border-border bg-card px-4 py-3.5">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-primary" />
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Top del mes
               </p>
-              <p className="font-mono text-[10px] text-muted-foreground">
-                {stats.topProduct.units} uds · {currency(stats.topProduct.revenue)}
-              </p>
-            </>
-          ) : (
-            <p className="mt-2 font-mono text-xs text-muted-foreground">Sin datos</p>
-          )}
+            </div>
+            {stats?.topProduct ? (
+              <>
+                <p className="mt-2 truncate font-sans text-sm font-bold text-foreground">
+                  {stats.topProduct.product_name}
+                </p>
+                <p className="font-mono text-[10px] text-muted-foreground">
+                  {stats.topProduct.units} uds · {currency(stats.topProduct.revenue)}
+                </p>
+              </>
+            ) : (
+              <p className="mt-2 font-mono text-xs text-muted-foreground">Sin datos</p>
+            )}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {/* Pendientes — solo staff ve la cola de entrega */}
       {isStaff && pending.length > 0 && (

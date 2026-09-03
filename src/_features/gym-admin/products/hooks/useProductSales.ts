@@ -54,11 +54,21 @@ export type SalesStats = {
   topProduct: { product_id: number; product_name: string; units: number; revenue: number } | null
 }
 
+function fetchSalesStatsDebug() {
+  const now = new Date()
+  const utcMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+  return {
+    nowISO: now.toISOString(),
+    nowLocalTzOffsetMinutes: now.getTimezoneOffset(),
+    startOfMonthISO: utcMonth.toISOString(),
+  }
+}
+
 async function fetchSalesStats(): Promise<SalesStats> {
   const supabase = createClient()
-  const startOfMonth = new Date()
-  startOfMonth.setDate(1)
-  startOfMonth.setHours(0, 0, 0, 0)
+  // Usar UTC para el corte de mes — nuevo Date en cliente puede distar de la DB.
+  const now = new Date()
+  const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
 
   const { data, error } = await supabase
     .from("product_sales")
@@ -73,6 +83,11 @@ async function fetchSalesStats(): Promise<SalesStats> {
     product_id: number
     product: { product_name: string } | null
   }[]
+
+  if (rows.length === 0 && process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-console
+    console.warn("[useSalesStats] returned 0 rows", fetchSalesStatsDebug())
+  }
 
   const totalRevenueMonth = rows.reduce((s, r) => s + r.total, 0)
   const unitsMonth = rows.reduce((s, r) => s + r.quantity, 0)

@@ -49,6 +49,7 @@ export type UserRoutine = {
   updated_at: string
   created_by: string
   user_id: string
+  gym_id: string
   author: RoutineAuthor | null
   routine_days: RoutineDayRow[]
 }
@@ -77,6 +78,7 @@ async function fetchUserRoutines(userId: string): Promise<UserRoutine[]> {
         updated_at,
         created_by,
         user_id,
+        gym_id,
         author:created_by (
           id,
           first_name,

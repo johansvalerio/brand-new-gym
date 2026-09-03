@@ -2,8 +2,13 @@
 
 import { Home, ArrowLeft, Crosshair } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function NotFound() {
+  // Si el 404 cae dentro de un gym (/slug/...), los links vuelven a ese gym.
+  const segs = usePathname().split("/").filter(Boolean);
+  const slug = segs[0] === "auth" || segs.length === 0 ? "gym-ulate" : segs[0];
+  const home = `/${slug}`;
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6 relative overflow-hidden">
       {/* Background Layer System */}
@@ -57,7 +62,7 @@ export default function NotFound() {
         {/* Aggressive Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-6 justify-center">
           <Link
-            href="/"
+            href={home}
             className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 bg-primary text-primary-foreground font-heading font-black uppercase tracking-widest text-sm hover:bg-primary/90 transition-all duration-200 overflow-hidden"
           >
             <span className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
@@ -81,21 +86,21 @@ export default function NotFound() {
           </p>
           <div className="flex flex-wrap justify-center gap-6">
             <Link
-              href="/"
+              href={home}
               className="group flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               <div className="w-1.5 h-1.5 bg-primary/50 group-hover:bg-primary rounded-full" />
               INICIO
             </Link>
             <Link
-              href="/products"
+              href={`${home}/products`}
               className="group flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               <div className="w-1.5 h-1.5 bg-primary/50 group-hover:bg-primary rounded-full" />
               PRODUCTOS
             </Link>
             <Link
-              href="/#location"
+              href={`${home}/#location`}
               className="group flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               <div className="w-1.5 h-1.5 bg-primary/50 group-hover:bg-primary rounded-full" />

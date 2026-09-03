@@ -70,6 +70,15 @@ export function Products() {
     return { count: products.length, units, revenue }
   }, [products])
 
+  // Similares para el modal: misma categoría primero, relleno con otros, máx 4.
+  const similar = useMemo(() => {
+    if (!selected) return []
+    const others = products.filter((p) => p.product_id !== selected.product_id)
+    const sameCat = others.filter((p) => p.category_id === selected.category_id)
+    const rest = others.filter((p) => p.category_id !== selected.category_id)
+    return [...sameCat, ...rest].slice(0, 4)
+  }, [products, selected])
+
   // ─── CRUD ───
   const openCreate = () => {
     if (!isAdmin) return
@@ -209,11 +218,14 @@ export function Products() {
 
       {/* Dialogs */}
       <ProductDetailModal
+        key={selected?.product_id ?? "none"}
         product={selected}
         open={Boolean(selected)}
         onClose={() => setSelected(null)}
         onPurchase={profile ? handlePurchase : undefined}
         purchasePending={createSale.isPending}
+        similar={similar}
+        onSelectProduct={setSelected}
       />
       <ProductFormDialog
         open={formOpen}

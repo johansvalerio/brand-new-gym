@@ -10,13 +10,16 @@ import {
   Dumbbell,
   Loader2,
   Mail,
+  MoreVertical,
   Pencil,
   ShieldAlert,
   Trash2,
   User as UserIcon,
   UserSearch,
+  Utensils,
   X,
 } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
 import {
@@ -94,7 +97,7 @@ function formatDate(value: string | null | undefined): string {
 
 export function UserProfile({ id }: { id: string }) {
   const { data: profile, isLoading: dataLoading, error } = useUser(id)
-  const { user: sessionUser, isAdmin, loading: authLoading } = useAuthSession()
+  const { user: sessionUser, isAdmin, isCoach, loading: authLoading } = useAuthSession()
   const { data: coaches = [] } = useCoaches()
   const { navigate } = usePageTransition()
 
@@ -106,7 +109,7 @@ export function UserProfile({ id }: { id: string }) {
 
   const isOwnProfile =
     Boolean(profile?.auth_id) && profile?.auth_id === sessionUser?.id
-  const allowed = isAdmin || isOwnProfile
+  const allowed = isAdmin || isCoach || isOwnProfile
   const loading = authLoading || dataLoading
 
   const sectionRef = useRef<HTMLDivElement>(null)
@@ -220,7 +223,7 @@ export function UserProfile({ id }: { id: string }) {
       <CenteredCard
         icon={<ShieldAlert className="h-10 w-10 text-muted-foreground/40" />}
         title="Acceso restringido"
-        description="Solo puedes ver tu propio perfil. Los perfiles de otros miembros están disponibles para administradores."
+        description="Solo puedes ver tu propio perfil. Los perfiles de otros miembros están disponibles para coaches y administradores."
       />
     )
   }
@@ -317,29 +320,47 @@ export function UserProfile({ id }: { id: string }) {
                   Ver rutina
                 </button>
 
+                <button
+                  onClick={() => navigate(`/users/profile/${profile.id}/nutrition`)}
+                  className="flex cursor-pointer items-center gap-2 rounded-none border border-primary/40 bg-primary/10 px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary transition-all hover:-translate-y-0.5 hover:bg-primary/20"
+                >
+                  <Utensils className="h-4 w-4" />
+                  Ver nutrición
+                </button>
+
                 {isAdmin ? (
-                  <>
-                    <button
-                      onClick={() => setFormOpen(true)}
-                      disabled={updateUser.isPending}
-                      className="flex cursor-pointer items-center gap-2 rounded-none bg-primary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-all hover:-translate-y-0.5 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      aria-label={`Más acciones de ${fullName}`}
+                      className="flex cursor-pointer items-center gap-2 rounded-none border border-border bg-secondary px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-foreground transition-all hover:border-foreground/50"
                     >
-                      {updateUser.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
+                      <MoreVertical className="h-4 w-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      side="bottom"
+                      sideOffset={4}
+                      className="z-[60] w-52 rounded-2xl border border-border/80 bg-card/95 p-2 shadow-[0_20px_45px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+                    >
+                      <DropdownMenuItem
+                        onClick={() => setFormOpen(true)}
+                        disabled={updateUser.isPending}
+                        className="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 font-sans text-sm font-medium text-foreground hover:bg-secondary"
+                      >
                         <Pencil className="h-4 w-4" />
-                      )}
-                      Editar miembro
-                    </button>
-                    <button
-                      onClick={() => setDeleting(profile)}
-                      disabled={deleteUser.isPending}
-                      className="flex cursor-pointer items-center gap-2 rounded-none border border-destructive/40 px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Eliminar
-                    </button>
-                  </>
+                        Editar miembro
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onClick={() => setDeleting(profile)}
+                        disabled={deleteUser.isPending}
+                        className="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 font-sans text-sm font-medium"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Eliminar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 ) : isOwnProfile ? (
                   <button
                     onClick={() => setOwnFormOpen(true)}

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
+import { useGym } from "@/app/providers/gym-provider"
 import type { Tables } from "@/types/database.types"
 
 export type SharedRoutineAuthor = Pick<
@@ -18,9 +19,11 @@ export type SharedRoutine = Tables<"routines"> & {
 
 export const sharedKeys = {
   all: ["routines", "shared"] as const,
+  /** Ranking por gym: sin gym en la key, el caché anónimo mezclaría gyms. */
+  byGym: (gymId: string) => ["routines", "shared", gymId] as const,
 }
 
-async function fetchSharedRoutines(): Promise<SharedRoutine[]> {
+async function fetchSharedRoutines(gymId: string): Promise<SharedRoutine[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from("routines")
@@ -28,6 +31,7 @@ async function fetchSharedRoutines(): Promise<SharedRoutine[]> {
       "*, author:users!routines_created_by_fkey(id, first_name, last_name, avatar, role), votes:routine_votes(user_id)",
     )
     .eq("is_shared", true)
+    .eq("gym_id", gymId)
 
   if (error) throw new Error(error.message)
 
@@ -40,9 +44,12 @@ async function fetchSharedRoutines(): Promise<SharedRoutine[]> {
 }
 
 export function useSharedRoutines() {
+  const gym = useGym()
+  const gymId = gym?.id ?? "none"
   return useQuery({
-    queryKey: sharedKeys.all,
-    queryFn: fetchSharedRoutines,
+    queryKey: sharedKeys.byGym(gymId),
+    queryFn: () => fetchSharedRoutines(gymId),
+    enabled: !!gym?.id,
   })
 }
 
@@ -60,6 +67,8 @@ type ToggleVoteInput = {
  */
 export function useToggleVote() {
   const queryClient = useQueryClient()
+  const gym = useGym()
+  const key = sharedKeys.byGym(gym?.id ?? "none")
 
   return useMutation({
     mutationFn: async ({ routineId, voterProfileId, wasVoted }: ToggleVoteInput): Promise<void> => {
@@ -83,10 +92,10 @@ export function useToggleVote() {
       if (error) throw new Error(error.message)
     },
     onMutate: async ({ routineId, voterProfileId, wasVoted }) => {
-      await queryClient.cancelQueries({ queryKey: sharedKeys.all })
-      const previous = queryClient.getQueryData<SharedRoutine[]>(sharedKeys.all)
+      await queryClient.cancelQueries({ queryKey: key })
+      const previous = queryClient.getQueryData<SharedRoutine[]>(key)
 
-      queryClient.setQueryData<SharedRoutine[]>(sharedKeys.all, (old) =>
+      queryClient.setQueryData<SharedRoutine[]>(key, (old) =>
         old?.map((routine) => {
           if (routine.id !== routineId) return routine
           return {
@@ -102,14 +111,14 @@ export function useToggleVote() {
     },
     onError: (error, _input, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(sharedKeys.all, context.previous)
+        queryClient.setQueryData(key, context.previous)
       }
       toast.error("No se pudo registrar tu voto", {
         description: error instanceof Error ? error.message : String(error),
       })
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: sharedKeys.all })
+      queryClient.invalidateQueries({ queryKey: key })
     },
   })
 }

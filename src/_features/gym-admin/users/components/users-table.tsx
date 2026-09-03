@@ -1,9 +1,10 @@
 "use client"
 
-import { User, Pencil, Trash2, Eye, Dumbbell } from "lucide-react"
+import { User, Pencil, Trash2, Eye, Dumbbell, Utensils, MoreVertical } from "lucide-react"
 import type { UserRow } from "../hooks/useUsers"
 import { MembershipChip } from "./MembershipCountdown"
 import { membershipBadgeClasses, membershipLabel, statusBadgeClasses, statusLabel } from "./utils"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface UsersTableProps {
   users: UserRow[]
@@ -11,11 +12,12 @@ interface UsersTableProps {
   onDelete: (user: UserRow) => void
   onView: (user: UserRow) => void
   onAssignRoutine?: (user: UserRow) => void
+  onAssignNutrition?: (user: UserRow) => void
   canManage?: boolean
-  canAssignRoutine?: boolean
+  canAssign?: boolean
 }
 
-export function UsersTable({ users, onEdit, onDelete, onView, onAssignRoutine, canManage = true, canAssignRoutine = false }: UsersTableProps) {
+export function UsersTable({ users, onEdit, onDelete, onView, onAssignRoutine, onAssignNutrition, canManage = true, canAssign = false }: UsersTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">
       <div className="overflow-x-auto">
@@ -102,45 +104,81 @@ export function UsersTable({ users, onEdit, onDelete, onView, onAssignRoutine, c
                         <button
                           onClick={() => onView(user)}
                           aria-label={`Ver perfil de ${fullName}`}
-                          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 transition-colors hover:border-primary hover:text-primary"
+                          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 hover:border-primary hover:text-primary"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
-                        <button
-                          onClick={() => onEdit(user)}
-                          aria-label={`Editar ${fullName}`}
-                          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 transition-colors hover:border-primary hover:text-primary"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => onDelete(user)}
-                          aria-label={`Eliminar ${fullName}`}
-                          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 transition-colors hover:border-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                        {canAssignRoutine && onAssignRoutine && (
+                        {canAssign && onAssignRoutine && (
                           <button
                             onClick={() => onAssignRoutine(user)}
                             aria-label={`Crear rutina del miembro ${fullName}`}
-                            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 transition-colors hover:border-primary hover:text-primary"
+                            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 hover:border-primary hover:text-primary"
                           >
                             <Dumbbell className="h-4 w-4" />
                           </button>
                         )}
+                        {canAssign && onAssignNutrition && (
+                          <button
+                            onClick={() => onAssignNutrition(user)}
+                            aria-label={`Nutrición del miembro ${fullName}`}
+                            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 hover:border-primary hover:text-primary"
+                          >
+                            <Utensils className="h-4 w-4" />
+                          </button>
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            aria-label={`Más acciones de ${fullName}`}
+                            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 hover:border-foreground hover:text-foreground"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            side="bottom"
+                            sideOffset={4}
+                            className="z-[60] w-44 rounded-2xl border border-border/80 bg-card/95 p-2 shadow-[0_20px_45px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+                          >
+                            <DropdownMenuItem
+                              onClick={() => onEdit(user)}
+                              className="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 font-sans text-sm font-medium text-foreground hover:bg-secondary"
+                            >
+                              <Pencil className="h-4 w-4" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={() => onDelete(user)}
+                              className="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 font-sans text-sm font-medium"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </td>
-                  ) : canAssignRoutine && onAssignRoutine ? (
+                  ) : canAssign && (onAssignRoutine || onAssignNutrition) ? (
                     <td className="whitespace-nowrap px-4 py-3">
                       <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => onAssignRoutine(user)}
-                          aria-label={`Crear rutina del miembro ${fullName}`}
-                          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 transition-colors hover:border-primary hover:text-primary"
-                        >
-                          <Dumbbell className="h-4 w-4" />
-                        </button>
+                        {onAssignRoutine && (
+                          <button
+                            onClick={() => onAssignRoutine(user)}
+                            aria-label={`Crear rutina del miembro ${fullName}`}
+                            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 hover:border-primary hover:text-primary"
+                          >
+                            <Dumbbell className="h-4 w-4" />
+                          </button>
+                        )}
+                        {onAssignNutrition && (
+                          <button
+                            onClick={() => onAssignNutrition(user)}
+                            aria-label={`Nutrición del miembro ${fullName}`}
+                            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors sm:h-8 sm:w-8 hover:border-primary hover:text-primary"
+                          >
+                            <Utensils className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   ) : (

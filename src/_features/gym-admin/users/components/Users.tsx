@@ -45,7 +45,7 @@ export function Users() {
 
   const canViewUsers = isAdmin || isCoach
   const canManageUsers = isAdmin
-  const canAssignRoutine = isAdmin || isCoach
+  const canAssign = isAdmin || isCoach
 
   const filtered = useMemo(() => {
     let result = users
@@ -252,8 +252,9 @@ export function Users() {
                 onDelete={setDeleting}
                 onView={(u) => navigate(`/users/profile/${u.id}`)}
                 onAssignRoutine={(u) => navigate(`/users/profile/${u.id}/routine`)}
+                onAssignNutrition={(u) => navigate(`/users/profile/${u.id}/nutrition`)}
                 canManage={canManageUsers}
-                canAssignRoutine={canAssignRoutine}
+                canAssign={canAssign}
               />
             </div>
             {view === "table" && (
@@ -264,8 +265,9 @@ export function Users() {
                   onDelete={setDeleting}
                   onView={(u) => navigate(`/users/profile/${u.id}`)}
                   onAssignRoutine={(u) => navigate(`/users/profile/${u.id}/routine`)}
+                  onAssignNutrition={(u) => navigate(`/users/profile/${u.id}/nutrition`)}
                   canManage={canManageUsers}
-                  canAssignRoutine={canAssignRoutine}
+                  canAssign={canAssign}
                 />
               </div>
             )}

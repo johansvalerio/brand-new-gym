@@ -1,9 +1,10 @@
 "use client"
 
-import { CreditCard, Pencil, Trash2 } from "lucide-react"
+import { CreditCard, Pencil, Trash2, MoreVertical } from "lucide-react"
 import type { PlanRow } from "../hooks/usePlans"
 import { currency } from "@/_features/gym-admin/products/components/utils"
 import { durationLabel, statusBadgeClasses, statusLabel } from "./plans-utils"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export function PlansCards({
   plans,
@@ -48,22 +49,36 @@ export function PlansCards({
               <span className="font-sans text-2xl font-black leading-none text-primary">
                 {currency(plan.price)}
               </span>
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => onEdit(plan)}
-                  aria-label={`Editar ${plan.name}`}
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  aria-label={`Más acciones de ${plan.name}`}
                   className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary sm:h-9 sm:w-9"
                 >
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => onDelete(plan)}
-                  aria-label={`Eliminar ${plan.name}`}
-                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-destructive hover:text-destructive sm:h-9 sm:w-9"
+                  <MoreVertical className="h-4 w-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  side="bottom"
+                  sideOffset={4}
+                  className="z-[60] w-44 rounded-2xl border border-border/80 bg-card/95 p-2 shadow-[0_20px_45px_rgba(0,0,0,0.45)] backdrop-blur-xl"
                 >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
+                  <DropdownMenuItem
+                    onClick={() => onEdit(plan)}
+                    className="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 font-sans text-sm font-medium text-foreground hover:bg-secondary"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => onDelete(plan)}
+                    className="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 font-sans text-sm font-medium"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Eliminar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </article>

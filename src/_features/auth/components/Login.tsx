@@ -5,11 +5,14 @@ import { Dumbbell, Loader2 } from "lucide-react";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground";
 import { createClient } from "@/lib/supabase/client";
 
-export function Login() {
+export function Login({ nextPath, gymName }: { nextPath?: string; gymName?: string | null }) {
   const [oAuthLoading, setOAuthLoading] = useState<"google" | "facebook" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const supabase = createClient();
+  // window solo existe en el browser: se lee dentro de los handlers, nunca en render (SSR).
+  const getCallbackUrl = () =>
+    `${window.location.origin}/auth/callback${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ""}`;
 
   const handleGoogleLogin = async () => {
     setOAuthLoading("google");
@@ -19,7 +22,7 @@ export function Login() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: getCallbackUrl(),
         },
       });
 
@@ -38,7 +41,7 @@ export function Login() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "facebook",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: getCallbackUrl(),
         },
       });
 
@@ -89,6 +92,11 @@ export function Login() {
           <p className="font-mono text-muted-foreground text-sm">
             ACCEDER A TU FORTALEZA DE ENTRENAMIENTO
           </p>
+          {gymName && (
+            <p className="mt-3 inline-flex items-center rounded-full border border-primary/40 bg-primary/10 px-4 py-1 font-mono text-xs uppercase tracking-widest text-primary">
+              {gymName}
+            </p>
+          )}
         </div>
 
         {/* Login Form */}

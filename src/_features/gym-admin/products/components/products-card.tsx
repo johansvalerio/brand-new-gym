@@ -1,10 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { Dumbbell, Pencil, Trash2, ShoppingCart } from "lucide-react"
+import { Dumbbell, Pencil, Trash2, ShoppingCart, MoreVertical } from "lucide-react"
 import type { ProductRow } from "@/_features/gym-admin/products/hooks/useProducts"
 import { currency } from "./utils"
 import { cn } from "@/lib/utils"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface ProductsCardsProps {
   products: ProductRow[]
@@ -89,6 +90,40 @@ function InteractiveCard({
           <span className="shrink-0 rounded-full bg-black/40 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-white">
             #{String(product.product_id).padStart(3, "0")}
           </span>
+          {canManage ? (
+            <div onClick={(e) => e.stopPropagation()}>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  aria-label={`Más acciones de ${product.product_name}`}
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur transition-all hover:border-primary hover:bg-primary hover:text-black"
+                >
+                  <MoreVertical className="h-3.5 w-3.5" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  side="bottom"
+                  sideOffset={4}
+                  className="z-[60] w-44 rounded-2xl border border-border/80 bg-card/95 p-2 shadow-[0_20px_45px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+                >
+                  <DropdownMenuItem
+                    onClick={() => onEdit(product)}
+                    className="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 font-sans text-sm font-medium text-foreground hover:bg-secondary"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => onDelete(product)}
+                    className="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 font-sans text-sm font-medium"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Eliminar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ) : null}
         </div>
 
         {/* Price tag */}
@@ -98,7 +133,7 @@ function InteractiveCard({
           </div>
         </div>
 
-        {/* Bottom actions */}
+        {/* Bottom actions — solo el cart (modal de compra) */}
         <div className="mt-auto flex items-center justify-between gap-2">
           <button
             onClick={(e) => {
@@ -110,24 +145,6 @@ function InteractiveCard({
           >
             <ShoppingCart className="h-3.5 w-3.5" />
           </button>
-          {canManage ? (
-            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-              <button
-                onClick={() => onEdit(product)}
-                aria-label={`Editar ${product.product_name}`}
-                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur transition-all hover:border-primary hover:bg-primary hover:text-black hover:shadow-[0_0_12px_rgba(150,217,6,0.6)]"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </button>
-              <button
-                onClick={() => onDelete(product)}
-                aria-label={`Eliminar ${product.product_name}`}
-                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur transition-colors hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ) : null}
         </div>
       </div>
 

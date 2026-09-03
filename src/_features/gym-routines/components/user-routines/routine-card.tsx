@@ -86,6 +86,7 @@ export function RoutineCard({
     updated_at: routine.updated_at,
     created_by: routine.created_by,
     user_id: routine.user_id,
+    gym_id: routine.gym_id,
   }
   void routineRow
 

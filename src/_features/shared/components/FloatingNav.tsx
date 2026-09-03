@@ -19,6 +19,7 @@ import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, User
 import { createClient } from '@/lib/supabase/client';
 import { usePageTransition } from '@/_features/shared/hooks/usePageTransition';
 import { usePathname } from 'next/navigation';
+import { useGym, useInGymPath } from '@/app/providers/gym-provider';
 import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
@@ -84,6 +85,14 @@ export function FloatingNav() {
   );
   const { navigate } = usePageTransition();
   const pathname = usePathname();
+  const inGymPath = useInGymPath();
+  // Slug para los anchors de landing (el <a> crudo no pasa por navigate()).
+  const gym = useGym();
+  const firstSeg = pathname.split("/").filter(Boolean)[0];
+  const navSlug =
+    gym?.slug ?? (firstSeg && firstSeg !== "auth" && firstSeg !== "api" ? firstSeg : "gym-ulate");
+  const landingHref = (href: string) =>
+    href.startsWith("/auth") || href.startsWith(`/${navSlug}`) ? href : `/${navSlug}${href}`;
 
   const handleScroll = () => {
     setScrolled(window.scrollY > 50);
@@ -97,7 +106,7 @@ export function FloatingNav() {
   if (loading) return null;
 
   // En rutas app (/dashboard, /workout...) el sidebar reemplaza al floating nav — después de todos los hooks
-  if (["/dashboard", "/users", "/workout", "/ranking", "/routine", "/membership", "/products", "/payments", "/plans", "/nutrition"].some((p) => pathname.startsWith(p))) {
+  if (["/dashboard", "/users", "/workout", "/ranking", "/routine", "/membership", "/products", "/payments", "/plans", "/nutrition"].some((p) => inGymPath.startsWith(p))) {
     return null;
   }
 
@@ -138,7 +147,7 @@ export function FloatingNav() {
           return (
             <a
               key={index}
-              href={link.href}
+              href={landingHref(link.href)}
               className="group flex items-center gap-2 rounded-full px-3 py-2 transition-all duration-300 hover:bg-primary/20"
             >
               <Icon className="h-4 w-4 text-muted-foreground transition-colors duration-300 group-hover:text-primary" />
@@ -255,14 +264,13 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
             <Package className="h-4 w-4 mr-1" />
             Productos
           </DropdownMenuItem>
-          {
-            (user.isAdmin || user.isCoach) && (
-              <DropdownMenuItem onClick={() => navigate('/users')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
-                <UserPlus className="h-4 w-4 mr-1" />
-                Usuarios
-              </DropdownMenuItem>
-            )
-          }
+          {/* Admin: Usuarios vive dentro del dropdown Administración, no suelto */}
+          {user.isAdmin ? null : user.isCoach ? (
+            <DropdownMenuItem onClick={() => navigate('/users')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+              <UserPlus className="h-4 w-4 mr-1" />
+              Usuarios
+            </DropdownMenuItem>
+          ) : null}
           {user.isAdmin && (
             <DropdownMenuSub>
               <DropdownMenuSubTrigger className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
@@ -270,6 +278,10 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
                 Administración
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="w-52 rounded-2xl border border-border/80 bg-card/95 p-2 shadow-[0_20px_45px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+                <DropdownMenuItem onClick={() => navigate('/users')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+                  <Users className="h-4 w-4 mr-1" />
+                  Usuarios
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/payments')}
                   className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
                   <Banknote className="h-4 w-4 mr-1" />

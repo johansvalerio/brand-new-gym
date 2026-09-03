@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
+import { useInGymPath, useGym } from "@/app/providers/gym-provider"
 import { createClient } from "@/lib/supabase/client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { LayoutDashboard, Dumbbell, Flame, Trophy, CreditCard, Package, Users, Banknote, LogOut, Menu, X, CalendarDays, Home, Bell, Utensils, ShieldCheck, ChevronDown } from "lucide-react"
@@ -146,7 +146,7 @@ function NavDropdown({
   isMobile?: boolean
   onNavigate?: () => void
 }) {
-  const pathname = usePathname()
+  const pathname = useInGymPath()
   const { navigate } = usePageTransition()
   const showLabel = isMobile || !collapsed
   const isActive = items.some((item) => pathname === item.href || pathname.startsWith(item.href + "/"))
@@ -208,8 +208,12 @@ function NavDropdown({
 
 /* ─── Main sidebar ─── */
 export function AppSidebar() {
-  const pathname = usePathname()
+  const pathname = useInGymPath()
   const { profile, isAdmin, isCoach } = useAuthSession()
+  const gym = useGym()
+  // White-label: nombre del gym (mayúsculas) o marca histórica en /auth.
+  const brand = (gym?.name ?? "GYM ULATE").toUpperCase()
+  const brandLetter = brand.replace(/^[^A-Z0-9]+/, "").charAt(0) || "G"
   const { navigate } = usePageTransition()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(true)
@@ -290,12 +294,12 @@ export function AppSidebar() {
     const showLabel = isMobile || !collapsed
     return (
       <div className="flex h-full flex-col">
-        {/* Logo — glitch estilo DURO (Hero5): "U" autónoma al colapsar, "GYM ULATE" al hover */}
+        {/* Logo — glitch estilo DURO (Hero5): inicial del gym al colapsar, nombre al hover */}
         <div
-          aria-label="GYM ULATE"
+          aria-label={brand}
           className={cn("glitch-wrapper relative flex h-14 shrink-0 items-center overflow-hidden border-b border-border/50", !isMobile && collapsed ? "justify-center px-0" : "px-3")}
         >
-          {/* Marca colapsada: U con glitch ambiental cada ~1.2s */}
+          {/* Marca colapsada: inicial con glitch ambiental cada ~1.2s */}
           <span
             aria-hidden="true"
             className={cn(
@@ -303,12 +307,12 @@ export function AppSidebar() {
               showLabel ? "pointer-events-none absolute opacity-0" : "glitch-ambient opacity-100",
             )}
           >
-            <span className="glitch-main inline-block">U</span>
-            <span aria-hidden="true" className="glitch-a inline-flex items-center justify-center">U</span>
-            <span aria-hidden="true" className="glitch-b inline-flex items-center justify-center">U</span>
+            <span className="glitch-main inline-block">{brandLetter}</span>
+            <span aria-hidden="true" className="glitch-a inline-flex items-center justify-center">{brandLetter}</span>
+            <span aria-hidden="true" className="glitch-b inline-flex items-center justify-center">{brandLetter}</span>
           </span>
 
-          {/* Wordmark expandido: GYM ULATE con glitch al hacer hover */}
+          {/* Wordmark expandido: nombre del gym con glitch al hacer hover */}
           <span
             aria-hidden="true"
             className={cn(
@@ -316,9 +320,9 @@ export function AppSidebar() {
               showLabel ? "opacity-100" : "pointer-events-none w-0 opacity-0",
             )}
           >
-            <span className="glitch-main inline-block">GYM ULATE</span>
-            <span aria-hidden="true" className="glitch-a">GYM ULATE</span>
-            <span aria-hidden="true" className="glitch-b">GYM ULATE</span>
+            <span className="glitch-main inline-block">{brand}</span>
+            <span aria-hidden="true" className="glitch-a">{brand}</span>
+            <span aria-hidden="true" className="glitch-b">{brand}</span>
           </span>
         </div>
 
@@ -472,7 +476,7 @@ export function AppSidebar() {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname()
+  const pathname = useInGymPath()
   const isAppRoute = ["/dashboard", "/users", "/workout", "/ranking", "/routine", "/membership", "/products", "/payments", "/plans", "/nutrition"].some((p) => pathname.startsWith(p))
   if (!isAppRoute) return <>{children}</>
   return (
