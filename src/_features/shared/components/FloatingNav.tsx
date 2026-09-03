@@ -10,9 +10,12 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, LogOut, UserCircle, Trophy, Bell, Banknote, LayoutDashboard, CalendarDays, Utensils } from 'lucide-react';
+import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, LogOut, UserCircle, Trophy, Bell, Banknote, LayoutDashboard, CalendarDays, Utensils, ShieldCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { usePageTransition } from '@/_features/shared/hooks/usePageTransition';
 import { usePathname } from 'next/navigation';
@@ -212,20 +215,27 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
             </DropdownMenuItem>
           ) : null}
           {user.profileId ? (
-            <DropdownMenuItem onClick={() => navigate('/workout')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
-              <Dumbbell className="h-4 w-4 mr-1" />
-              Entrenar
-            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+                <Dumbbell className="h-4 w-4 mr-1" />
+                Entrenamiento
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-52 rounded-2xl border border-border/80 bg-card/95 p-2 shadow-[0_20px_45px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+                <DropdownMenuItem onClick={() => navigate('/workout')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+                  <Dumbbell className="h-4 w-4 mr-1" />
+                  Entrenar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/workout/history')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+                  <CalendarDays className="h-4 w-4 mr-1" />
+                  Histórico
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/routine')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+                  <Flame className="h-4 w-4 mr-1" />
+                  Rutinas
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
           ) : null}
-          <DropdownMenuItem onClick={() => navigate('/workout/history')} className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
-            <CalendarDays className="h-4 w-4 mr-1" />
-            Histórico
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/routine')}
-            className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
-            <Flame className="h-4 w-4 mr-1" />
-            Rutinas
-          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate(`/nutrition`)}
             className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
             <Utensils className="h-4 w-4 mr-1" />
@@ -254,18 +264,24 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
             )
           }
           {user.isAdmin && (
-            <DropdownMenuItem onClick={() => navigate('/payments')}
-              className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
-              <Banknote className="h-4 w-4 mr-1" />
-              Pagos
-            </DropdownMenuItem>
-          )}
-          {user.isAdmin && (
-            <DropdownMenuItem onClick={() => navigate('/plans')}
-              className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
-              <CreditCard className="h-4 w-4 mr-1" />
-              Planes
-            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+                <ShieldCheck className="h-4 w-4 mr-1" />
+                Administración
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-52 rounded-2xl border border-border/80 bg-card/95 p-2 shadow-[0_20px_45px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+                <DropdownMenuItem onClick={() => navigate('/payments')}
+                  className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+                  <Banknote className="h-4 w-4 mr-1" />
+                  Pagos
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/plans')}
+                  className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+                  <CreditCard className="h-4 w-4 mr-1" />
+                  Planes
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
           )}
         </DropdownMenuGroup>
 

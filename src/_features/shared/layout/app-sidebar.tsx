@@ -7,9 +7,9 @@ import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
 import { createClient } from "@/lib/supabase/client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LayoutDashboard, Dumbbell, Flame, Trophy, CreditCard, Package, Users, Banknote, LogOut, Menu, X, CalendarDays, Home, Bell, Utensils } from "lucide-react"
+import { LayoutDashboard, Dumbbell, Flame, Trophy, CreditCard, Package, Users, Banknote, LogOut, Menu, X, CalendarDays, Home, Bell, Utensils, ShieldCheck, ChevronDown } from "lucide-react"
 import { useNotifications, useMarkAllNotificationsRead, useMarkNotificationRead } from "@/_features/shared/hooks/useNotifications"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuItem, DropdownMenuGroup } from "@/components/ui/dropdown-menu"
 
 type NavItem = { label: string; href: string; icon: React.ElementType; adminOnly?: boolean; coachOrAdmin?: boolean }
 
@@ -24,9 +24,6 @@ const navSections: { title: string; items: NavItem[] }[] = [
   {
     title: "Entrenamiento",
     items: [
-      { label: "Entrenar", href: "/workout", icon: Dumbbell },
-      { label: "Histórico", href: "/workout/history", icon: CalendarDays },
-      { label: "Rutinas", href: "/routine", icon: Flame },
       { label: "Nutrición", href: "/nutrition", icon: Utensils },
       { label: "Ranking", href: "/ranking", icon: Trophy },
     ],
@@ -38,15 +35,24 @@ const navSections: { title: string; items: NavItem[] }[] = [
       { label: "Productos", href: "/products", icon: Package },
     ],
   },
-  {
-    title: "Administración",
-    items: [
-      { label: "Usuarios", href: "/users", icon: Users, coachOrAdmin: true },
-      { label: "Pagos", href: "/payments", icon: Banknote, adminOnly: true },
-      { label: "Planes", href: "/plans", icon: CreditCard, adminOnly: true },
-    ],
-  },
 ]
+
+/* Entrenar/Histórico/Rutinas → dropdown "Entrenamiento" (mismo esquema que FloatingNav). */
+const workoutItems: NavItem[] = [
+  { label: "Entrenar", href: "/workout", icon: Dumbbell },
+  { label: "Histórico", href: "/workout/history", icon: CalendarDays },
+  { label: "Rutinas", href: "/routine", icon: Flame },
+]
+
+/* Solo-admin: vive en el dropdown "Administración", no como filas sueltas. */
+const adminItems: NavItem[] = [
+  { label: "Usuarios", href: "/users", icon: Users },
+  { label: "Pagos", href: "/payments", icon: Banknote },
+  { label: "Planes", href: "/plans", icon: CreditCard },
+]
+
+/* Coach (no-admin): un solo extra, va inline sin dropdown. */
+const coachItem: NavItem = { label: "Usuarios", href: "/users", icon: Users }
 
 /* ─── Notification bell ─── */
 function SidebarNotificationBell({ collapsed, isMobile = false }: { collapsed: boolean; isMobile?: boolean }) {
@@ -124,6 +130,82 @@ function SidebarNotificationBell({ collapsed, isMobile = false }: { collapsed: b
   )
 }
 
+/* ─── Dropdown genérico para sección de nav (Entrenamiento, Administración) ─── */
+function NavDropdown({
+  label,
+  icon: Icon,
+  items,
+  collapsed,
+  isMobile = false,
+  onNavigate,
+}: {
+  label: string
+  icon: React.ElementType
+  items: NavItem[]
+  collapsed: boolean
+  isMobile?: boolean
+  onNavigate?: () => void
+}) {
+  const pathname = usePathname()
+  const { navigate } = usePageTransition()
+  const showLabel = isMobile || !collapsed
+  const isActive = items.some((item) => pathname === item.href || pathname.startsWith(item.href + "/"))
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label={label}
+        className={cn(
+          "group/link relative flex w-full cursor-pointer items-center overflow-hidden rounded-full py-2 text-left font-sans text-sm font-medium transition-all duration-200",
+          isActive ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+          !isMobile && collapsed ? "justify-center px-0" : "gap-3 px-3",
+        )}
+      >
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+          <Icon className="h-5 w-5" />
+        </span>
+        <span className={cn("whitespace-nowrap transition-opacity duration-200", showLabel ? "opacity-100" : "pointer-events-none w-0 opacity-0")}>
+          {label}
+        </span>
+        {showLabel && <ChevronDown className="ml-auto h-4 w-4 shrink-0 opacity-60" />}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align={isMobile ? "center" : "start"}
+        side={isMobile ? "bottom" : "right"}
+        sideOffset={isMobile ? 8 : 4}
+        className="z-[60] w-56 rounded-2xl border border-border/80 bg-card/95 p-2 shadow-[0_20px_45px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+      >
+        <DropdownMenuGroup>
+          <p className="px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            {label}
+          </p>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator className="my-1" />
+        {items.map((item) => {
+          const ItemIcon = item.icon
+          const active = pathname === item.href || pathname.startsWith(item.href + "/")
+          return (
+            <DropdownMenuItem
+              key={item.href}
+              onClick={() => {
+                navigate(item.href)
+                onNavigate?.()
+              }}
+              className={cn(
+                "flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 font-sans text-sm font-medium",
+                active ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <ItemIcon className="h-4 w-4 shrink-0" />
+              {item.label}
+            </DropdownMenuItem>
+          )
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 /* ─── Main sidebar ─── */
 export function AppSidebar() {
   const pathname = usePathname()
@@ -194,6 +276,15 @@ export function AppSidebar() {
     }))
     .filter((section) => section.items.length > 0)
 
+  // prepend dropdown de Entrenamiento antes de sección Entrenamiento
+  const withWorkout: { title: string; items: NavItem[]; isWorkoutDropdown?: boolean }[] = []
+  visibleSections.forEach((section) => {
+    if (section.title === "Entrenamiento") {
+      withWorkout.push({ title: "Entrenamiento", items: [], isWorkoutDropdown: true })
+    }
+    withWorkout.push(section)
+  })
+
   /* ─── Sidebar inner content ─── */
   const renderSidebarInner = (isMobile = false) => {
     const showLabel = isMobile || !collapsed
@@ -232,15 +323,55 @@ export function AppSidebar() {
         </div>
 
         {/* Nav links */}
-        <nav className="flex flex-1 flex-col gap-0.5 px-2 py-2">
-          {visibleSections.map((section, idx) => (
-            <div key={section.title}>
-              {idx > 0 && <div className="mx-auto my-1.5 h-px w-8 bg-border/40" />}
-              {section.items.map((item) => (
-                <NavLink key={item.label} item={item} isMobile={isMobile} />
-              ))}
+        <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-2">
+          {withWorkout.map((section, idx) => {
+            if (section.isWorkoutDropdown) {
+              return (
+                <div key={`workout-dropdown-${idx}`}>
+                  {idx > 0 && <div className="mx-auto my-1.5 h-px w-8 bg-border/40" />}
+                  <NavDropdown
+                    label="Entrenamiento"
+                    icon={Dumbbell}
+                    items={workoutItems}
+                    collapsed={isMobile ? false : collapsed}
+                    isMobile={isMobile}
+                    onNavigate={() => setMobileOpen(false)}
+                  />
+                </div>
+              )
+            }
+            return (
+              <div key={section.title}>
+                {idx > 0 && <div className="mx-auto my-1.5 h-px w-8 bg-border/40" />}
+                {section.items.map((item) => (
+                  <NavLink key={item.label} item={item} isMobile={isMobile} />
+                ))}
+              </div>
+            )
+          })}
+
+          {/* Coach: Usuarios inline (un solo extra, sin dropdown) */}
+          {!isAdmin && isCoach && (
+            <div>
+              <div className="mx-auto my-1.5 h-px w-8 bg-border/40" />
+              <NavLink item={coachItem} isMobile={isMobile} />
             </div>
-          ))}
+          )}
+
+          {/* Admin: Usuarios/Pagos/Planes en dropdown */}
+          {isAdmin && (
+            <div>
+              <div className="mx-auto my-1.5 h-px w-8 bg-border/40" />
+              <NavDropdown
+                label="Administración"
+                icon={ShieldCheck}
+                items={adminItems}
+                collapsed={isMobile ? false : collapsed}
+                isMobile={isMobile}
+                onNavigate={() => setMobileOpen(false)}
+              />
+            </div>
+          )}
 
           {/* Notifications */}
           <div className="mx-auto my-1.5 h-px w-8 bg-border/40" />
