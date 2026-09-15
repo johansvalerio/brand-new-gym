@@ -9,6 +9,7 @@ import { AuthProvider } from "@/app/providers/auth-provider";
 import { GymProvider } from "@/app/providers/gym-provider";
 import { FloatingNav } from "@/_features/shared/components/FloatingNav";
 import { AppShell } from "@/_features/shared/layout/app-sidebar";
+import { PushSubscriber } from "@/_features/shared/components/push-subscriber";
 import { createClient } from "@/lib/supabase/server";
 import { SITE_URL } from "@/lib/site-url";
 
@@ -107,6 +108,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <PageTransitionOverlay />
             <AppShell>{children}</AppShell>
             <AppToaster />
+            <PushSubscriber />
           </QueryProvider>
           </GymProvider>
         </AuthProvider>
