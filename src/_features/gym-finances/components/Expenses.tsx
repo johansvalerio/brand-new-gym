@@ -15,7 +15,7 @@ import {
   useDeleteExpense,
   useExpenses,
   useUpdateExpense,
-  type ExpenseRow,
+  type ExpenseWithPayee,
 } from "../hooks/useExpenses"
 import { EXPENSE_CATEGORY_LABELS } from "../lib/expense.schema"
 import { startOfMonthUtc } from "../hooks/useIncome"
@@ -53,7 +53,7 @@ function ExpenseStats({
   )
 }
 
-function ExpenseRowMenu({ expense, onEdit, onDelete }: { expense: ExpenseRow; onEdit: () => void; onDelete: () => void }) {
+function ExpenseRowMenu({ expense, onEdit, onDelete }: { expense: ExpenseWithPayee; onEdit: () => void; onDelete: () => void }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -77,7 +77,7 @@ function ExpenseRowMenu({ expense, onEdit, onDelete }: { expense: ExpenseRow; on
 }
 
 export function Expenses() {
-  const { isAdmin, loading: authLoading } = useAuthSession()
+  const { isStaff, loading: authLoading } = useAuthSession()
   const { data: expenses = [], isLoading, error } = useExpenses()
   const createExpense = useCreateExpense()
   const updateExpense = useUpdateExpense()
@@ -85,8 +85,8 @@ export function Expenses() {
 
   const [query, setQuery] = useState("")
   const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<ExpenseRow | null>(null)
-  const [deleting, setDeleting] = useState<ExpenseRow | null>(null)
+  const [editing, setEditing] = useState<ExpenseWithPayee | null>(null)
+  const [deleting, setDeleting] = useState<ExpenseWithPayee | null>(null)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -118,12 +118,12 @@ export function Expenses() {
   }, [expenses])
 
   const openCreate = () => {
-    if (!isAdmin) return
+    if (!isStaff) return
     setEditing(null)
     setFormOpen(true)
   }
-  const openEdit = (expense: ExpenseRow) => {
-    if (!isAdmin) return
+  const openEdit = (expense: ExpenseWithPayee) => {
+    if (!isStaff) return
     setEditing(expense)
     setFormOpen(true)
   }
@@ -139,7 +139,7 @@ export function Expenses() {
   }
 
   const confirmDelete = async () => {
-    if (!deleting || !isAdmin) return
+    if (!deleting || !isStaff) return
     await deleteExpense.mutateAsync(deleting)
     setDeleting(null)
   }
@@ -153,13 +153,13 @@ export function Expenses() {
     )
   }
 
-  if (!isAdmin) {
+  if (!isStaff) {
     return (
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
         <div className="rounded-lg border border-border bg-card px-8 py-10 text-center shadow-sm">
           <ShieldAlert className="mx-auto mb-4 h-10 w-10 text-muted-foreground/40" />
           <p className="font-sans text-xl font-black uppercase tracking-tight text-foreground">Acceso restringido</p>
-          <p className="mt-2 text-sm text-muted-foreground">Solo el administrador puede ver los egresos.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Solo el staff puede ver los egresos.</p>
         </div>
       </section>
     )
@@ -245,6 +245,9 @@ export function Expenses() {
                       month: "short",
                       year: "numeric",
                     })}
+                    {expense.payee
+                      ? ` · ${[expense.payee.first_name, expense.payee.last_name].filter(Boolean).join(" ") || "Staff"}`
+                      : null}
                   </p>
                 </div>
                 <span className="shrink-0 font-sans text-sm font-black tabular-nums text-foreground">

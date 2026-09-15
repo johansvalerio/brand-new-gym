@@ -36,4 +36,17 @@ describe("expenseFormSchema", () => {
       false,
     )
   })
+
+  it("salarios exige beneficiario y otras categorías lo aceptan nulo", () => {
+    expect(
+      expenseFormSchema.safeParse({ ...valid, category: "salarios" }).success,
+    ).toBe(false)
+    expect(
+      expenseFormSchema.safeParse({
+        ...valid,
+        category: "salarios",
+        paid_to_user_id: "a6e00000-0000-4000-8000-000000000001",
+      }).success,
+    ).toBe(true)
+  })
 })

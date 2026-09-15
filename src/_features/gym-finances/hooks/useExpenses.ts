@@ -18,16 +18,21 @@ export const expenseKeys = {
   detail: (id: string) => ["expenses", id] as const,
 }
 
-async function fetchExpenses(gymId: string): Promise<ExpenseRow[]> {
+// Beneficiario embebido (coach/recepción) cuando el egreso tiene paid_to_user_id.
+export type ExpenseWithPayee = ExpenseRow & {
+  payee: { first_name: string | null; last_name: string | null } | null
+}
+
+async function fetchExpenses(gymId: string): Promise<ExpenseWithPayee[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from("expenses")
-    .select("*")
+    .select("*, payee:users!expenses_paid_to_user_id_fkey(first_name, last_name)")
     .eq("gym_id", gymId)
     .order("expense_date", { ascending: false })
 
   if (error) throw new Error(error.message)
-  return data ?? []
+  return (data ?? []) as unknown as ExpenseWithPayee[]
 }
 
 export function useExpenses() {
@@ -50,6 +55,7 @@ export function useCreateExpense() {
         description: dto.description as string,
         amount: dto.amount as number,
         expense_date: dto.expense_date as string,
+        paid_to_user_id: dto.paid_to_user_id ?? null,
       })
       if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Datos inválidos")
       const supabase = createClient()
@@ -61,6 +67,7 @@ export function useCreateExpense() {
           description: parsed.data.description.trim(),
           amount: parsed.data.amount,
           expense_date: parsed.data.expense_date,
+          paid_to_user_id: parsed.data.paid_to_user_id ?? null,
         })
         .select("*")
         .single()
@@ -94,6 +101,7 @@ export function useUpdateExpense() {
         description: dto.description as string,
         amount: dto.amount as number,
         expense_date: dto.expense_date as string,
+        paid_to_user_id: dto.paid_to_user_id ?? null,
       })
       if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Datos inválidos")
       const supabase = createClient()
@@ -104,6 +112,7 @@ export function useUpdateExpense() {
           description: parsed.data.description.trim(),
           amount: parsed.data.amount,
           expense_date: parsed.data.expense_date,
+          paid_to_user_id: parsed.data.paid_to_user_id ?? null,
         })
         .eq("id", id)
         .select("*")

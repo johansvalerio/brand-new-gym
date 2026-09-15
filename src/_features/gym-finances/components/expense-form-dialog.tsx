@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { X, Receipt } from "lucide-react"
+import { X, Receipt, ShieldCheck } from "lucide-react"
 import { useBodyScrollLock } from "@/_features/shared/hooks/useBodyScrollLock"
 import type { ExpenseRow } from "../hooks/useExpenses"
+import { useSalaryStaff, staffDisplayName } from "../hooks/useSalaryStaff"
 import {
   EXPENSE_CATEGORIES,
   EXPENSE_CATEGORY_LABELS,
@@ -17,6 +18,7 @@ export type ExpenseFormPayload = {
   description: string
   amount: number
   expense_date: string
+  paid_to_user_id: string | null
 }
 
 interface ExpenseFormDialogProps {
@@ -31,6 +33,7 @@ type FormState = {
   description: string
   amount: string
   expense_date: string
+  paid_to_user_id: string
 }
 
 function todayIso(): string {
@@ -41,7 +44,7 @@ function todayIso(): string {
   return `${y}-${m}-${d}`
 }
 
-const emptyForm = (): FormState => ({ category: "otros", description: "", amount: "", expense_date: todayIso() })
+const emptyForm = (): FormState => ({ category: "otros", description: "", amount: "", expense_date: todayIso(), paid_to_user_id: "" })
 
 export function ExpenseFormDialog(props: ExpenseFormDialogProps) {
   const { open, expense, onClose, onSubmit } = props
@@ -74,12 +77,14 @@ function ExpenseFormInner({
           description: expense.description,
           amount: String(expense.amount),
           expense_date: expense.expense_date,
+          paid_to_user_id: expense.paid_to_user_id ?? "",
         }
       : emptyForm(),
   )
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const firstFieldRef = useRef<HTMLInputElement>(null)
+  const { data: staffList = [] } = useSalaryStaff()
 
   useEffect(() => {
     const t = setTimeout(() => firstFieldRef.current?.focus(), 50)
@@ -109,6 +114,7 @@ function ExpenseFormInner({
         description: form.description.trim(),
         amount: Number(form.amount),
         expense_date: form.expense_date,
+        paid_to_user_id: form.paid_to_user_id || null,
       })
     } finally {
       setIsSubmitting(false)
@@ -151,6 +157,33 @@ function ExpenseFormInner({
               ))}
             </select>
           </Field>
+
+          {/* Picker de beneficiario: solo para salarios (coach + recepción). */}
+          {form.category === "salarios" ? (
+            <Field label="Recibe el pago" htmlFor="expense_paid_to" error={errors.paid_to_user_id}>
+              <div className="relative">
+                <ShieldCheck className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <select
+                  id="expense_paid_to"
+                  value={form.paid_to_user_id}
+                  onChange={(e) => set("paid_to_user_id", e.target.value)}
+                  className={`${inputCls(errors.paid_to_user_id)} pl-9`}
+                >
+                  <option value="">Seleccioná al beneficiario…</option>
+                  {staffList.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {staffDisplayName(s)} — {s.role === "coach" ? "Coach" : "Recepción"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {staffList.length === 0 ? (
+                <p className="font-mono text-[10px] text-muted-foreground">
+                  Sin coaches ni recepción registrados en tu gym.
+                </p>
+              ) : null}
+            </Field>
+          ) : null}
           <Field label="Descripción" htmlFor="expense_description" error={errors.description}>
             <input
               ref={firstFieldRef}

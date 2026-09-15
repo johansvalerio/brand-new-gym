@@ -22,18 +22,30 @@ export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   otros: "Otros",
 }
 
-export const expenseFormSchema = z.object({
-  category: z.enum(EXPENSE_CATEGORIES, "Selecciona una categoría."),
-  description: z
-    .string()
-    .trim()
-    .min(1, "La descripción es obligatoria.")
-    .max(200, "Máx 200 caracteres."),
-  amount: z.coerce.number().min(0, "Monto ≥ 0."),
-  expense_date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida (AAAA-MM-DD)."),
-})
+export const expenseFormSchema = z
+  .object({
+    category: z.enum(EXPENSE_CATEGORIES, "Selecciona una categoría."),
+    description: z
+      .string()
+      .trim()
+      .min(1, "La descripción es obligatoria.")
+      .max(200, "Máx 200 caracteres."),
+    amount: z.coerce.number().min(0, "Monto ≥ 0."),
+    expense_date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida (AAAA-MM-DD)."),
+    // Beneficiario del pago: solo aplica (y se exige) para salarios.
+    paid_to_user_id: z.string().uuid().nullable().optional(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.category === "salarios" && !v.paid_to_user_id) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["paid_to_user_id"],
+        message: "Elegí quién recibe el salario.",
+      })
+    }
+  })
 
 export type ExpenseFormInput = z.infer<typeof expenseFormSchema>
 

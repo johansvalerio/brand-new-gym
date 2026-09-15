@@ -75,7 +75,7 @@ const SOURCE_LABEL: Record<string, string> = {
 }
 
 export function Income() {
-  const { isAdmin, loading: authLoading } = useAuthSession()
+  const { isStaff, loading: authLoading } = useAuthSession()
   const { data: income, isLoading: incomeLoading } = useIncome()
   const { data: expenses = [], isLoading: expensesLoading } = useExpenses()
   const { data: rents = [], isLoading: rentsLoading } = useRecurringIncomes()
@@ -109,7 +109,7 @@ export function Income() {
   }
 
   const confirmDeleteRent = async () => {
-    if (!deletingRent || !isAdmin) return
+    if (!deletingRent || !isStaff) return
     await deleteRent.mutateAsync(deletingRent)
     setDeletingRent(null)
   }
@@ -123,13 +123,13 @@ export function Income() {
     )
   }
 
-  if (!isAdmin) {
+  if (!isStaff) {
     return (
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
         <div className="rounded-lg border border-border bg-card px-8 py-10 text-center shadow-sm">
           <ShieldAlert className="mx-auto mb-4 h-10 w-10 text-muted-foreground/40" />
           <p className="font-sans text-xl font-black uppercase tracking-tight text-foreground">Acceso restringido</p>
-          <p className="mt-2 text-sm text-muted-foreground">Solo el administrador puede ver los ingresos.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Solo el staff puede ver los ingresos.</p>
         </div>
       </section>
     )
