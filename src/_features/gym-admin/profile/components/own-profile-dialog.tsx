@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { X, User } from "lucide-react"
 import { useBodyScrollLock } from "@/_features/shared/hooks/useBodyScrollLock"
+import { AvatarPicker } from "@/_features/shared/components/avatar-picker"
 import type { Tables } from "@/types/database.types"
 
 /**
@@ -204,15 +205,15 @@ function OwnProfileInner({
             </select>
           </Field>
 
-          <Field label="URL de avatar (opcional)" htmlFor="own-avatar">
-            <input
-              id="own-avatar"
-              value={form.avatar}
-              onChange={(e) => set("avatar", e.target.value)}
-              placeholder="https://..."
-              className={inputCls()}
+          <div className="flex flex-col gap-2 text-sm text-foreground">
+            <span className="font-sans text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Foto de perfil (opcional)
+            </span>
+            <AvatarPicker
+              value={form.avatar || null}
+              onChange={(v) => set("avatar", v ?? "")}
             />
-          </Field>
+          </div>
 
           <div className="sticky bottom-0 -mx-4 mt-2 flex items-center justify-end gap-3 border-t border-border bg-card px-4 py-3 sm:-mx-6 sm:px-6">
             <button

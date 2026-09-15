@@ -5,7 +5,18 @@ export const userFormSchema = z.object({
   last_name: z.string().trim().nullable(),
   email: z.string().trim().email("Ingresa un email válido."),
   phone: z.string().trim().nullable(),
-  avatar: z.string().trim().url("URL inválida.").nullable().or(z.literal("")),
+  // https (OAuth/link legacy) o dataURL del AvatarPicker (foto del dispositivo).
+  // Regex propia: z.string().url() acepta data:text/plain y no sirve aquí.
+  avatar: z
+    .string()
+    .trim()
+    .refine(
+      (v) =>
+        v === "" || /^https?:\/\/.+/.test(v) || v.startsWith("data:image/"),
+      { message: "URL inválida." },
+    )
+    .nullable()
+    .or(z.literal("")),
   role: z.enum(["admin", "user", "coach"]),
   coach_id: z.string().nullable(),
   membership_status: z.enum(["active", "inactive", "pending", "expired"]),

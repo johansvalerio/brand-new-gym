@@ -1,8 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react"
 import { dayLabel } from "../hooks/routine-helpers"
 import { ExerciseEditor } from "./exercise-editor"
+import { ExerciseChooser } from "./exercise-chooser"
+import { useExerciseCatalog } from "../hooks/useExercises"
 import { emptyExercise, type DayDraft } from "./routine-form-types"
 
 /** Un día de entrenamiento: header (foco + reordenar/borrar) + lista de ejercicios. */
@@ -25,9 +28,18 @@ export function DayEditor({
   onMoveDown: () => void
   onRemove: () => void
 }) {
-  const addExercise = () => {
-    const nextOrder = day.exercises.length + 1
-    onUpdate({ exercises: [...day.exercises, emptyExercise(nextOrder)] })
+  const [chooserOpen, setChooserOpen] = useState(false)
+  const { data: catalog = [] } = useExerciseCatalog()
+
+  /** Bulk multi-select: agrega un draft por cada ejercicio elegido (3x8-12, 90s). */
+  const addExercises = (ids: number[]) => {
+    const start = day.exercises.length
+    onUpdate({
+      exercises: [
+        ...day.exercises,
+        ...ids.map((id, k) => ({ ...emptyExercise(start + k + 1), exercise_id: id })),
+      ],
+    })
   }
 
   const updateExercise = (i: number, patch: Parameters<typeof onUpdate>[0]) => {
@@ -110,12 +122,19 @@ export function DayEditor({
 
         <button
           type="button"
-          onClick={addExercise}
+          onClick={() => setChooserOpen(true)}
           className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-border bg-background/30 px-3 py-2 font-mono text-xs uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary hover:text-primary"
         >
           <Plus className="h-3 w-3" />
-          Agregar ejercicio
+          Agregar ejercicios
         </button>
+        <ExerciseChooser
+          open={chooserOpen}
+          catalog={catalog}
+          excludeIds={day.exercises.map((ex) => ex.exercise_id)}
+          onConfirm={addExercises}
+          onClose={() => setChooserOpen(false)}
+        />
       </div>
     </div>
   )

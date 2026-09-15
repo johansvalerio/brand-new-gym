@@ -1,8 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import { ChevronDown, ChevronUp, Trash2, Plus } from "lucide-react"
 import { dayLabel } from "../../hooks/nutrition-helpers"
 import { MealEditor } from "./meal-editor"
+import { FoodChooser } from "../food-chooser"
 import { emptyMeal, type DayDraft } from "./nutrition-form-types"
 import { useFoods } from "../../hooks/useFoods"
 
@@ -27,8 +29,18 @@ export function DayEditor({
 }) {
   const { data: foods = [] } = useFoods()
   const byId = new Map(foods.map((f) => [f.id, f]))
+  const [chooserOpen, setChooserOpen] = useState(false)
 
-  const addMeal = () => onUpdate({ meals: [...day.meals, emptyMeal(day.meals.length + 1)] })
+  /** Bulk multi-select: agrega un draft (100g, almuerzo) por cada alimento elegido. */
+  const addMeals = (ids: number[]) => {
+    const start = day.meals.length
+    onUpdate({
+      meals: [
+        ...day.meals,
+        ...ids.map((id, k) => ({ ...emptyMeal(start + k + 1), food_id: id })),
+      ],
+    })
+  }
   const updateMeal = (i: number, patch: Partial<DayDraft["meals"][number]>) =>
     onUpdate({ meals: day.meals.map((m, k) => (k === i ? { ...m, ...patch } : m)) })
   const removeMeal = (i: number) => onUpdate({ meals: day.meals.filter((_, k) => k !== i) })
@@ -110,12 +122,19 @@ export function DayEditor({
         )}
         <button
           type="button"
-          onClick={addMeal}
+          onClick={() => setChooserOpen(true)}
           className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-border bg-background/30 px-3 py-2 font-mono text-xs uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary hover:text-primary"
         >
           <Plus className="h-3 w-3" />
-          Agregar comida
+          Agregar comidas
         </button>
+        <FoodChooser
+          open={chooserOpen}
+          catalog={foods}
+          excludeIds={day.meals.map((m) => m.food_id)}
+          onConfirm={addMeals}
+          onClose={() => setChooserOpen(false)}
+        />
       </div>
     </div>
   )

@@ -1,11 +1,14 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import { Check, Dumbbell, Loader2, Plus, RefreshCw, Wifi, WifiOff, X, Zap } from "lucide-react"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { useUserRoutines } from "@/_features/gym-routines/hooks/useUserRoutines"
 import { dayLabel } from "@/_features/gym-routines/hooks/routine-helpers"
 import {
+  activeWorkoutKey,
   useAbortWorkout,
   useActiveWorkout,
   useExerciseCatalog,
@@ -36,6 +39,7 @@ export function WorkoutSession() {
   const { data: catalog = [] } = useExerciseCatalog()
 
   // Mutaciones incrementales (B + red A en paso posterior).
+  const queryClient = useQueryClient()
   const startWorkout = useStartWorkout()
   const saveSet = useSaveSet()
   const finishWorkout = useFinishWorkout()
@@ -49,6 +53,9 @@ export function WorkoutSession() {
   const [chooserOpen, setChooserOpen] = useState(false)
   const [restSeconds, setRestSeconds] = useState<number | null>(null)
   const [workoutLogId, setWorkoutLogId] = useState<number | null>(null)
+  // Huérfana ya atendida (Continuar o Nueva): no mostrar el cartel aunque
+  // la query se re-pregunte al servidor antes de cerrarse la sesión.
+  const [dismissedOrphanId, setDismissedOrphanId] = useState<number | null>(null)
   const [syncMap, setSyncMap] = useState<Record<string, SetSyncStatus>>({})
   const [syncingCount, setSyncingCount] = useState(0)
   const [isOnline, setIsOnline] = useState(true)
@@ -216,9 +223,16 @@ export function WorkoutSession() {
   const handleResumeOrphan = async () => {
     if (!orphanWorkout || !profile) return
     setWorkoutLogId(orphanWorkout.id)
+    setDismissedOrphanId(orphanWorkout.id)
+    // Cierra el cartel al instante (sin esto parecía que el botón no hacía nada).
+    queryClient.setQueryData(activeWorkoutKey(profile.id), null)
+    toast.success("Sesión retomada", {
+      description: "Seguí registrando tus series.",
+    })
   }
   const handleAbandonOrphan = async () => {
     if (!orphanWorkout || !profile) return
+    setDismissedOrphanId(orphanWorkout.id)
     await abortWorkout.mutateAsync({
       userId: profile.id,
       workoutLogId: orphanWorkout.id,
@@ -294,7 +308,7 @@ export function WorkoutSession() {
       </header>
 
       {/* Modal de sesión huérfana detectada */}
-      {orphanLoading ? null : orphanWorkout ? (
+      {orphanLoading ? null : orphanWorkout && orphanWorkout.id !== dismissedOrphanId ? (
         <div className="mb-6 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
@@ -424,10 +438,11 @@ export function WorkoutSession() {
           <ExerciseChooser
             open={chooserOpen}
             catalog={availableCatalog}
-            value={0}
-            onSelect={(id) => {
-              const ex = catalog.find((c) => c.id === id)
-              if (ex) addFreeExercise(ex)
+            onConfirm={(ids) => {
+              for (const id of ids) {
+                const ex = catalog.find((c) => c.id === id)
+                if (ex) addFreeExercise(ex)
+              }
             }}
             onClose={() => setChooserOpen(false)}
           />
