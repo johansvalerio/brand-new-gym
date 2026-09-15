@@ -1,6 +1,6 @@
 "use client"
 
-import { CalendarClock, Plus, Search } from "lucide-react"
+import { ArrowLeftRight, CalendarClock, Plus, Search } from "lucide-react"
 import type { PlanRow } from "@/_features/gym-admin/plans/hooks/usePlans"
 import { FilterPill } from "@/_features/shared/components/filter-pill"
 import { ViewToggle, type ViewMode } from "@/_features/shared/components/view-toggle"
@@ -19,6 +19,8 @@ export function UsersToolbar({
   onViewChange,
   canCreate,
   onCreate,
+  canTransfer,
+  onTransfer,
 }: {
   query: string
   onQueryChange: (v: string) => void
@@ -31,6 +33,8 @@ export function UsersToolbar({
   onViewChange: (v: ViewMode) => void
   canCreate: boolean
   onCreate: () => void
+  canTransfer: boolean
+  onTransfer: () => void
 }) {
   return (
     <div className="mb-6 flex w-full flex-col gap-y-5">
@@ -89,6 +93,17 @@ export function UsersToolbar({
       {/* Acciones: siempre debajo de los filtros, alineadas a la derecha */}
       <div className="flex items-center justify-end gap-3">
         <ViewToggle value={view} onChange={onViewChange} />
+
+        {canTransfer ? (
+          <button
+            onClick={onTransfer}
+            aria-label="Transferir miembro"
+            className="flex cursor-pointer items-center gap-2 rounded-none border border-border px-4 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-foreground transition-all hover:border-primary hover:text-primary"
+          >
+            <ArrowLeftRight className="h-4 w-4" />
+            <span className="hidden sm:inline">Transferir</span>
+          </button>
+        ) : null}
 
         {canCreate ? (
           <button

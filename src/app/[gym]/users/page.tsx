@@ -1,16 +1,30 @@
 import { Users } from "@/_features/gym-admin/users/components/Users";
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground";
+import { SITE_URL } from "@/lib/site-url";
 
-export default function Home() {
+export const metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
+export default async function Home({
+  params,
+}: {
+  params: Promise<{ gym: string }>;
+}) {
+  const { gym } = await params;
+  const base = `${SITE_URL}/${gym}`;
   const breadcrumbItems = [
   {
     "name": "Inicio",
-    "item": "https://gymulate.vercel.app"
+    "item": base
   },
   {
     "name": "Miembros",
-    "item": "https://gymulate.vercel.app/users"
+    "item": `${base}/users`
   }
 ];
 

@@ -1,89 +1,90 @@
-import { StoryText2 } from "@/_features/gym-landing/components/StoryText2";
-import { DifferencesSection } from "@/_features/gym-landing/components/DifferencesSection";
-import FanDeckCards2 from "@/_features/gym-landing/components/FanDeckCards2";
-import { CoachesSection } from "@/_features/gym-landing/components/CoachesSection";
-import { MembershipSection } from "@/_features/gym-landing/components/MembershipSection";
-import { LocationHours } from "@/_features/gym-landing/components/LocationHours";
-import { FaqSection } from "@/_features/gym-landing/components/FaqSection";
-import { FinalCTA } from "@/_features/gym-landing/components/FinalCTA";
-import { Footer } from "@/_features/gym-landing/components/Footer";
-import { Hero5 } from "@/_features/gym-landing/components/Hero5";
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
+import { getLanding } from "@/_features/gym-landing/shared/registry";
+import { SITE_URL } from "@/lib/site-url";
 import type { Metadata } from "next";
-import { Gallery } from "@/_features/gym-landing/components/Gallery";
 
-export const metadata: Metadata = {
-  title: "Inicio",
-  description: "Únete a Gymulate - el centro de entrenamiento táctico de fitness con equipamiento de élite, seguimiento con datos, acceso 24/7 y una comunidad que exige excelencia. Comienza tu transformación hoy.",
-  openGraph: {
-    title: "Gymulate - Centro de Entrenamiento Táctico de Fitness",
-    description: "Únete a Gymulate - el centro de entrenamiento táctico de fitness con equipamiento de élite, seguimiento con datos, acceso 24/7 y una comunidad que exige excelencia.",
-    url: "https://gymulate.vercel.app",
-    images: [
-      {
-        url: "https://gymulate.vercel.app/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Gymulate - Centro de Entrenamiento Táctico de Fitness",
-      },
-    ],
-  },
-  twitter: {
-    title: "Gymulate - Centro de Entrenamiento Táctico de Fitness",
-    description: "Únete a Gymulate - el centro de entrenamiento táctico de fitness con equipamiento de élite, seguimiento con datos, acceso 24/7 y una comunidad que exige excelencia.",
-    images: ["https://gymulate.vercel.app/og-image.jpg"],
-  },
-};
-
-// JSON-LD Schema for LocalBusiness/Gym
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "GymOrFitnessCenter",
-  name: "Gymulate",
-  description: "Centro de entrenamiento táctico de fitness con equipamiento de élite, seguimiento con datos y acceso 24/7",
-  url: "https://gymulate.vercel.app",
-  telephone: "+506 8888-1111",
-  address: {
-    "@type": "PostalAddress",
-    streetAddress: "Av. Central",
-    addressLocality: "Cañas",
-    addressRegion: "Guanacaste",
-    addressCountry: "CR",
-  },
-  geo: {
-    "@type": "GeoCoordinates",
-    latitude: 9.9326,
-    longitude: -84.0827,
-  },
-  openingHoursSpecification: [
-    {
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-      opens: "05:00",
-      closes: "22:00",
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ gym: string }>;
+}): Promise<Metadata> {
+  const { gym } = await params;
+  const { site } = getLanding(gym);
+  const url = `${SITE_URL}/${site.slug}`;
+  const ogImage = `${SITE_URL}${site.ogImage ?? "/og-image.jpg"}`;
+  return {
+    title: `${site.name} - Centro de Entrenamiento`,
+    description: site.description,
+    alternates: {
+      canonical: url,
     },
-    {
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: "Saturday",
-      opens: "05:00",
-      closes: "12:00",
+    openGraph: {
+      title: `${site.name} - Centro de Entrenamiento`,
+      description: site.description,
+      url,
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: `${site.name} - Centro de Entrenamiento`,
+        },
+      ],
     },
-  ],
-  priceRange: "$$",
-  amenityFeature: [
-    "Acceso 24/7",
-    "Equipamiento de Élite",
-    "Seguimiento con Datos",
-    "Entrenamiento Personal",
-    "Vestidores",
-    "Duchas",
-  ],
-};
+    twitter: {
+      title: `${site.name} - Centro de Entrenamiento`,
+      description: site.description,
+      images: [ogImage],
+    },
+  };
+}
 
-export default function Home() {
-  const breadcrumbItems = [
-    { name: "Inicio", item: "https://gymulate.vercel.app" },
-  ];
+export default async function GymHome({ params }: { params: Promise<{ gym: string }> }) {
+  const { gym } = await params;
+  const { site, sections } = getLanding(gym);
+  const url = `${SITE_URL}/${site.slug}`;
+
+  // JSON-LD Schema for LocalBusiness/Gym — datos del site.ts de cada gym.
+  // openingHours (formato texto schema.org) y sameAs solo se emiten si el gym los define.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "GymOrFitnessCenter",
+    name: site.name,
+    description: site.description,
+    url,
+    telephone: site.phone,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: site.address.street,
+      addressLocality: site.address.city,
+      addressRegion: site.address.region,
+      addressCountry: site.address.country,
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: site.geo.lat,
+      longitude: site.geo.lng,
+    },
+    priceRange: site.priceRange,
+    amenityFeature: site.amenities,
+    ...(site.hours && site.hours.length > 0 ? { openingHours: site.hours } : {}),
+    ...(site.sameAs && site.sameAs.length > 0 ? { sameAs: site.sameAs } : {}),
+  };
+
+  const breadcrumbItems = [{ name: "Inicio", item: url }];
+  const {
+    hero: Hero,
+    story: Story,
+    fanDeck: FanDeck,
+    differences: Differences,
+    gallery: Gallery,
+    coaches: Coaches,
+    membership: Membership,
+    faq: Faq,
+    location: Location,
+    finalCta: FinalCta,
+    footer: Footer,
+  } = sections;
 
   return (
     <>
@@ -92,25 +93,28 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <BreadcrumbSchema items={breadcrumbItems} />
-      <main className="min-h-screen bg-background text-foreground overflow-x-clip selection:bg-primary/30">
-        <Hero5 />
+      {/* key por gym: sin esto, navegar entre slugs reutiliza las instancias de
+          Location/FinalCTA (mismo tipo) con ScrollTriggers medidos en el gym
+          anterior → línea congelada y CTA sin aparición. */}
+      <main key={site.slug} className="min-h-screen bg-background text-foreground overflow-x-clip selection:bg-primary/30">
+        <Hero />
 
         {/* Cortina: el contenido sube tapando el hero sticky. Sin bg acá:
-            el redondeo vive en StoryText2 para que las esquinas dejen
+            el redondeo vive en el story para que las esquinas dejen
             ver el hero detrás (mismo lenguaje que la cortina del FinalCTA) */}
         <div className="relative z-10">
-          <StoryText2 />
-          <FanDeckCards2 />
-          <DifferencesSection />
+          <Story />
+          <FanDeck />
+          <Differences />
 
           {/* Aire después de la secuencia pineada (no afecta la geometría del pin) */}
           <div aria-hidden="true" className="h-16 md:h-24 bg-background" />
 
           <Gallery />
-          <CoachesSection />
-          <MembershipSection />
-          <FaqSection />
-          <LocationHours />
+          <Coaches />
+          <Membership />
+          <Faq />
+          <Location />
 
           {/* Pausa antes de la cortina: el mapa sticky se queda fijo mientras
               el usuario recorre este tramo extra */}
@@ -120,7 +124,7 @@ export default function Home() {
               Sin bg en el wrapper para que las esquinas del rounded-t
               (pintadas por FinalCTA) dejen ver el mapa detrás. */}
           <div className="relative z-10 shadow-[0_-24px_60px_rgba(0,0,0,0.55)]">
-            <FinalCTA />
+            <FinalCta />
             <Footer />
           </div>
         </div>

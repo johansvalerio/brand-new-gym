@@ -2,13 +2,21 @@ import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import { UserRoutines } from "@/_features/gym-routines/components/UserRoutines"
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground"
 import { createClient } from "@/lib/supabase/server"
+import { SITE_URL } from "@/lib/site-url";
+
+export const metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function UserRoutinesPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ gym: string; id: string }>
 }) {
-  const { id } = await params
+  const { gym, id } = await params
 
   // Server Component trae el nombre del perfil para el header de la página.
   // Los datos de rutinas los trae el componente client (TanStack) para
@@ -24,10 +32,10 @@ export default async function UserRoutinesPage({
     ? `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim() || "Miembro"
     : "Miembro"
   const breadcrumbItems = [
-    { name: "Inicio", item: "https://gymulate.vercel.app" },
-    { name: "Miembros", item: "https://gymulate.vercel.app/users" },
-    { name: "Perfil", item: `https://gymulate.vercel.app/users/profile/${id}` },
-    { name: "Rutinas", item: `https://gymulate.vercel.app/users/profile/${id}/routine` },
+    { name: "Inicio", item: `${SITE_URL}/${gym}` },
+    { name: "Miembros", item: `${SITE_URL}/${gym}/users` },
+    { name: "Perfil", item: `${SITE_URL}/${gym}/users/profile/${id}` },
+    { name: "Rutinas", item: `${SITE_URL}/${gym}/users/profile/${id}/routine` },
   ];
 
   return (

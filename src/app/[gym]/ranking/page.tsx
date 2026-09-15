@@ -1,17 +1,28 @@
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground";
+import { SITE_URL } from "@/lib/site-url";
 import { RankingTabs } from "./ranking-tabs";
 
 export const metadata = {
   title: "Ranking | Gymulate",
   description:
     "Las rutinas y rutinas + planes de nutrición mejor puntuadas por la comunidad de Gymulate, compartidas por sus propios miembros.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
-export default function RankingPage() {
+export default async function RankingPage({
+  params,
+}: {
+  params: Promise<{ gym: string }>;
+}) {
+  const { gym } = await params;
+  const base = `${SITE_URL}/${gym}`;
   const breadcrumbItems = [
-    { name: "Inicio", item: "https://gymulate.vercel.app" },
-    { name: "Ranking", item: "https://gymulate.vercel.app/ranking" },
+    { name: "Inicio", item: base },
+    { name: "Ranking", item: `${base}/ranking` },
   ];
 
   return (

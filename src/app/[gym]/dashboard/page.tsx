@@ -1,22 +1,33 @@
 import { Dashboard } from "@/_features/gym-admin/dashboard/components/Dashboard";
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground";
+import { SITE_URL } from "@/lib/site-url";
 
 export const metadata = {
  title: "Dashboard | Gymulate",
  description:
  "Tu vista general: membresía, rutinas, pagos y actividad — cada rol ve lo suyo en tiempo real.",
+ robots: {
+   index: false,
+   follow: false,
+ },
 };
 
-export default function DashboardPage() {
+export default async function DashboardPage({
+  params,
+}: {
+  params: Promise<{ gym: string }>;
+}) {
+  const { gym } = await params;
+  const base = `${SITE_URL}/${gym}`;
   const breadcrumbItems = [
   {
     "name": "Inicio",
-    "item": "https://gymulate.vercel.app"
+    "item": base
   },
   {
     "name": "Dashboard",
-    "item": "https://gymulate.vercel.app/dashboard"
+    "item": `${base}/dashboard`
   }
 ];
 

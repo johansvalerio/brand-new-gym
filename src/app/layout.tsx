@@ -10,6 +10,7 @@ import { GymProvider } from "@/app/providers/gym-provider";
 import { FloatingNav } from "@/_features/shared/components/FloatingNav";
 import { AppShell } from "@/_features/shared/layout/app-sidebar";
 import { createClient } from "@/lib/supabase/server";
+import { SITE_URL } from "@/lib/site-url";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,9 +23,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Gymulate - Centro de Entrenamiento Táctico de Fitness",
-    template: "%s | Gymulate"
+    default: "Gym",
+    template: "%s",
   },
   description: "Gymulate es un centro de entrenamiento táctico de fitness con equipamiento de élite, seguimiento con datos y acceso 24/7. Transforma tu cuerpo con nuestros programas de entrenamiento inspirados en el ejército.",
   keywords: ["gym", "fitness", "entrenamiento táctico", "entrenamiento personal", "gym 24/7", "equipamiento de élite", "seguimiento de datos", "entrenamiento de fuerza", "crossfit", "fitness funcional"],
@@ -32,7 +34,7 @@ export const metadata: Metadata = {
   creator: "Gymulate",
   publisher: "Gymulate",
   alternates: {
-    canonical: "https://gymulate.vercel.app",
+    canonical: SITE_URL,
   },
   icons: {
     icon: [
@@ -58,7 +60,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "es_CR",
-    url: "https://gymulate.vercel.app",
+    url: SITE_URL,
     title: "Gymulate - Centro de Entrenamiento Táctico de Fitness",
     description: "Transforma tu cuerpo con equipamiento de élite, seguimiento con datos y acceso 24/7 en Gymulate.",
     siteName: "Gymulate",
@@ -68,9 +70,6 @@ export const metadata: Metadata = {
     title: "Gymulate - Centro de Entrenamiento Táctico de Fitness",
     description: "Transforma tu cuerpo con equipamiento de élite, seguimiento con datos y acceso 24/7 en Gymulate.",
     creator: "@gymulate",
-  },
-  verification: {
-    google: "google-site-verification-code",
   },
 };
 

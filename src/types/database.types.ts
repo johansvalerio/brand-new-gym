@@ -1254,6 +1254,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      transfer_member_to_my_gym: { Args: { p_email: string }; Returns: string }
     }
     Enums: {
       membership_status: "active" | "inactive" | "pending" | "expired"

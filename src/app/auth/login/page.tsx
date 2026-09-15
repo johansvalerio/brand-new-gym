@@ -1,6 +1,7 @@
 import { Login } from "@/_features/auth/components/Login";
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import { createClient } from "@/lib/supabase/server";
+import { SITE_URL } from "@/lib/site-url";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -34,9 +35,9 @@ export default async function LoginPage({
   const nextPath = next ?? (gymSlug ? `/${gymSlug}/dashboard` : "/gym-ulate/dashboard");
 
   const breadcrumbItems = [
-    { name: "Inicio", item: "https://gymulate.vercel.app" },
-    { name: "Autenticación", item: "https://gymulate.vercel.app/auth" },
-    { name: "Iniciar Sesión", item: "https://gymulate.vercel.app/auth/login" },
+    { name: "Inicio", item: SITE_URL },
+    { name: "Autenticación", item: `${SITE_URL}/auth` },
+    { name: "Iniciar Sesión", item: `${SITE_URL}/auth/login` },
   ];
 
   return (

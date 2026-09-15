@@ -1,22 +1,33 @@
 import { MyMembership } from "@/_features/gym-admin/membership/components/MyMembership";
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground";
+import { SITE_URL } from "@/lib/site-url";
 
 export const metadata = {
  title: "Mi membresía | Gymulate",
  description:
  "Gestiona tu membresía: solicita planes diarios, semanales o mensuales y sigue tu tiempo restante.",
+ robots: {
+   index: false,
+   follow: false,
+ },
 };
 
-export default function MyMembershipPage() {
+export default async function MyMembershipPage({
+  params,
+}: {
+  params: Promise<{ gym: string }>;
+}) {
+  const { gym } = await params;
+  const base = `${SITE_URL}/${gym}`;
   const breadcrumbItems = [
   {
     "name": "Inicio",
-    "item": "https://gymulate.vercel.app"
+    "item": base
   },
   {
     "name": "Membresía",
-    "item": "https://gymulate.vercel.app/membership"
+    "item": `${base}/membership`
   }
 ];
 

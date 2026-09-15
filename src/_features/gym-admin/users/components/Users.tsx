@@ -7,6 +7,7 @@ import {
   useCreateUser,
   useUpdateUser,
   useDeleteUser,
+  useTransferMember,
   type UserRow,
 } from "../hooks/useUsers"
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
@@ -21,6 +22,7 @@ import { UsersToolbar, type MembershipFilter } from "./users-toolbar"
 import { UsersStats } from "./users-stats"
 import { UserFormDialog, type UserFormPayload } from "./user-form-dialog"
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog"
+import { TransferMemberDialog } from "./transfer-member-dialog"
 
 const DAY_MS = 86_400_000
 
@@ -29,6 +31,7 @@ export function Users() {
   const createUser = useCreateUser()
   const updateUser = useUpdateUser()
   const deleteUser = useDeleteUser()
+  const transferMember = useTransferMember()
   const { isAdmin, isCoach, loading: authLoading } = useAuthSession()
   const { data: coaches = [] } = useCoaches()
   const { data: plans = [] } = usePlans()
@@ -42,6 +45,7 @@ export function Users() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<UserRow | null>(null)
   const [deleting, setDeleting] = useState<UserRow | null>(null)
+  const [transferOpen, setTransferOpen] = useState(false)
 
   const canViewUsers = isAdmin || isCoach
   const canManageUsers = isAdmin
@@ -162,6 +166,12 @@ export function Users() {
     setDeleting(null)
   }
 
+  const confirmTransfer = async (email: string) => {
+    if (!canManageUsers) return
+    await transferMember.mutateAsync(email)
+    setTransferOpen(false)
+  }
+
   if (authLoading) {
     return (
       <section className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
@@ -221,6 +231,8 @@ export function Users() {
           onViewChange={setView}
           canCreate={canManageUsers}
           onCreate={openCreate}
+          canTransfer={canManageUsers}
+          onTransfer={() => setTransferOpen(true)}
         />
 
         {error ? (
@@ -291,6 +303,15 @@ export function Users() {
         onCancel={() => setDeleting(null)}
         onConfirm={confirmDelete}
       />
+
+      {transferOpen ? (
+        <TransferMemberDialog
+          key="transfer"
+          open={transferOpen}
+          onClose={() => setTransferOpen(false)}
+          onConfirm={confirmTransfer}
+        />
+      ) : null}
     </section>
   )
 }

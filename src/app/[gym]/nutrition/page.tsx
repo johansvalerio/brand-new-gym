@@ -1,16 +1,27 @@
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground";
+import { SITE_URL } from "@/lib/site-url";
 import { NutritionClient } from "./NutritionClient";
 
 export const metadata = {
   title: "Nutrición | Gymulate",
   description: "Planes de nutrición con comidas, macros y ficha técnica — comparte tus recetas con la comunidad.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
-export default function NutritionPage() {
+export default async function NutritionPage({
+  params,
+}: {
+  params: Promise<{ gym: string }>;
+}) {
+  const { gym } = await params;
+  const base = `${SITE_URL}/${gym}`;
   const breadcrumbItems = [
-    { name: "Inicio", item: "https://gymulate.vercel.app" },
-    { name: "Nutrición", item: "https://gymulate.vercel.app/nutrition" },
+    { name: "Inicio", item: base },
+    { name: "Nutrición", item: `${base}/nutrition` },
   ];
 
   return (

@@ -1,16 +1,30 @@
 import { Plans } from "@/_features/gym-admin/plans/components/Plans";
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground";
+import { SITE_URL } from "@/lib/site-url";
 
-export default function PlansPage() {
+export const metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
+export default async function PlansPage({
+  params,
+}: {
+  params: Promise<{ gym: string }>;
+}) {
+  const { gym } = await params;
+  const base = `${SITE_URL}/${gym}`;
   const breadcrumbItems = [
   {
     "name": "Inicio",
-    "item": "https://gymulate.vercel.app"
+    "item": base
   },
   {
     "name": "Planes",
-    "item": "https://gymulate.vercel.app/plans"
+    "item": `${base}/plans`
   }
 ];
 

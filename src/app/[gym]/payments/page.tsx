@@ -1,16 +1,30 @@
 import { Payments } from "@/_features/gym-admin/payments/components/Payments";
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground";
+import { SITE_URL } from "@/lib/site-url";
 
-export default function PaymentsPage() {
+export const metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
+export default async function PaymentsPage({
+  params,
+}: {
+  params: Promise<{ gym: string }>;
+}) {
+  const { gym } = await params;
+  const base = `${SITE_URL}/${gym}`;
   const breadcrumbItems = [
   {
     "name": "Inicio",
-    "item": "https://gymulate.vercel.app"
+    "item": base
   },
   {
     "name": "Pagos",
-    "item": "https://gymulate.vercel.app/payments"
+    "item": `${base}/payments`
   }
 ];
 

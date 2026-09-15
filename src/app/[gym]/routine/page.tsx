@@ -1,16 +1,27 @@
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground";
+import { SITE_URL } from "@/lib/site-url";
 import { RoutineClient } from "./RoutineClient";
 
 export const metadata = {
   title: "Rutinas | Gymulate",
   description: "Tus rutinas activas, compartidas por la comunidad y asignadas por tu coach — visualiza días, ejercicios y progresos.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
-export default function RoutinePage() {
+export default async function RoutinePage({
+  params,
+}: {
+  params: Promise<{ gym: string }>;
+}) {
+  const { gym } = await params;
+  const base = `${SITE_URL}/${gym}`;
   const breadcrumbItems = [
-    { name: "Inicio", item: "https://gymulate.vercel.app" },
-    { name: "Rutinas", item: "https://gymulate.vercel.app/routine" },
+    { name: "Inicio", item: base },
+    { name: "Rutinas", item: `${base}/routine` },
   ];
 
   return (

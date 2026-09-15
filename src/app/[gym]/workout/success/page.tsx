@@ -1,25 +1,36 @@
 import { WorkoutSuccess } from "@/_features/gym-workout/components/workout-success"
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground"
+import { SITE_URL } from "@/lib/site-url";
 
 export const metadata = {
  title: "¡Guardado! | Gymulate",
  description: "Tu entrenamiento se guardó correctamente.",
+ robots: {
+   index: false,
+   follow: false,
+ },
 }
 
-export default function WorkoutSuccessPage() {
+export default async function WorkoutSuccessPage({
+  params,
+}: {
+  params: Promise<{ gym: string }>;
+}) {
+  const { gym } = await params;
+  const base = `${SITE_URL}/${gym}`;
   const breadcrumbItems = [
   {
     "name": "Inicio",
-    "item": "https://gymulate.vercel.app"
+    "item": base
   },
   {
     "name": "Entrenar",
-    "item": "https://gymulate.vercel.app/workout"
+    "item": `${base}/workout`
   },
   {
     "name": "Éxito",
-    "item": "https://gymulate.vercel.app/workout/success"
+    "item": `${base}/workout/success`
   }
 ];
 

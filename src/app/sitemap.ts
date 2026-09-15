@@ -1,10 +1,11 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site-url";
 
 // Landings públicas por gym (/[slug]) + login global. La app privada no se indexa.
 const GYM_SLUGS = ["gym-ulate", "zona-fit", "isaac-castro"];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://gymulate.vercel.app";
+  const baseUrl = SITE_URL;
 
   return [
     {

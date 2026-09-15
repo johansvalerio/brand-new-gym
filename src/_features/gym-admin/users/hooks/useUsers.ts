@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
+import { z } from "zod"
 import { createClient } from "@/lib/supabase/client"
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/database.types"
 import { userFormSchema } from "../../lib/user.schema"
@@ -141,6 +142,35 @@ export function useUpdateUser() {
     },
     onError: (error) => {
       toast.error("No se pudo actualizar el usuario", {
+        description: error.message,
+      })
+    },
+  })
+}
+
+const transferMemberSchema = z.string().trim().email("Ingresa un email válido.")
+
+export function useTransferMember() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (email: string): Promise<string> => {
+      const parsed = transferMemberSchema.safeParse(email)
+      if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Email inválido")
+      const supabase = createClient()
+      const { data, error } = await supabase.rpc("transfer_member_to_my_gym", {
+        p_email: parsed.data,
+      })
+
+      if (error) throw new Error(error.message)
+      return data as string
+    },
+    onSuccess: () => {
+      toast.success("Miembro transferido a tu gym correctamente")
+      queryClient.invalidateQueries({ queryKey: userKeys.all })
+    },
+    onError: (error) => {
+      toast.error("No se pudo transferir al miembro", {
         description: error.message,
       })
     },

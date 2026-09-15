@@ -1,16 +1,25 @@
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import { UserProfile } from "@/_features/gym-admin/profile/components/UserProfile";
+import { SITE_URL } from "@/lib/site-url";
+
+export const metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function UserProfilePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ gym: string; id: string }>;
 }) {
-  const { id } = await params;
+  const { gym, id } = await params;
+  const base = `${SITE_URL}/${gym}`;
   const breadcrumbItems = [
-    { name: "Inicio", item: "https://gymulate.vercel.app" },
-    { name: "Miembros", item: "https://gymulate.vercel.app/users" },
-    { name: "Perfil", item: `https://gymulate.vercel.app/users/profile/${id}` },
+    { name: "Inicio", item: base },
+    { name: "Miembros", item: `${base}/users` },
+    { name: "Perfil", item: `${base}/users/profile/${id}` },
   ];
 
   return (

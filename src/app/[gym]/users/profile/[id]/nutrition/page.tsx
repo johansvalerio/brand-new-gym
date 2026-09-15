@@ -2,17 +2,25 @@ import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import { NutritionPlans } from "@/_features/gym-nutrition/components/NutritionPlans";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground";
 import { createClient } from "@/lib/supabase/server";
+import { SITE_URL } from "@/lib/site-url";
 
-export default async function UserNutritionPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export const metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
+export default async function UserNutritionPage({ params }: { params: Promise<{ gym: string; id: string }> }) {
+  const { gym, id } = await params;
   const supabase = await createClient();
   const { data: profile } = await supabase.from("users").select("id, first_name, last_name, role, coach_id").eq("id", id).maybeSingle();
   const displayName = profile ? `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim() || "Miembro" : "Miembro";
   const breadcrumbItems = [
-    { name: "Inicio", item: "https://gymulate.vercel.app" },
-    { name: "Miembros", item: "https://gymulate.vercel.app/users" },
-    { name: "Perfil", item: `https://gymulate.vercel.app/users/profile/${id}` },
-    { name: "Nutrición", item: `https://gymulate.vercel.app/users/profile/${id}/nutrition` },
+    { name: "Inicio", item: `${SITE_URL}/${gym}` },
+    { name: "Miembros", item: `${SITE_URL}/${gym}/users` },
+    { name: "Perfil", item: `${SITE_URL}/${gym}/users/profile/${id}` },
+    { name: "Nutrición", item: `${SITE_URL}/${gym}/users/profile/${id}/nutrition` },
   ];
   return (
     <>

@@ -2,25 +2,36 @@ import { WorkoutCharts } from "@/_features/gym-workout/components/workout-charts
 import { WorkoutHistory } from "@/_features/gym-workout/components/workout-history"
 import { BreadcrumbSchema } from "@/_features/shared/components/Breadcrumbs";
 import ConstellationBackground from "@/_features/shared/components/ConstellationBackground"
+import { SITE_URL } from "@/lib/site-url";
 
 export const metadata = {
  title: "Histórico | Gymulate",
  description: "Tu histórico de entrenamientos: volumen, series y progreso.",
+ robots: {
+   index: false,
+   follow: false,
+ },
 }
 
-export default function WorkoutHistoryPage() {
+export default async function WorkoutHistoryPage({
+  params,
+}: {
+  params: Promise<{ gym: string }>;
+}) {
+  const { gym } = await params;
+  const base = `${SITE_URL}/${gym}`;
   const breadcrumbItems = [
   {
     "name": "Inicio",
-    "item": "https://gymulate.vercel.app"
+    "item": base
   },
   {
     "name": "Entrenar",
-    "item": "https://gymulate.vercel.app/workout"
+    "item": `${base}/workout`
   },
   {
     "name": "Historial",
-    "item": "https://gymulate.vercel.app/workout/history"
+    "item": `${base}/workout/history`
   }
 ];
 
