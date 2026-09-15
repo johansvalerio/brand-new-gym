@@ -4,7 +4,7 @@ import { SITE_URL } from "@/lib/site-url";
 import { RoutineClient } from "./RoutineClient";
 
 export const metadata = {
-  title: "Rutinas | Gymulate",
+  title: "Rutinas | Jaula",
   description: "Tus rutinas activas, compartidas por la comunidad y asignadas por tu coach — visualiza días, ejercicios y progresos.",
   robots: {
     index: false,

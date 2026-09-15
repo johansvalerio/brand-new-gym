@@ -25,14 +25,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Gym",
+    default: "Jaula",
     template: "%s",
   },
-  description: "Gymulate es un centro de entrenamiento táctico de fitness con equipamiento de élite, seguimiento con datos y acceso 24/7. Transforma tu cuerpo con nuestros programas de entrenamiento inspirados en el ejército.",
-  keywords: ["gym", "fitness", "entrenamiento táctico", "entrenamiento personal", "gym 24/7", "equipamiento de élite", "seguimiento de datos", "entrenamiento de fuerza", "crossfit", "fitness funcional"],
-  authors: [{ name: "Gymulate" }],
-  creator: "Gymulate",
-  publisher: "Gymulate",
+  description: "Jaula es la plataforma para gestionar tu gimnasio: socios, membresías, rutinas, nutrición y entrenamientos en un solo lugar.",
+  keywords: ["software gimnasios", "gestión gimnasio", "app gimnasio", "membresías", "rutinas entrenamiento", "control acceso gym", "multi-sede"],
+  authors: [{ name: "Jaula" }],
+  creator: "Jaula",
+  publisher: "Jaula",
   alternates: {
     canonical: SITE_URL,
   },
@@ -61,15 +61,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_CR",
     url: SITE_URL,
-    title: "Gymulate - Centro de Entrenamiento Táctico de Fitness",
-    description: "Transforma tu cuerpo con equipamiento de élite, seguimiento con datos y acceso 24/7 en Gymulate.",
-    siteName: "Gymulate",
+    title: "Jaula - Software para gimnasios",
+    description: "Socios, membresías, rutinas, nutrición y entrenamientos en una sola plataforma.",
+    siteName: "Jaula",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Gymulate - Centro de Entrenamiento Táctico de Fitness",
-    description: "Transforma tu cuerpo con equipamiento de élite, seguimiento con datos y acceso 24/7 en Gymulate.",
-    creator: "@gymulate",
+    title: "Jaula - Software para gimnasios",
+    description: "Socios, membresías, rutinas, nutrición y entrenamientos en una sola plataforma.",
   },
 };
 

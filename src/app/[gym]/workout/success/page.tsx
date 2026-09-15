@@ -4,7 +4,7 @@ import ConstellationBackground from "@/_features/shared/components/Constellation
 import { SITE_URL } from "@/lib/site-url";
 
 export const metadata = {
- title: "¡Guardado! | Gymulate",
+ title: "¡Guardado! | Jaula",
  description: "Tu entrenamiento se guardó correctamente.",
  robots: {
    index: false,

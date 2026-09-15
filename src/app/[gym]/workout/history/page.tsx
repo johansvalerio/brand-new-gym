@@ -5,7 +5,7 @@ import ConstellationBackground from "@/_features/shared/components/Constellation
 import { SITE_URL } from "@/lib/site-url";
 
 export const metadata = {
- title: "Histórico | Gymulate",
+ title: "Histórico | Jaula",
  description: "Tu histórico de entrenamientos: volumen, series y progreso.",
  robots: {
    index: false,

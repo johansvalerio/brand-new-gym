@@ -4,7 +4,7 @@ import ConstellationBackground from "@/_features/shared/components/Constellation
 import { SITE_URL } from "@/lib/site-url";
 
 export const metadata = {
- title: "Mi membresía | Gymulate",
+ title: "Mi membresía | Jaula",
  description:
  "Gestiona tu membresía: solicita planes diarios, semanales o mensuales y sigue tu tiempo restante.",
  robots: {

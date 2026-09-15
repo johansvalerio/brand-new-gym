@@ -4,7 +4,7 @@ import ConstellationBackground from "@/_features/shared/components/Constellation
 import { SITE_URL } from "@/lib/site-url";
 
 export const metadata = {
- title: "Dashboard | Gymulate",
+  title: "Dashboard | Jaula",
  description:
  "Tu vista general: membresía, rutinas, pagos y actividad — cada rol ve lo suyo en tiempo real.",
  robots: {

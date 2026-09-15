@@ -5,5 +5,5 @@
  * nunca hardcodear el dominio en otro archivo.
  */
 export const SITE_URL: string = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://gymulate.vercel.app"
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://jaula.vercel.app"
 ).replace(/\/$/, "");

@@ -85,7 +85,7 @@ function InteractiveCard({
         <div className="flex items-start justify-between gap-3 rounded-xl border border-white/10 bg-white/10 p-3 backdrop-blur-md">
           <div className="min-w-0">
             <h3 className="truncate font-sans text-base font-bold leading-tight text-white">{product.product_name}</h3>
-            <p className="truncate text-xs text-white/70">{product.category?.name ?? product.product_description?.slice(0, 32) ?? "Gymulate"}</p>
+            <p className="truncate text-xs text-white/70">{product.category?.name ?? product.product_description?.slice(0, 32) ?? "Jaula"}</p>
           </div>
           <span className="shrink-0 rounded-full bg-black/40 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-white">
             #{String(product.product_id).padStart(3, "0")}

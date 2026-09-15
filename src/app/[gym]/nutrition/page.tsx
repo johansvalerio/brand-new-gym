@@ -4,7 +4,7 @@ import { SITE_URL } from "@/lib/site-url";
 import { NutritionClient } from "./NutritionClient";
 
 export const metadata = {
-  title: "Nutrición | Gymulate",
+  title: "Nutrición | Jaula",
   description: "Planes de nutrición con comidas, macros y ficha técnica — comparte tus recetas con la comunidad.",
   robots: {
     index: false,

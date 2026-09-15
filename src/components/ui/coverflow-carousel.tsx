@@ -126,7 +126,7 @@ export function CoverflowCarousel({
       card.style.opacity = String(Math.max(0, 1 - fade * distance) * edge);
       card.style.zIndex = String(100 - Math.round(distance));
 
-      // Gymulate addition: mark the centered card so the tactical active
+      // Jaula addition: mark the centered card so the tactical active
       // styling (grayscale/color, glow border) can target it from CSS.
       if (distance < 0.5) card.setAttribute("data-active", "");
       else card.removeAttribute("data-active");

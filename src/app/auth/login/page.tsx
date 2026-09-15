@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Iniciar Sesión",
-  description: "Accede a tu cuenta de Gymulate para rastrear tus entrenamientos, gestionar tu membresía y conectar con la comunidad de fitness táctico.",
+  description: "Accede a Jaula para gestionar tu gimnasio: socios, membresías, rutinas, nutrición y entrenamientos.",
   robots: {
     index: false,
     follow: false,

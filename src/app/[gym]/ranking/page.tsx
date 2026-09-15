@@ -4,9 +4,9 @@ import { SITE_URL } from "@/lib/site-url";
 import { RankingTabs } from "./ranking-tabs";
 
 export const metadata = {
-  title: "Ranking | Gymulate",
+  title: "Ranking | Jaula",
   description:
-    "Las rutinas y rutinas + planes de nutrición mejor puntuadas por la comunidad de Gymulate, compartidas por sus propios miembros.",
+    "Las rutinas y planes de nutrición mejor puntuados por la comunidad de tu gym, compartidos por sus propios miembros.",
   robots: {
     index: false,
     follow: false,

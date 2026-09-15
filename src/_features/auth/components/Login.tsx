@@ -86,11 +86,11 @@ export function Login({ nextPath, gymName }: { nextPath?: string; gymName?: stri
               <Dumbbell className="w-8 h-8 text-primary" strokeWidth={2} />
             </div>
             <h1 className="font-heading text-3xl font-black uppercase tracking-tight text-foreground">
-              GYM<span className="text-primary">ULATE</span>
+              JAULA
             </h1>
           </div>
           <p className="font-mono text-muted-foreground text-sm">
-            ACCEDER A TU FORTALEZA DE ENTRENAMIENTO
+            TU GYM, BAJO CONTROL
           </p>
           {gymName && (
             <p className="mt-3 inline-flex items-center rounded-full border border-primary/40 bg-primary/10 px-4 py-1 font-mono text-xs uppercase tracking-widest text-primary">
