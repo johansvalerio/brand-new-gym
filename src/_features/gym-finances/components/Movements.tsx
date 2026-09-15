@@ -24,6 +24,7 @@ const ACTION_ICON: Record<string, string> = {
 }
 
 const TABLES = ["users", "plans", "products", "categories", "payments", "product_sales", "expenses", "recurring_incomes"] as const
+const HIDDEN_FIELDS = new Set(["id", "gym_id", "auth_id", "created_at", "updated_at"])
 const TABLE_LABEL: Record<string, string> = {
   users: "Usuarios",
   plans: "Planes",
@@ -52,6 +53,11 @@ function AuditRow({ row, open, onToggle }: { row: AuditLogRow; open: boolean; on
   const target = summarizeAuditRow(row.table_name, row)
   const amount = pickAmount(row.new_data) ?? pickAmount(row.old_data)
   const changes = row.action === "update" ? diffAudit(row.old_data as Record<string, unknown> | null, row.new_data as Record<string, unknown> | null) : []
+  const dataList = (() => {
+    const src = (row.new_data ?? row.old_data) as Record<string, unknown> | null
+    if (!src) return [] as [string, unknown][]
+    return Object.entries(src).filter(([k]) => !HIDDEN_FIELDS.has(k)) as [string, unknown][]
+  })()
 
   return (
     <li className="border-b border-border/40 last:border-0">
@@ -80,27 +86,44 @@ function AuditRow({ row, open, onToggle }: { row: AuditLogRow; open: boolean; on
       </button>
 
       {open ? (
-        <div className="border-t border-border/40 bg-secondary/20 px-4 py-3">
-          {changes.length > 0 ? (
-            <dl className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-              {changes.map((c) => (
-                <div key={c.field} className="flex items-baseline gap-2">
-                  <dt className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{c.field}</dt>
-                  <dd className="truncate font-mono text-xs text-foreground">
-                    <span className="text-muted-foreground/70">{c.before}</span> <span className="text-primary">→</span>{" "}
-                    <span className="font-bold">{c.after}</span>
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          ) : (
-            <p className="font-mono text-xs text-muted-foreground">
-              {row.action === "insert"
-                ? "Registro nuevo."
-                : row.action === "delete"
-                  ? "Registro eliminado."
-                  : "Sin campos modificados."}
-            </p>
+        <div className="border-t border-border/40 bg-secondary/20 px-4 py-3 space-y-4">
+          {/* Diff campo-a-campo cuando es update */}
+          {changes.length > 0 && (
+            <div>
+              <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-widest text-primary">Cambios</p>
+              <dl className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                {changes.map((c) => (
+                  <div key={c.field} className="flex items-baseline gap-2">
+                    <dt className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{c.field}</dt>
+                    <dd className="truncate font-mono text-xs text-foreground">
+                      <span className="text-muted-foreground/70">{c.before}</span> <span className="text-primary">→</span>{" "}
+                      <span className="font-bold">{c.after}</span>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
+
+          {/* Todo el payload cuando es insert/delete (no hay diff) */}
+          {dataList.length > 0 && (
+            <div>
+              <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                {row.action === "insert" ? "Datos registrados" : row.action === "delete" ? "Datos eliminados" : "Estado actual"}
+              </p>
+              <dl className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                {dataList.map(([k, v]) => (
+                  <div key={k} className="flex items-baseline gap-2">
+                    <dt className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{k}</dt>
+                    <dd className="truncate font-mono text-xs text-foreground">{String(v ?? "—")}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
+
+          {dataList.length === 0 && changes.length === 0 && (
+            <p className="font-mono text-xs text-muted-foreground">Sin datos visibles.</p>
           )}
         </div>
       ) : null}

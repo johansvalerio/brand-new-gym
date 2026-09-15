@@ -53,8 +53,10 @@ export function useAuditLog() {
   const filtered = useMemo(() => {
     const rows = (query.data ?? []) as AuditLogRow[]
     let out = rows
-    const actorQ = filter.actor.trim().toLowerCase()
-    if (actorQ) out = out.filter((r) => `${r.actor?.first_name ?? ""} ${r.actor?.last_name ?? ""}`.toLowerCase().includes(actorQ))
+    // actorOptions guarda el ID real de actor_user_id (o "system" si es insert de trigger sin usuario)
+    if (filter.actor) {
+      out = out.filter((r) => (r.actor_user_id ?? "sistema") === filter.actor)
+    }
     if (filter.table) out = out.filter((r) => r.table_name === filter.table)
     if (filter.action) out = out.filter((r) => r.action === filter.action)
     const q = filter.search.trim().toLowerCase()
