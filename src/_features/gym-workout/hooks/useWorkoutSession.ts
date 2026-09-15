@@ -45,6 +45,10 @@ export const workoutKeys = {
   all: (userId: string) => ["workouts", userId] as const,
 }
 
+/** Sesión huérfana (sin terminar) del usuario. */
+export const activeWorkoutKey = (userId: string | null) =>
+  userId ? (["active-workout", userId] as const) : (["active-workout", "noop"] as const)
+
 /** Inicia (o reanuda) una sesión para el usuario autenticado. */
 export function useStartWorkout() {
   return useMutation<
@@ -167,7 +171,12 @@ export function useAbortWorkout() {
       return data as WorkoutLogRow
     },
     onSuccess: (_log, vars) => {
+      toast.success("Sesión anterior descartada", {
+        description: "Empezá tu nuevo entrenamiento.",
+      })
       queryClient.invalidateQueries({ queryKey: workoutKeys.all(vars.userId) })
+      // Sin esto el cartel "Sesión sin terminar" quedaba pegado en pantalla.
+      queryClient.invalidateQueries({ queryKey: activeWorkoutKey(vars.userId) })
     },
   })
 }
@@ -175,7 +184,7 @@ export function useAbortWorkout() {
 /** Query que devuelve la sesión huérfana del usuario (si existe). */
 export function useActiveWorkout(userId: string | null) {
   return useQuery<WorkoutLogRow | null>({
-    queryKey: userId ? ["active-workout", userId] : ["active-workout", "noop"],
+    queryKey: activeWorkoutKey(userId),
     enabled: Boolean(userId),
     queryFn: async () => {
       const supabase = createClient()
