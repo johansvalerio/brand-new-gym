@@ -19,6 +19,12 @@ import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, User
 import { createClient } from '@/lib/supabase/client';
 import { usePageTransition } from '@/_features/shared/hooks/usePageTransition';
 import { usePathname } from 'next/navigation';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
 import { useGym, useInGymPath } from '@/app/providers/gym-provider';
 import {
   useMarkAllNotificationsRead,
@@ -27,7 +33,7 @@ import {
 } from '@/_features/shared/hooks/useNotifications';
 
 const links = [
-  { name: 'Inicio', href: '/', icon: Home },
+  { name: 'Inicio', href: '/#top', icon: Home },
   { name: 'Equipamiento', href: '/#equipment', icon: Dumbbell },
   { name: 'Galería', href: '/#gallery', icon: Camera },
   { name: 'Entrenadores', href: '/#coaches', icon: Users },
@@ -98,6 +104,22 @@ export function FloatingNav() {
     setScrolled(window.scrollY > 50);
   };
 
+  // Scroll controlado a anchors de la landing: previene el salto nativo
+  // (se perdía dentro del story pineado) y refresca triggers antes de moverse.
+  const handleLandingAnchor = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    const hash = href.split('#')[1];
+    if (!hash) return;
+    const urlBase = href.split('#')[0].replace(/\/$/, '');
+    if (urlBase !== pathname.replace(/\/$/, '')) return; // otra landing: navegación nativa
+    const el = document.getElementById(hash);
+    if (!el) return;
+    e.preventDefault();
+    ScrollTrigger.refresh();
+    if (hash === 'top') window.scrollTo({ top: 0, behavior: 'smooth' });
+    else el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.history.replaceState(null, '', href);
+  };
+
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -116,7 +138,7 @@ export function FloatingNav() {
         className={cn(
           'pointer-events-auto flex items-center gap-1 rounded-full border bg-background/70 px-3 py-2 backdrop-blur-md transition-all duration-300 sm:gap-2',
           scrolled
-            ? 'border-primary/40 bg-background/90 shadow-[0_0_20px_rgba(150,217,6,0.15)]'
+            ? 'border-primary/40 bg-background/90 shadow-[0_0_20px_color-mix(in_srgb,var(--primary)_15%,transparent)]'
             : 'border-border/50',
         )}
       >
@@ -148,6 +170,7 @@ export function FloatingNav() {
             <a
               key={index}
               href={landingHref(link.href)}
+              onClick={(e) => handleLandingAnchor(e, landingHref(link.href))}
               className="group flex items-center gap-2 rounded-full px-3 py-2 transition-all duration-300 hover:bg-primary/20"
             >
               <Icon className="h-4 w-4 text-muted-foreground transition-colors duration-300 group-hover:text-primary" />
@@ -179,7 +202,7 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="rounded-full cursor-pointer border border-primary/25 bg-background/80 p-0 shadow-[0_0_18px_rgba(150,217,6,0.12)] transition-all duration-300 hover:border-primary/50 hover:bg-primary/10 hover:shadow-[0_0_24px_rgba(150,217,6,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+      <DropdownMenuTrigger className="rounded-full cursor-pointer border border-primary/25 bg-background/80 p-0 shadow-[0_0_18px_color-mix(in_srgb,var(--primary)_12%,transparent)] transition-all duration-300 hover:border-primary/50 hover:bg-primary/10 hover:shadow-[0_0_24px_color-mix(in_srgb,var(--primary)_18%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background">
         <div className="flex h-9 w-9 items-center justify-center rounded-full">
           <Avatar className="h-7 w-7 ring-2 ring-background">
             <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
@@ -225,7 +248,7 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
           ) : null}
           {user.profileId ? (
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+              <DropdownMenuSubTrigger className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary data-popup-open:bg-primary data-popup-open:text-primary-foreground">
                 <Dumbbell className="h-4 w-4 mr-1" />
                 Entrenamiento
               </DropdownMenuSubTrigger>
@@ -273,7 +296,7 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
           ) : null}
           {user.isAdmin && (
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+              <DropdownMenuSubTrigger className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary data-popup-open:bg-primary data-popup-open:text-primary-foreground">
                 <ShieldCheck className="h-4 w-4 mr-1" />
                 Administración
               </DropdownMenuSubTrigger>
@@ -347,7 +370,7 @@ function NotificationBell() {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={`Notificaciones${unread > 0 ? ` (${unread} sin leer)` : ''}`}
-        className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-primary/25 bg-background/80 shadow-[0_0_18px_rgba(150,217,6,0.12)] transition-all duration-300 hover:border-primary/50 hover:bg-primary/10 hover:shadow-[0_0_24px_rgba(150,217,6,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-primary/25 bg-background/80 shadow-[0_0_18px_color-mix(in_srgb,var(--primary)_12%,transparent)] transition-all duration-300 hover:border-primary/50 hover:bg-primary/10 hover:shadow-[0_0_24px_color-mix(in_srgb,var(--primary)_18%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <Bell className="h-4 w-4 text-muted-foreground transition-colors duration-300 hover:text-primary" />
         {unread > 0 ? (
@@ -396,7 +419,7 @@ function NotificationBell() {
                   }`}
               >
                 <span
-                  className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read ? 'bg-transparent' : 'bg-primary shadow-[0_0_6px_rgba(150,217,6,0.8)]'
+                  className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read ? 'bg-transparent' : 'bg-primary shadow-[0_0_6px_color-mix(in_srgb,var(--primary)_80%,transparent)]'
                     }`}
                 />
                 <span className="min-w-0 flex-1">

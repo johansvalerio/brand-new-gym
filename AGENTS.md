@@ -41,7 +41,7 @@ src/
 │   ├── error.tsx not-found.tsx robots.ts sitemap.ts
 │   └── */loading.tsx         # Skeletons por ruta (route-loading.tsx)
 ├── _features/                # Feature modules — the real structure
-│   ├── gym-landing/          # Landing sections
+│   ├── gym-landing/          # Landing POR GYM: <slug>/components/ + <slug>/site.ts · shared/registry.ts (fallback por sección a gym-ulate)
 │   ├── gym-admin/            # users/ products/ payments/ membership/ plans/ dashboard/ profile/
 │   │   ├── lib/              # zod schemas: user.schema.ts, product.schema.ts, plan.schema.ts, payment.schema.ts
 │   │   ├── users/components/ # Users.tsx, user-form-dialog.tsx (key remount), users-table/card/toolbar (+utils.ts)
@@ -303,8 +303,8 @@ Resumen mensual (Ingresos/Unidades/Top) SOLO `isAdmin` — coach no ve dinero gl
 ### Tabs pill Monster + route loading (2026-09-02)
 Tabs con iconos estilo pill Monster (`ranking-tabs`, `Products` Inventario/Ventas). Cada `app/*/` tiene `loading.tsx` sobre `route-loading.tsx`.
 
-### Tests (2026-09-02)
-`npm run test` (`vitest run`): `computePRs.test.ts` (workout PRs), `nutrition-helpers.test.ts`, `routine-helpers.test.ts`. Helpers puros al lado del hook.
+### Tests (2026-09-02, ampliado 2026-09-04)
+`npm run test` (`vitest run`, 15 archivos): `computePRs.test.ts` (workout PRs), `nutrition-helpers.test.ts`, `routine-helpers.test.ts` + schemas zod (`user/product/plan/payment/routine/nutrition.schema.test.ts` en `lib/`) + `offline-queue.test.ts` + `useCheckIns.test.ts` (rachas) + `useMembershipClock.test.ts` + reducers de wizards (`routine-form/context.test.ts`, `nutrition-form/context.test.ts`) + `provider.test.tsx` (jsdom + testing-library, `include` cubre `.test.tsx`). `npm run test:e2e` (`playwright test`, `e2e/smoke.spec.ts`, Chromium): landings de los 3 gyms, `/` → `/gym-ulate`, slug inválido → 404, rutas privadas sin login → `/auth/login?gym=`. Helpers puros al lado del hook. Funciones puras NO-exportadas se exportan para testear (`computeMembershipClock`, `wizardReducer`, `nutritionFormReducer`).
 
 ---
 
@@ -410,3 +410,6 @@ Base 375px, `sm:` restaura desktop. Dialogs `max-h-[85vh]` `overflow-y-auto`, st
 | 2026-09-04 | Multi-tenant: una DB + `gyms` + `gym_id` + RLS, rutas `/[slug]` | Un deploy sirve N gyms; RLS + proxy + layout validan gym (el rol no alcanza); slug en URL es compartible y entra en Vercel Hobby | Proyecto-por-gym / schemas-por-gym (costo operativo, fricción PostgREST/SSR) |
 | 2026-09-04 | Compartidos y rankings POR GYM; solo foods/exercises globales | Regla del dueño: cada gym ve su ranking; catálogos son referencia sin PII | Pool compartido global (fuga de contenido entre gyms) |
 | 2026-09-04 | `navigate()` auto-prefija slug + `useInGymPath()` para comparar rutas | 28 call-sites intactos; sidebar/FloatingNav/activos funcionan en cualquier slug | Reescribir ~50 links a mano |
+| 2026-09-04 | Landing por gym en carpetas (`gym-ulate/` + `zona-fit/` + `isaac-castro/`) + `shared/registry.ts` con fallback por sección + `site.ts` por gym (metadata/JSON-LD) | Contenido difiere por gym sin duplicar lógica; gym nuevo = copiar 1 sección + override en registry | Landing única global o contenido en DB (se evaluará con 10+ gyms) |
+| 2026-09-04 | Catálogo scopeado: `plans_select_anon` + `plans/products/categories_select_own_gym`, hooks `usePlans/useProducts/useCategories` con `byGym` + `.eq(gym_id)` | Auditoría encontró `SELECT true` + hooks sin filtro (miembro veía catálogo de 3 gyms); products/categories sin rama anon (nada público los usa) | Dejar catálogo abierto global |
+| 2026-09-04 | Colores por gym en DB (`gym-ulate #96D906`, `zona-fit #E3FF00 neón`, `isaac-castro #FFB800`) + 9 verdes hardcodeados → `var(--primary)` + Hero/Story propios para los 3 | White-label ya existía vía body `--primary`; faltaban hexes en Gallery/LocationHours/Stories y contenido distinto | Un solo color global |

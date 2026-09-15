@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
+import { useGym } from "@/app/providers/gym-provider"
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/database.types"
 import { planFormSchema } from "../../lib/plan.schema"
 
@@ -12,13 +13,16 @@ export type UpdatePlanDto = TablesUpdate<"plans">
 
 export const plansKeys = {
   all: ["plans"] as const,
+  /** Catálogo por gym: sin gym en la key, el caché mezclaría gyms. */
+  byGym: (gymId: string) => ["plans", gymId] as const,
 }
 
-async function fetchPlans(): Promise<PlanRow[]> {
+async function fetchPlans(gymId: string): Promise<PlanRow[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from("plans")
     .select("*")
+    .eq("gym_id", gymId)
     .order("duration_days", { ascending: true })
 
   if (error) throw new Error(error.message)
@@ -26,9 +30,12 @@ async function fetchPlans(): Promise<PlanRow[]> {
 }
 
 export function usePlans() {
+  const gym = useGym()
+  const gymId = gym?.id ?? "none"
   return useQuery({
-    queryKey: plansKeys.all,
-    queryFn: fetchPlans,
+    queryKey: plansKeys.byGym(gymId),
+    queryFn: () => fetchPlans(gymId),
+    enabled: !!gym?.id,
   })
 }
 

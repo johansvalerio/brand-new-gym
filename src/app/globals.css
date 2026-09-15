@@ -56,18 +56,18 @@
   --popover: #09090b;
   --popover-foreground: #f8fafc;
   --primary: #96d906;
-  /* Monster Energy Green */
+  /* Monster Energy Green (default gym-ulate; el body lo sobreescribe por gym) */
   --primary-foreground: #000000;
   --secondary: #121212;
-  --secondary-foreground: #96d906;
+  --secondary-foreground: var(--primary);
   --muted: #1a1a1a;
   --muted-foreground: #a1a1aa;
-  --accent: #96d906;
+  --accent: var(--primary);
   --accent-foreground: #000000;
   --destructive: #ef4444;
   --border: #1a1a1a;
   --input: #1a1a1a;
-  --ring: #96d906;
+  --ring: var(--primary);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -76,12 +76,12 @@
   --radius: 0.5rem;
   --sidebar: #09090b;
   --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #96d906;
+  --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: #000000;
   --sidebar-accent: #121212;
-  --sidebar-accent-foreground: #96d906;
+  --sidebar-accent-foreground: var(--primary);
   --sidebar-border: #1a1a1a;
-  --sidebar-ring: #96d906;
+  --sidebar-ring: var(--primary);
 }
 
 @layer base {

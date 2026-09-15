@@ -27,7 +27,7 @@ export type MembershipClock = {
   consumedPct: number
 }
 
-function computeMembershipClock(
+export function computeMembershipClock(
   start: string | null,
   end: string | null,
   now: number | null,

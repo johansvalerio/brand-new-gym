@@ -111,7 +111,7 @@ export function computeBestStreak(rows: Pick<CheckInRow, "check_in_date">[]): nu
   let prev: string | null = null
   for (const key of days) {
     if (prev) {
-      const next = new Date(prev)
+      const next = parseKey(prev)
       next.setDate(next.getDate() + 1)
       run = toKey(next) === key ? run + 1 : 1
     } else {
@@ -160,4 +160,14 @@ function toKey(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, "0")
   const day = String(d.getDate()).padStart(2, "0")
   return `${y}-${m}-${day}`
+}
+
+/**
+ * Parsea un "YYYY-MM-DD" como medianoche LOCAL.
+ * `new Date("2026-08-01")` es medianoche UTC y en CR (UTC-6) cae el día
+ * anterior — rompía computeBestStreak con off-by-one.
+ */
+function parseKey(key: string): Date {
+  const [y, m, d] = key.split("-").map(Number)
+  return new Date(y, m - 1, d)
 }

@@ -24,6 +24,8 @@
 .DS_Store
 *.pem
 
+.agents
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -34,6 +36,7 @@ yarn-error.log*
 .env*
 
 # opencode mcp (project config is committed)
+opencode.json
 # cline_mcp_settings.json removed - migrated to opencode.json
 
 # vercel

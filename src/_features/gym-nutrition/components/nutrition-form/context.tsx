@@ -20,7 +20,7 @@ type Action =
   | { type: "set_errors"; errors: Record<string, string> }
   | { type: "set_submitting"; v: boolean }
 
-function reducer(state: State, action: Action): State {
+export function nutritionFormReducer(state: State, action: Action): State {
   switch (action.type) {
     case "set_step":
       return { ...state, step: action.step }
@@ -49,7 +49,7 @@ export function NutritionFormProvider({
   initialDays: () => DayDraft[]
   children: React.ReactNode
 }) {
-  const [state, dispatch] = useReducer(reducer, undefined, () => ({
+  const [state, dispatch] = useReducer(nutritionFormReducer, undefined, () => ({
     step: "datos" as Step,
     metadata: initialMetadata(),
     days: initialDays(),

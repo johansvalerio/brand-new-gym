@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
+import { useGym } from "@/app/providers/gym-provider"
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/database.types"
 import { productFormSchema } from "../../lib/product.schema"
 
@@ -14,14 +15,17 @@ export type UpdateProductDto = TablesUpdate<"products">
 
 export const productKeys = {
   all: ["products"] as const,
+  /** Catálogo por gym: sin gym en la key, el caché mezclaría gyms. */
+  byGym: (gymId: string) => ["products", gymId] as const,
   detail: (id: number) => ["products", id] as const,
 }
 
-async function fetchProducts(): Promise<ProductRow[]> {
+async function fetchProducts(gymId: string): Promise<ProductRow[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from("products")
     .select("*, category:categories(id, slug, name)")
+    .eq("gym_id", gymId)
     .order("product_id", { ascending: false })
 
   if (error) throw new Error(error.message)
@@ -29,9 +33,12 @@ async function fetchProducts(): Promise<ProductRow[]> {
 }
 
 export function useProducts() {
+  const gym = useGym()
+  const gymId = gym?.id ?? "none"
   return useQuery({
-    queryKey: productKeys.all,
-    queryFn: fetchProducts,
+    queryKey: productKeys.byGym(gymId),
+    queryFn: () => fetchProducts(gymId),
+    enabled: !!gym?.id,
   })
 }
 

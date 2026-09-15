@@ -25,7 +25,7 @@ export type WizardAction =
   | { type: "set_errors"; errors: Record<string, string> }
   | { type: "set_submitting"; value: boolean }
 
-function wizardReducer(state: WizardState, action: WizardAction): WizardState {
+export function wizardReducer(state: WizardState, action: WizardAction): WizardState {
   switch (action.type) {
     case "set_step":
       return { ...state, step: action.step }
