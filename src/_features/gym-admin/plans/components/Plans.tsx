@@ -19,7 +19,7 @@ import { PlanConfirmDeleteDialog } from "./plan-confirm-delete-dialog"
 import { planSlug } from "./plans-utils"
 
 export function Plans() {
-  const { isAdmin, loading: authLoading } = useAuthSession()
+  const { isStaff, loading: authLoading } = useAuthSession()
   const { data: plans = [], isLoading } = usePlans()
   const createPlan = useCreatePlan()
   const updatePlan = useUpdatePlan()
@@ -43,12 +43,12 @@ export function Plans() {
   }, [plans])
 
   const openCreate = () => {
-    if (!isAdmin) return
+    if (!isStaff) return
     setEditing(null)
     setFormOpen(true)
   }
   const openEdit = (plan: PlanRow) => {
-    if (!isAdmin) return
+    if (!isStaff) return
     setEditing(plan)
     setFormOpen(true)
   }
@@ -67,7 +67,7 @@ export function Plans() {
   }
 
   const confirmDelete = async () => {
-    if (!deleting || !isAdmin) return
+    if (!deleting || !isStaff) return
     await deletePlan.mutateAsync(deleting)
     setDeleting(null)
   }
@@ -81,7 +81,7 @@ export function Plans() {
     )
   }
 
-  if (!isAdmin) {
+  if (!isStaff) {
     return (
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
         <div className="rounded-lg border border-border bg-card px-8 py-10 text-center shadow-sm">
@@ -90,7 +90,7 @@ export function Plans() {
             Acceso restringido
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Solo el administrador puede gestionar los planes.
+            Solo el staff puede gestionar los planes.
           </p>
         </div>
       </section>

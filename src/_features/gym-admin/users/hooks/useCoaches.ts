@@ -2,13 +2,14 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
+import type { Tables } from "@/types/database.types"
 
 export type CoachOption = {
   id: string
   first_name: string | null
   last_name: string | null
   avatar: string | null
-  role: "admin" | "user" | "coach" | null
+  role: Tables<"users">["role"]
 }
 
 export const coachKeys = {

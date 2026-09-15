@@ -32,7 +32,7 @@ export function Users() {
   const updateUser = useUpdateUser()
   const deleteUser = useDeleteUser()
   const transferMember = useTransferMember()
-  const { isAdmin, isCoach, loading: authLoading } = useAuthSession()
+  const { isAdmin, isCoach, isStaff, loading: authLoading } = useAuthSession()
   const { data: coaches = [] } = useCoaches()
   const { data: plans = [] } = usePlans()
   const { navigate } = usePageTransition()
@@ -47,8 +47,8 @@ export function Users() {
   const [deleting, setDeleting] = useState<UserRow | null>(null)
   const [transferOpen, setTransferOpen] = useState(false)
 
-  const canViewUsers = isAdmin || isCoach
-  const canManageUsers = isAdmin
+  const canViewUsers = isStaff || isCoach
+  const canManageUsers = isStaff
   const canAssign = isAdmin || isCoach
 
   const filtered = useMemo(() => {
@@ -167,7 +167,7 @@ export function Users() {
   }
 
   const confirmTransfer = async (email: string) => {
-    if (!canManageUsers) return
+    if (!isAdmin) return
     await transferMember.mutateAsync(email)
     setTransferOpen(false)
   }
@@ -187,7 +187,7 @@ export function Users() {
           <div className="rounded-lg border border-border bg-card px-8 py-10 shadow-sm">
             <p className="font-sans text-xl font-black uppercase tracking-tight text-foreground">Acceso restringido</p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Solo los usuarios con rol <span className="font-semibold text-primary">admin o coach</span> pueden ver los miembros.
+              Solo los usuarios con rol <span className="font-semibold text-primary">staff o coach</span> pueden ver los miembros.
             </p>
           </div>
         </div>
@@ -231,7 +231,7 @@ export function Users() {
           onViewChange={setView}
           canCreate={canManageUsers}
           onCreate={openCreate}
-          canTransfer={canManageUsers}
+          canTransfer={isAdmin}
           onTransfer={() => setTransferOpen(true)}
         />
 

@@ -45,7 +45,7 @@ export function dayLabel(dayIndex: number): string {
 
 type Viewer = {
   id: string
-  role: "admin" | "user" | "coach" | null
+  role: Tables<"users">["role"]
   assignedCoachId: string | null
 }
 

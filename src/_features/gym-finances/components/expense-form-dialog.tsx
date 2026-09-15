@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { X, Receipt, ShieldCheck } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { X, Receipt, Search, Check } from "lucide-react"
 import { useBodyScrollLock } from "@/_features/shared/hooks/useBodyScrollLock"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import type { ExpenseRow } from "../hooks/useExpenses"
 import { useSalaryStaff, staffDisplayName } from "../hooks/useSalaryStaff"
 import {
@@ -85,6 +86,7 @@ function ExpenseFormInner({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const firstFieldRef = useRef<HTMLInputElement>(null)
   const { data: staffList = [] } = useSalaryStaff()
+  const [payeeSearch, setPayeeSearch] = useState("")
 
   useEffect(() => {
     const t = setTimeout(() => firstFieldRef.current?.focus(), 50)
@@ -93,6 +95,25 @@ function ExpenseFormInner({
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }))
+
+  /** Asigna categoría y limpia el beneficiario cuando no es salarios. */
+  const setCategory = (c: ExpenseCategory) =>
+    setForm((prev) => ({
+      ...prev,
+      category: c,
+      paid_to_user_id: c === "salarios" ? prev.paid_to_user_id : "",
+    }))
+
+  const payees = useMemo(() => {
+    const q = payeeSearch.trim().toLowerCase()
+    const list = staffList.filter((s) => ["coach", "recepcionista"].includes(s.role ?? ""))
+    if (!q) return list
+    return list.filter((s) =>
+      `${s.first_name ?? ""} ${s.last_name ?? ""}`.toLowerCase().includes(q),
+    )
+  }, [staffList, payeeSearch])
+
+  const selectedPayee = payees.find((p) => p.id === form.paid_to_user_id) ?? null
 
   const validate = () => {
     const parsed = expenseFormSchema.safeParse(form)
@@ -147,7 +168,7 @@ function ExpenseFormInner({
             <select
               id="expense_category"
               value={form.category}
-              onChange={(e) => set("category", e.target.value as ExpenseCategory)}
+              onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
               className={inputCls(errors.category)}
             >
               {EXPENSE_CATEGORIES.map((c) => (
@@ -158,30 +179,95 @@ function ExpenseFormInner({
             </select>
           </Field>
 
-          {/* Picker de beneficiario: solo para salarios (coach + recepción). */}
+          {/* Picker de beneficiario: solo para salarios, mismo patrón que selección de miembro en walk-in. */}
           {form.category === "salarios" ? (
-            <Field label="Recibe el pago" htmlFor="expense_paid_to" error={errors.paid_to_user_id}>
+            <Field label="Recibe el pago" htmlFor="expense_payee_search" error={errors.paid_to_user_id}>
               <div className="relative">
-                <ShieldCheck className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <select
-                  id="expense_paid_to"
-                  value={form.paid_to_user_id}
-                  onChange={(e) => set("paid_to_user_id", e.target.value)}
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  id="expense_payee_search"
+                  value={payeeSearch}
+                  onChange={(e) => setPayeeSearch(e.target.value)}
+                  placeholder="Buscar coach o recepción…"
                   className={`${inputCls(errors.paid_to_user_id)} pl-9`}
-                >
-                  <option value="">Seleccioná al beneficiario…</option>
-                  {staffList.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {staffDisplayName(s)} — {s.role === "coach" ? "Coach" : "Recepción"}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
-              {staffList.length === 0 ? (
-                <p className="font-mono text-[10px] text-muted-foreground">
-                  Sin coaches ni recepción registrados en tu gym.
-                </p>
+
+              {/* Selección actual — chip con X para quitar. */}
+              {selectedPayee ? (
+                <div className="mt-2 flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-2">
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={selectedPayee.avatar ?? undefined} alt={selectedPayee.first_name ?? "?"} />
+                    <AvatarFallback className="bg-primary/20 text-xs font-bold text-primary">
+                      {`${(selectedPayee.first_name ?? "?")[0]}${(selectedPayee.last_name ?? "")[0] ?? ""}`.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-sans text-xs font-bold text-foreground">
+                      {staffDisplayName(selectedPayee)}
+                    </p>
+                    <p className="truncate font-mono text-[10px] text-muted-foreground">
+                      {selectedPayee.role === "coach" ? "Coach" : "Recepción"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => set("paid_to_user_id", "")}
+                    aria-label="Quitar selección"
+                    className="ml-auto flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:bg-primary/20 hover:text-primary"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               ) : null}
+
+              {/* Grid de círculos — mismo patrón que selección de miembro en walk-in. */}
+              <div className="mt-2 grid grid-cols-5 gap-2 overflow-y-auto max-h-48 rounded-md border border-border/60 bg-background/40 p-2.5 sm:grid-cols-6">
+                {payees.length === 0 ? (
+                  <p className="col-span-full py-6 text-center font-mono text-xs text-muted-foreground">
+                    Sin coaches ni recepción registrados en tu gym.
+                  </p>
+                ) : (
+                  payees.map((s) => {
+                    const fullName = staffDisplayName(s)
+                    const isSel = s.id === form.paid_to_user_id
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => set("paid_to_user_id", isSel ? "" : s.id)}
+                        aria-pressed={isSel}
+                        aria-label={`Seleccionar ${fullName}`}
+                        className={`group relative flex cursor-pointer flex-col items-center gap-1 rounded-md border px-1 pb-2 pt-2 transition-all ${
+                          isSel
+                            ? "border-primary bg-primary/10"
+                            : "border-transparent hover:border-primary/40 hover:bg-secondary/40"
+                        }`}
+                      >
+                        <span className="relative">
+                          <Avatar className="h-11 w-11">
+                            <AvatarImage src={s.avatar ?? undefined} alt={fullName} />
+                            <AvatarFallback className="bg-secondary text-sm font-bold text-foreground">
+                              {`${(s.first_name ?? "?")[0]}${(s.last_name ?? "")[0] ?? ""}`.toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          {isSel ? (
+                            <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-card">
+                              <Check className="h-2.5 w-2.5" strokeWidth={3} />
+                            </span>
+                          ) : null}
+                        </span>
+                        <p className="max-w-full truncate font-sans text-[10px] font-medium text-foreground">
+                          {fullName.split(" ")[0]}
+                        </p>
+                        <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+                          {s.role === "coach" ? "Coach" : "Recepción"}
+                        </p>
+                      </button>
+                    )
+                  })
+                )}
+              </div>
             </Field>
           ) : null}
           <Field label="Descripción" htmlFor="expense_description" error={errors.description}>

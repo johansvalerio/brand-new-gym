@@ -6,6 +6,7 @@ import { useAuthSession } from "@/_features/auth/hooks/useAuthSession"
 import { useUsers } from "@/_features/gym-admin/users/hooks/useUsers"
 import { usePayments } from "@/_features/gym-admin/payments/hooks/usePayments"
 import { useMonthProductSales } from "../hooks/useAdminCharts"
+import { useExpenses } from "@/_features/gym-finances/hooks/useExpenses"
 // Reuso de queries ligeras (mismo cache que el dashboard del coach, sin queries extra).
 import { useRoutinesLite, useNutritionLite } from "@/_features/gym-coach/dashboard/hooks/useCoachDashboard"
 import { useNow } from "@/_features/shared/hooks/useNow"
@@ -15,6 +16,7 @@ import { ExpiringMembers } from "./expiring-members"
 import { PendingPayments } from "./pending-payments"
 import { PendingSales } from "./pending-sales"
 import { AdminCharts } from "./AdminCharts"
+import { MoneyDashboard } from "./MoneyDashboard"
 
 const DAY_MS = 86_400_000
 
@@ -27,7 +29,7 @@ function monthShortEs(ts: number): string {
 }
 
 export function AdminDashboard() {
-  const { isAdmin, loading: authLoading } = useAuthSession()
+  const { isStaff, loading: authLoading } = useAuthSession()
   const {
     data: users = [],
     isLoading: usersLoading,
@@ -39,6 +41,7 @@ export function AdminDashboard() {
     error: paymentsError,
   } = usePayments()
   const { data: monthProductSales = 0 } = useMonthProductSales()
+  const { data: expenses = [] } = useExpenses()
   const { data: routinesLite = [], isLoading: routinesLoading } = useRoutinesLite()
   const { data: nutritionLite = [], isLoading: nutritionLoading } = useNutritionLite()
   const {
@@ -89,6 +92,16 @@ export function AdminDashboard() {
       .reduce((sum, p) => sum + p.amount, 0)
     const revenueMonth = monthRevenue + monthProductSales
 
+    // Egresos del mes (expense_date es date YYYY-MM-DD → corte local estable).
+    // Solo calculamos el neto cuando existe "now" real (useNow); en el primer render mostrará 0.
+    const monthKey = now ? new Date(now).toISOString().slice(0, 7) : null
+    const monthExpenses = monthKey
+      ? expenses
+          .filter((e) => e.expense_date.slice(0, 7) === monthKey)
+          .reduce((s, e) => s + Number(e.amount ?? 0), 0)
+      : 0
+    const netMonth = revenueMonth - monthExpenses
+
     // Adopción global: miembros con al menos una rutina / plan nutricional activo.
     const withRoutine = new Set(
       routinesLite.filter((r) => r.is_active).map((r) => r.user_id),
@@ -103,14 +116,16 @@ export function AdminDashboard() {
       expiring: expiringRows.length,
       pendingRequests: pendingRows.length + pendingSalesRows.length,
       revenueMonth,
+      netMonth,
       revenueLabel: `Ingresos (${monthShortEs(now ?? new Date().getTime())})`,
+      netLabel: `Neto (${monthShortEs(now ?? new Date().getTime())})`,
       withRoutine,
       withNutrition,
       expiringRows,
       pendingRows,
       pendingSalesRows,
     }
-  }, [users, payments, now, monthProductSales, routinesLite, nutritionLite, recentSales])
+  }, [users, payments, now, monthProductSales, expenses, routinesLite, nutritionLite, recentSales])
 
   if (authLoading) {
     return (
@@ -121,7 +136,7 @@ export function AdminDashboard() {
     )
   }
 
-  if (!isAdmin) {
+  if (!isStaff) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center px-4">
         <div className="rounded-lg border border-border bg-card px-8 py-10 text-center shadow-sm">
@@ -130,7 +145,7 @@ export function AdminDashboard() {
             Acceso restringido
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            El dashboard está disponible solo para administradores.
+            El dashboard está disponible solo para el staff.
           </p>
         </div>
       </div>
@@ -144,6 +159,8 @@ export function AdminDashboard() {
     pendingRequests: stats.pendingRequests,
     revenueMonth: stats.revenueMonth,
     revenueLabel: stats.revenueLabel,
+    netMonth: stats.netMonth,
+    netLabel: stats.netLabel,
     withRoutine: stats.withRoutine,
     withNutrition: stats.withNutrition,
   }
@@ -152,7 +169,16 @@ export function AdminDashboard() {
     <div className="flex flex-col gap-8">
       <DashboardStats data={statsData} loading={usersLoading || paymentsLoading || routinesLoading || nutritionLoading || salesLoading} />
 
-      <AdminCharts />
+      {/* Tabs del panel: Resumen (lo de siempre) y Dinero (finanzas). */}
+      <div className="grid grid-cols-1 gap-6">
+        <AdminCharts />
+        <div>
+          <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            Dinero
+          </h2>
+          <MoneyDashboard />
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <ExpiringMembers

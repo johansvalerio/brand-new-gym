@@ -187,6 +187,7 @@ function UserFormInner({ user, coaches = [], onClose, onSubmit }: Omit<UserFormD
               <select id="role" value={form.role} onChange={(e) => set("role", e.target.value as UserFormPayload["role"])} className={inputCls()}>
                 <option value="user">Usuario</option>
                 <option value="coach">Coach</option>
+                <option value="recepcionista">Recepcionista</option>
                 <option value="admin">Admin</option>
               </select>
             </Field>

@@ -28,18 +28,18 @@ export function ProductSalesTab() {
   const { data: sales = [], isLoading, error } = useRecentSales(30)
   const { data: stats } = useSalesStats()
   const decide = useDecideSale()
-  const { isAdmin, isCoach } = useAuthSession()
-  const isStaff = isAdmin || isCoach
-  const title = isStaff ? "Ventas recientes" : "Mis compras"
-  const emptyText = isStaff ? "Aún no hay ventas registradas." : "Aún no tienes compras registradas."
+  const { isStaff, isCoach } = useAuthSession()
+  const isSalesStaff = isStaff || isCoach
+  const title = isSalesStaff ? "Ventas recientes" : "Mis compras"
+  const emptyText = isSalesStaff ? "Aún no hay ventas registradas." : "Aún no tienes compras registradas."
   const pending = sales.filter((s) => (s as unknown as { status: string }).status === "pending")
   const historyStaff = sales.filter((s) => (s as unknown as { status: string }).status !== "pending")
-  const displayList = isStaff ? historyStaff : sales
+  const displayList = isSalesStaff ? historyStaff : sales
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Resumen del mes — solo admin (dinero global). Staff coach no ve finanzas, member ve "Gastado". */}
-      {isAdmin ? (
+      {/* Resumen del mes — solo staff (dinero global). Coach no ve finanzas, member ve "Gastado". */}
+      {isStaff ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-lg border border-border bg-card px-4 py-3.5">
             <div className="flex items-center gap-2">
@@ -84,8 +84,8 @@ export function ProductSalesTab() {
         </div>
       ) : null}
 
-      {/* Pendientes — solo staff ve la cola de entrega */}
-      {isStaff && pending.length > 0 && (
+      {/* Pendientes — solo staff/coach ve la cola de entrega */}
+      {isSalesStaff && pending.length > 0 && (
         <div className="overflow-hidden rounded-lg border border-amber-500/30 bg-card">
           <header className="flex items-center justify-between border-b border-amber-500/20 bg-amber-500/5 px-4 py-3">
             <h2 className="flex items-center gap-2 font-sans text-xs font-black uppercase tracking-widest text-amber-600">
@@ -143,7 +143,7 @@ export function ProductSalesTab() {
             {title}
           </h2>
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            {isStaff ? `Últimas ${historyStaff.length} · ${pending.length} pendientes` : `Últimas ${sales.length}`}
+            {isSalesStaff ? `Últimas ${historyStaff.length} · ${pending.length} pendientes` : `Últimas ${sales.length}`}
           </span>
         </header>
 
@@ -156,7 +156,7 @@ export function ProductSalesTab() {
             <Package className="mx-auto h-8 w-8 text-muted-foreground/40" />
             <p className="mt-2 font-mono text-xs text-muted-foreground">{emptyText}</p>
           </div>
-        ) : isStaff && historyStaff.length === 0 && pending.length > 0 ? (
+        ) : isSalesStaff && historyStaff.length === 0 && pending.length > 0 ? (
           <p className="px-4 py-6 text-center font-mono text-xs text-muted-foreground">
             Solo hay solicitudes pendientes arriba.
           </p>
@@ -199,7 +199,7 @@ export function ProductSalesTab() {
                       </span>
                     </p>
                     <p className="font-mono text-[10px] text-muted-foreground">
-                      {isStaff ? `${buyerName(sale)} · ${timeAgo(sale.sold_at)}` : timeAgo(sale.sold_at)}
+                      {isSalesStaff ? `${buyerName(sale)} · ${timeAgo(sale.sold_at)}` : timeAgo(sale.sold_at)}
                     </p>
                   </div>
                   <span className="shrink-0 font-sans text-sm font-black tabular-nums text-primary">

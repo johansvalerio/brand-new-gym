@@ -40,27 +40,21 @@ async function fetchAdminCharts(): Promise<AdminChartsData> {
   })
   const checkinsByDay = [...byDay.entries()].map(([date, count]) => ({ date, count }))
 
-  // 2) Ingresos por mes — últimos 6 meses, memberships (payments) + productos (product_sales)
+  // 2) Ingresos por mes — últimos 6 meses: membresías (payments) + productos (product_sales) + rentas fijas (recurring_incomes).
   const sixMonthsAgo = startOfMonthUtc(5)
-  const [{ data: payments }, { data: sales }] = await Promise.all([
-    supabase
-      .from("payments")
-      .select("amount, decided_at")
-      .eq("status", "approved")
-      .gte("decided_at", sixMonthsAgo),
-    supabase
-      .from("product_sales")
-      .select("total, sold_at")
-      .eq("status", "approved")
-      .gte("sold_at", sixMonthsAgo),
+  const [{ data: payments }, { data: sales }, { data: recurring }] = await Promise.all([
+    supabase.from("payments").select("amount, decided_at").eq("status", "approved").gte("decided_at", sixMonthsAgo),
+    supabase.from("product_sales").select("total, sold_at").eq("status", "approved").gte("sold_at", sixMonthsAgo),
+    supabase.from("recurring_incomes").select("amount").eq("is_active", true),
   ])
 
-  const revenueMap = new Map<string, { memberships: number; products: number }>()
+  const revenueMap = new Map<string, { memberships: number; products: number; rents: number }>()
+  const rentsMonth = (recurring ?? []).reduce((s: number, r: { amount: number | null }) => s + (r.amount ?? 0), 0)
   const months: string[] = []
   for (let i = 5; i >= 0; i--) {
-    const key = startOfMonthUtc(i).slice(0, 7) // YYYY-MM
+    const key = startOfMonthUtc(i).slice(0, 7)
     months.push(key)
-    revenueMap.set(key, { memberships: 0, products: 0 })
+    revenueMap.set(key, { memberships: 0, products: 0, rents: rentsMonth })
   }
   ;(payments ?? []).forEach((p: { amount: number | null; decided_at: string | null }) => {
     if (!p.decided_at) return
@@ -77,7 +71,7 @@ async function fetchAdminCharts(): Promise<AdminChartsData> {
   const revenueByMonth = months.map((key) => ({
     month: key,
     label: monthLabel(`${key}-01T00:00:00Z`),
-    ...(revenueMap.get(key) ?? { memberships: 0, products: 0 }),
+    ...(revenueMap.get(key) ?? { memberships: 0, products: 0, rents: 0 }),
   }))
 
   // 3) Distribución de planes activos

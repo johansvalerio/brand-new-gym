@@ -17,7 +17,7 @@ export const userFormSchema = z.object({
     )
     .nullable()
     .or(z.literal("")),
-  role: z.enum(["admin", "user", "coach"]),
+  role: z.enum(["admin", "user", "coach", "recepcionista"]),
   coach_id: z.string().nullable(),
   membership_status: z.enum(["active", "inactive", "pending", "expired"]),
   gender: z.enum(["masculino", "femenino", "otro"]).nullable(),

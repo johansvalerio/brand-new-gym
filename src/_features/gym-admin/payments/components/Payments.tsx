@@ -17,7 +17,7 @@ import { WalkInPaymentDialog } from "./walk-in-payment-dialog"
 import { usePlans } from "@/_features/gym-admin/plans/hooks/usePlans"
 
 export function Payments() {
-  const { isAdmin, loading: authLoading } = useAuthSession()
+  const { isStaff, loading: authLoading } = useAuthSession()
   const { data: payments = [], isLoading, error } = usePayments()
   const { data: plans = [] } = usePlans()
   const decide = useDecidePayment()
@@ -65,7 +65,7 @@ export function Payments() {
     )
   }
 
-  if (!isAdmin) {
+  if (!isStaff) {
     return (
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
         <div className="rounded-lg border border-border bg-card px-8 py-10 text-center shadow-sm">
@@ -74,7 +74,7 @@ export function Payments() {
             Acceso restringido
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Solo el administrador puede gestionar pagos.
+            Solo el staff puede gestionar pagos.
           </p>
         </div>
       </section>

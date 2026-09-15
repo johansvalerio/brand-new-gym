@@ -10,8 +10,11 @@ export type DashboardStatsData = {
   expiring: number
   pendingRequests: number
   revenueMonth: number
+  netMonth: number
   /** Ej. "Ingresos (Sep)" — mes dinámico calculado en el dashboard. */
   revenueLabel: string
+  /** Ej. "Neto (Sep)" — ingresos − egresos del mes. */
+  netLabel: string
   withRoutine: number
   withNutrition: number
 }
@@ -68,7 +71,7 @@ export function DashboardStats({
       </TabsContent>
 
       <TabsContent value="negocio" className="mt-3">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <StatCard
             icon={<Banknote className="h-4 w-4" />}
             label="Solicitudes"
@@ -81,6 +84,15 @@ export function DashboardStats({
             label={data.revenueLabel}
             value={currency(data.revenueMonth)}
             loading={loading}
+          />
+          {/* Neto = ingresos − egresos del mes. Verde si ≥0, rojo si es negativo. */}
+          <StatCard
+            icon={<Banknote className="h-4 w-4" />}
+            label={data.netLabel}
+            value={currency(data.netMonth)}
+            loading={loading}
+            warn={data.netMonth < 0}
+            accent={data.netMonth >= 0}
           />
         </div>
       </TabsContent>

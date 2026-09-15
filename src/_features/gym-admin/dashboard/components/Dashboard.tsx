@@ -11,7 +11,7 @@ import { MemberDashboard } from "@/_features/gym-member/dashboard/components/Mem
  * El guard real vive en RLS; esto solo decide qué orquestador renderizar.
  */
 export function Dashboard() {
-  const { profile, isAdmin, isCoach, loading } = useAuthSession()
+  const { profile, isStaff, isCoach, loading } = useAuthSession()
 
   if (loading) {
     return (
@@ -22,7 +22,7 @@ export function Dashboard() {
     )
   }
 
-  if (isAdmin) return <AdminDashboard />
+  if (isStaff) return <AdminDashboard />
   if (isCoach && profile) return <CoachDashboard coachId={profile.id} />
   if (profile) return <MemberDashboard profileId={profile.id} />
 

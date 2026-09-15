@@ -82,6 +82,7 @@ export function AdminCharts() {
             <Tooltip {...tip} formatter={(value) => (typeof value === "number" ? currency(value) : "")} />
             <Bar dataKey="memberships" stackId="a" fill={COLORS[0]} radius={[4, 4, 0, 0]} name="Membresías" />
             <Bar dataKey="products" stackId="a" fill={COLORS[3]} radius={[4, 4, 0, 0]} name="Productos" />
+            <Bar dataKey="rents" stackId="a" fill={COLORS[2]} radius={[4, 4, 0, 0]} name="Rentas" />
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>

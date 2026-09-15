@@ -7,7 +7,7 @@ import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
 import { useInGymPath, useGym } from "@/app/providers/gym-provider"
 import { createClient } from "@/lib/supabase/client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LayoutDashboard, Dumbbell, Flame, Trophy, CreditCard, Package, Users, Banknote, LogOut, Menu, X, CalendarDays, Home, Bell, Utensils, ShieldCheck, ChevronDown, TrendingUp, Wallet } from "lucide-react"
+import { LayoutDashboard, Dumbbell, Flame, Trophy, CreditCard, Package, Users, Banknote, LogOut, Menu, X, CalendarDays, Home, Bell, Utensils, ShieldCheck, ChevronDown, TrendingUp, Wallet, ScrollText } from "lucide-react"
 import { useNotifications, useMarkAllNotificationsRead, useMarkNotificationRead } from "@/_features/shared/hooks/useNotifications"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuItem, DropdownMenuGroup } from "@/components/ui/dropdown-menu"
 
@@ -44,7 +44,8 @@ const workoutItems: NavItem[] = [
   { label: "Rutinas", href: "/routine", icon: Flame },
 ]
 
-/* Solo-admin: vive en el dropdown "Administración", no como filas sueltas. */
+/* Solo-staff: vive en el dropdown "Administración", no como filas sueltas. */
+/* Staff = admin + recepcionista (carga de datos); Movimientos solo admin (auditoría). */
 const adminItems: NavItem[] = [
   { label: "Usuarios", href: "/users", icon: Users },
   { label: "Membresías", href: "/memberships", icon: Banknote },
@@ -52,6 +53,8 @@ const adminItems: NavItem[] = [
   { label: "Ingresos", href: "/income", icon: TrendingUp },
   { label: "Egresos", href: "/expenses", icon: Wallet },
 ]
+
+const movementsItem: NavItem = { label: "Movimientos", href: "/movements", icon: ScrollText }
 
 /* Coach (no-admin): un solo extra, va inline sin dropdown. */
 const coachItem: NavItem = { label: "Usuarios", href: "/users", icon: Users }
@@ -364,14 +367,15 @@ export function AppSidebar() {
             </div>
           )}
 
-          {/* Admin: Usuarios/Membresías/Planes/Ingresos/Egresos en dropdown */}
-          {isAdmin && (
+          {/* Staff: Usuarios/Membresías/Planes/Ingresos/Egresos en dropdown */}
+          {(isAdmin || isCoach) && (
             <div>
               <div className="mx-auto my-1.5 h-px w-8 bg-border/40" />
               <NavDropdown
                 label="Administración"
                 icon={ShieldCheck}
-                items={adminItems}
+                // Movimientos solo admin (auditoria); el resto de items staff.
+                items={[...adminItems, ...(isAdmin ? [movementsItem] : [])]}
                 collapsed={isMobile ? false : collapsed}
                 isMobile={isMobile}
                 onNavigate={() => setMobileOpen(false)}

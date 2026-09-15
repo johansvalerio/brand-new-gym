@@ -39,6 +39,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          gym_id: string
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          row_id: string | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          gym_id: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          row_id?: string | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          gym_id?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          row_id?: string | null
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_log_gym_id_fkey"
+            columns: ["gym_id"]
+            isOneToOne: false
+            referencedRelation: "gyms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -150,6 +201,7 @@ export type Database = {
           expense_date: string
           gym_id: string
           id: string
+          paid_to_user_id: string | null
         }
         Insert: {
           amount: number
@@ -160,6 +212,7 @@ export type Database = {
           expense_date?: string
           gym_id?: string
           id?: string
+          paid_to_user_id?: string | null
         }
         Update: {
           amount?: number
@@ -170,6 +223,7 @@ export type Database = {
           expense_date?: string
           gym_id?: string
           id?: string
+          paid_to_user_id?: string | null
         }
         Relationships: [
           {
@@ -184,6 +238,13 @@ export type Database = {
             columns: ["gym_id"]
             isOneToOne: false
             referencedRelation: "gyms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_paid_to_user_id_fkey"
+            columns: ["paid_to_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -1271,6 +1332,8 @@ export type Database = {
       gym_before_update: { Args: { target_id: string }; Returns: string }
       is_admin: { Args: never; Returns: boolean }
       is_coach: { Args: never; Returns: boolean }
+      is_receptionist: { Args: never; Returns: boolean }
+      is_staff: { Args: never; Returns: boolean }
       my_gym_id: { Args: never; Returns: string }
       notify: {
         Args: {
@@ -1363,7 +1426,7 @@ export type Database = {
         | "perdida_de_grasa"
         | "movilidad"
       user_gender: "masculino" | "femenino" | "otro"
-      user_role: "admin" | "user" | "coach"
+      user_role: "admin" | "user" | "coach" | "recepcionista"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1505,7 +1568,7 @@ export const Constants = {
         "movilidad",
       ],
       user_gender: ["masculino", "femenino", "otro"],
-      user_role: ["admin", "user", "coach"],
+      user_role: ["admin", "user", "coach", "recepcionista"],
     },
   },
 } as const

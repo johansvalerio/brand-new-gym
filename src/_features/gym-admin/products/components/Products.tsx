@@ -32,8 +32,8 @@ export function Products() {
   const updateProduct = useUpdateProduct()
   const deleteProduct = useDeleteProduct()
   const createSale = useCreateSale()
-  const { isAdmin, isCoach, profile, loading: authLoading } = useAuthSession()
-  const isStaff = isAdmin || isCoach
+  const { isStaff, isCoach, profile, loading: authLoading } = useAuthSession()
+  const isSalesStaff = isStaff || isCoach
 
   const [view, setView] = useState<ViewMode>("cards")
   const [query, setQuery] = useState("")
@@ -81,12 +81,12 @@ export function Products() {
 
   // ─── CRUD ───
   const openCreate = () => {
-    if (!isAdmin) return
+    if (!isStaff) return
     setEditing(null)
     setFormOpen(true)
   }
   const openEdit = (product: ProductRow) => {
-    if (!isAdmin) return
+    if (!isStaff) return
     setEditing(product)
     setFormOpen(true)
   }
@@ -102,7 +102,7 @@ export function Products() {
   }
 
   const confirmDelete = async () => {
-    if (!deleting || !isAdmin) return
+    if (!deleting || !isStaff) return
     await deleteProduct.mutateAsync(deleting)
     setDeleting(null)
   }
@@ -155,7 +155,7 @@ export function Products() {
         </header>
 
         {/* Stats */}
-        <ProductsStats isAdmin={isAdmin} count={stats.count} units={stats.units} revenue={stats.revenue} />
+        <ProductsStats isAdmin={isStaff} count={stats.count} units={stats.units} revenue={stats.revenue} />
 
         <Tabs defaultValue="inventory" className="flex flex-col gap-4">
           <TabsList className="self-start">
@@ -163,7 +163,7 @@ export function Products() {
               <Package /> Inventario
             </TabsTrigger>
             <TabsTrigger value="sales">
-              <ShoppingBag /> {isStaff ? "Ventas" : "Mis compras"}
+              <ShoppingBag /> {isSalesStaff ? "Ventas" : "Mis compras"}
             </TabsTrigger>
           </TabsList>
 
@@ -177,7 +177,7 @@ export function Products() {
               categories={categories}
               view={view}
               onViewChange={setView}
-              canCreate={isAdmin}
+              canCreate={isStaff}
               onCreate={openCreate}
             />
 
@@ -193,7 +193,7 @@ export function Products() {
               <div className="rounded-2xl border border-border/60 bg-card/40 p-4 sm:p-6 backdrop-blur supports-[backdrop-filter]:bg-card/30">
                 {/* Mobile: siempre tarjetas; la tabla solo existe ≥sm */}
                 <div className={view === "table" ? "sm:hidden" : undefined}>
-                  <ProductsCards products={filtered} onEdit={openEdit} onDelete={setDeleting} onSelect={setSelected} canManage={isAdmin} />
+                  <ProductsCards products={filtered} onEdit={openEdit} onDelete={setDeleting} onSelect={setSelected} canManage={isStaff} />
                 </div>
                 {view === "table" && (
                   <div className="hidden sm:block">
@@ -202,7 +202,7 @@ export function Products() {
                       onEdit={openEdit}
                       onDelete={setDeleting}
                       onSelect={setSelected}
-                      canManage={isAdmin}
+                      canManage={isStaff}
                     />
                   </div>
                 )}
