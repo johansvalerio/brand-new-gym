@@ -7,7 +7,7 @@ import { usePageTransition } from "@/_features/shared/hooks/usePageTransition"
 import { useInGymPath, useGym } from "@/app/providers/gym-provider"
 import { createClient } from "@/lib/supabase/client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LayoutDashboard, Dumbbell, Flame, Trophy, CreditCard, Package, Users, Banknote, LogOut, Menu, X, CalendarDays, Home, Bell, Utensils, ShieldCheck, ChevronDown } from "lucide-react"
+import { LayoutDashboard, Dumbbell, Flame, Trophy, CreditCard, Package, Users, Banknote, LogOut, Menu, X, CalendarDays, Home, Bell, Utensils, ShieldCheck, ChevronDown, TrendingUp, Wallet } from "lucide-react"
 import { useNotifications, useMarkAllNotificationsRead, useMarkNotificationRead } from "@/_features/shared/hooks/useNotifications"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuItem, DropdownMenuGroup } from "@/components/ui/dropdown-menu"
 
@@ -47,8 +47,10 @@ const workoutItems: NavItem[] = [
 /* Solo-admin: vive en el dropdown "Administración", no como filas sueltas. */
 const adminItems: NavItem[] = [
   { label: "Usuarios", href: "/users", icon: Users },
-  { label: "Pagos", href: "/payments", icon: Banknote },
+  { label: "Membresías", href: "/memberships", icon: Banknote },
   { label: "Planes", href: "/plans", icon: CreditCard },
+  { label: "Ingresos", href: "/income", icon: TrendingUp },
+  { label: "Egresos", href: "/expenses", icon: Wallet },
 ]
 
 /* Coach (no-admin): un solo extra, va inline sin dropdown. */
@@ -219,7 +221,7 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(true)
 
   const isAppRoute = useMemo(
-    () => ["/dashboard", "/users", "/workout", "/ranking", "/routine", "/membership", "/products", "/payments", "/plans", "/nutrition"].some((p) => pathname.startsWith(p)),
+    () => ["/dashboard", "/users", "/workout", "/ranking", "/routine", "/membership", "/products", "/memberships", "/income", "/expenses", "/plans", "/nutrition"].some((p) => pathname.startsWith(p)),
     [pathname],
   )
 
@@ -362,7 +364,7 @@ export function AppSidebar() {
             </div>
           )}
 
-          {/* Admin: Usuarios/Pagos/Planes en dropdown */}
+          {/* Admin: Usuarios/Membresías/Planes/Ingresos/Egresos en dropdown */}
           {isAdmin && (
             <div>
               <div className="mx-auto my-1.5 h-px w-8 bg-border/40" />
@@ -477,7 +479,7 @@ export function AppSidebar() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = useInGymPath()
-  const isAppRoute = ["/dashboard", "/users", "/workout", "/ranking", "/routine", "/membership", "/products", "/payments", "/plans", "/nutrition"].some((p) => pathname.startsWith(p))
+  const isAppRoute = ["/dashboard", "/users", "/workout", "/ranking", "/routine", "/membership", "/products", "/memberships", "/income", "/expenses", "/plans", "/nutrition"].some((p) => pathname.startsWith(p))
   if (!isAppRoute) return <>{children}</>
   return (
     <div className="flex min-h-screen bg-background">

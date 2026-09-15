@@ -36,11 +36,11 @@ export function PendingPayments({
           Solicitudes de pago
         </h3>
         <button
-          onClick={() => navigate("/payments")}
-          aria-label="Ver todos los pagos"
+          onClick={() => navigate("/memberships")}
+          aria-label="Ver todas las membresías"
           className="flex cursor-pointer items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground transition-colors hover:text-primary"
         >
-          Ver pagos
+          Ver membresías
           <ArrowRight className="h-3 w-3" />
         </button>
       </header>

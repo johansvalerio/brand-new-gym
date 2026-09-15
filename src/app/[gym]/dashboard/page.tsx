@@ -6,7 +6,7 @@ import { SITE_URL } from "@/lib/site-url";
 export const metadata = {
   title: "Dashboard | Jaula",
  description:
- "Tu vista general: membresía, rutinas, pagos y actividad — cada rol ve lo suyo en tiempo real.",
+  "Tu vista general: membresía, rutinas y actividad — cada rol ve lo suyo en tiempo real.",
  robots: {
    index: false,
    follow: false,

@@ -27,7 +27,7 @@ test("slug inexistente → 404", async ({ page }) => {
   expect(res?.status()).toBe(404)
 })
 
-for (const ruta of ["dashboard", "users", "products", "payments", "workout"]) {
+for (const ruta of ["dashboard", "users", "products", "memberships", "income", "expenses", "workout"]) {
   test(`/${ruta} sin login rebota al login de ese gym`, async ({ page }) => {
     await page.goto(`/gym-ulate/${ruta}`)
     await expect(page).toHaveURL(/\/auth\/login\?gym=gym-ulate/)

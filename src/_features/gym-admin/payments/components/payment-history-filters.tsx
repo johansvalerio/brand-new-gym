@@ -53,7 +53,7 @@ function matchesPeriod(requestedAt: string, f: PaymentFilters): boolean {
   }
 }
 
-/** Filtrado puro reutilizable por /payments (historial) y /membership. */
+/** Filtrado puro reutilizable por /memberships (historial) y /membership. */
 export function filterPaymentRows<
   T extends {
     requested_at: string

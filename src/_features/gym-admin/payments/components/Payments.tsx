@@ -97,7 +97,7 @@ export function Payments() {
             Facturación
           </span>
           <h1 className="font-sans text-4xl font-black uppercase leading-[0.95] tracking-tighter text-foreground text-balance md:text-6xl">
-            Pagos &amp; <span className="text-primary">Membresías</span>
+            Membre<span className="text-primary">sías</span>
           </h1>
           <p className="mt-3 max-w-2xl font-mono text-sm leading-relaxed text-muted-foreground md:text-base">
             Verifica las solicitudes de membresía (SINPE o efectivo) y apruébalas

@@ -15,7 +15,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, LogOut, UserCircle, Trophy, Bell, Banknote, LayoutDashboard, CalendarDays, Utensils, ShieldCheck } from 'lucide-react';
+import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, LogOut, UserCircle, Trophy, Bell, Banknote, LayoutDashboard, CalendarDays, Utensils, ShieldCheck, TrendingUp, Wallet } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { usePageTransition } from '@/_features/shared/hooks/usePageTransition';
 import { usePathname } from 'next/navigation';
@@ -128,7 +128,7 @@ export function FloatingNav() {
   if (loading) return null;
 
   // En rutas app (/dashboard, /workout...) el sidebar reemplaza al floating nav — después de todos los hooks
-  if (["/dashboard", "/users", "/workout", "/ranking", "/routine", "/membership", "/products", "/payments", "/plans", "/nutrition"].some((p) => inGymPath.startsWith(p))) {
+  if (["/dashboard", "/users", "/workout", "/ranking", "/routine", "/membership", "/products", "/memberships", "/income", "/expenses", "/plans", "/nutrition"].some((p) => inGymPath.startsWith(p))) {
     return null;
   }
 
@@ -305,15 +305,25 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
                   <Users className="h-4 w-4 mr-1" />
                   Usuarios
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/payments')}
+                <DropdownMenuItem onClick={() => navigate('/memberships')}
                   className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
                   <Banknote className="h-4 w-4 mr-1" />
-                  Pagos
+                  Membresías
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/plans')}
                   className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
                   <CreditCard className="h-4 w-4 mr-1" />
                   Planes
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/income')}
+                  className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+                  <TrendingUp className="h-4 w-4 mr-1" />
+                  Ingresos
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/expenses')}
+                  className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary">
+                  <Wallet className="h-4 w-4 mr-1" />
+                  Egresos
                 </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
