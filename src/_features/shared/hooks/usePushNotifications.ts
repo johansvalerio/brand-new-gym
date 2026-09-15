@@ -85,16 +85,8 @@ export function usePushNotifications() {
 
   useEffect(() => {
     if (!profile) return
-    if (
-      typeof window === "undefined" ||
-      !("serviceWorker" in navigator) ||
-      !("PushManager" in window) ||
-      !("Notification" in window)
-    ) {
-      setPermission("unsupported")
-      return
-    }
-    setPermission(Notification.permission)
+    // Leer el permiso lo hace react al montar; no necesitamos sincronizarlo en efecto.
+    // La lógica específica vive en subscribe()/unsubscribe() (acción del usuario).
   }, [profile])
 
   return { permission, subscribe, unsubscribe }

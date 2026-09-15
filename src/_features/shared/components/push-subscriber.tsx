@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useAuthSession } from "@/_features/auth/hooks/useAuthSession";
-import { usePushNotifications } from "./usePushNotifications";
+import { usePushNotifications } from "../hooks/usePushNotifications";
 
 /**
  * Componente invisible que auto-suscribe a push cuando el usuario se loguea

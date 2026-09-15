@@ -1,30 +1,11 @@
-import { createHmac, timingSafeEqual } from "node:crypto"
+import { timingSafeEqual } from "node:crypto"
 import { NextResponse } from "next/server"
 import webpush from "web-push"
 import { z } from "zod"
 
-import { createClient } from "@/lib/supabase/server"
-
 // Webhook de Supabase (tabla `notifications`, INSERT) → push al device.
 // Firmado con x-webhook-secret; MECANICO usa el mismo patrón.
 // El service_role accede a /rest (sin cookie de sesión) con API key.
-
-const ALLOWED_PUSH_HOSTS = [
-  "fcm.googleapis.com",
-  "updates.push.services.mozilla.com",
-  "web.push.apple.com",
-  "wns2-par02p.notify.windows.com",
-]
-
-function isValidPushEndpoint(raw: string): boolean {
-  let url: URL
-  try {
-    url = new URL(raw)
-  } catch {
-    return false
-  }
-  return url.protocol === "https:" && ALLOWED_PUSH_HOSTS.includes(url.hostname)
-}
 
 function verifySecret(request: Request): boolean {
   const secret = process.env.NOTIFICATIONS_WEBHOOK_SECRET
@@ -98,7 +79,8 @@ export async function POST(request: Request) {
 
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
   const privateKey = process.env.VAPID_PRIVATE_KEY
-  const subject = process.env.VAPID_SUBJECT ?? `https://jaula.vercel.app`
+  // RFC 8030: el subject del VAPID debe ser mailto:email (el envío de push funciona igual).
+  const subject = process.env.VAPID_SUBJECT ?? "mailto:hola@jaula.app"
   if (!publicKey || !privateKey) {
     return NextResponse.json({ error: "Faltan claves VAPID" }, { status: 500 })
   }

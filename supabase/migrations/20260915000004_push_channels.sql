@@ -23,7 +23,7 @@ ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY push_subscriptions_select_own
   ON public.push_subscriptions FOR SELECT
   TO authenticated
-  USING (user_id = auth.uid()::uuid AND gym_id = public.my_gym_id());
+  USING (user_id = (SELECT id FROM public.users WHERE auth_id = auth.uid()) AND gym_id = public.my_gym_id());
 
 CREATE POLICY push_subscriptions_insert_own
   ON public.push_subscriptions FOR INSERT

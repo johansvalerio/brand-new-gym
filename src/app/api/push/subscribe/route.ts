@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-// Anti-SSRF: el endpoint debe ser de un proveedor push conocido,
-// nunca un host arbitrario (Mecanico / beauty-space pattern).
+// Anti-SSRF: solo proveedores push reales (nunca host arbitrario).
 const ALLOWED_PUSH_HOSTS = [
   "fcm.googleapis.com",
   "updates.push.services.mozilla.com",
@@ -41,11 +40,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Endpoint inválido" }, { status: 400 })
   }
 
+  // gym_id lo resuelve el server desde el profile del usuario (no del cliente,
+  // eso violaría RLS multi-tenant si alguien lo envía manipulado).
+  const { data: me } = await supabase
+    .from("users")
+    .select("gym_id")
+    .eq("auth_id", user.id)
+    .maybeSingle()
+  const gymId = me?.gym_id ?? null
+  if (!gymId) {
+    return NextResponse.json({ error: "Sin gym asignado" }, { status: 403 })
+  }
+
   const { error } = await supabase
     .from("push_subscriptions")
     .upsert(
       {
-        gym_id: null, // El trigger `set_gym_id` la llena por defecto.
+        gym_id: gymId,
         user_id: user.id,
         endpoint: body.endpoint,
         keys: body.keys,
