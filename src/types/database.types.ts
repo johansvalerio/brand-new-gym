@@ -1135,6 +1135,7 @@ export type Database = {
           provider: string | null
           provider_id: string | null
           role: Database["public"]["Enums"]["user_role"] | null
+          is_platform_admin: boolean
           updated_at: string | null
         }
         Insert: {
@@ -1163,6 +1164,7 @@ export type Database = {
           provider?: string | null
           provider_id?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          is_platform_admin?: boolean
           updated_at?: string | null
         }
         Update: {
@@ -1191,6 +1193,7 @@ export type Database = {
           provider?: string | null
           provider_id?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          is_platform_admin?: boolean
           updated_at?: string | null
         }
         Relationships: [
@@ -1462,6 +1465,25 @@ export type Database = {
         }
       }
       transfer_member_to_my_gym: { Args: { p_email: string }; Returns: string }
+      is_platform_admin: { Args: never; Returns: boolean }
+      platform_gyms_overview: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          gym_id: string
+          name: string
+          slug: string
+          primary_color: string
+          is_active: boolean
+          members_total: number
+          members_active: number
+          signups_month: number
+          income_month: number
+          expenses_month: number
+          net_month: number
+          income_all_time: number
+          last_checkin: string | null
+        }[]
+      }
     }
     Enums: {
       membership_status: "active" | "inactive" | "pending" | "expired"

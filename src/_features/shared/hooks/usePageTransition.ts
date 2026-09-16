@@ -6,13 +6,13 @@ import { useCallback } from 'react';
 export function usePageTransition() {
     const pathname = usePathname();
 
-    // Slug del gym actual (null en rutas globales /auth/* y en la raíz).
+    // Slug del gym actual (null en rutas globales /auth/*, /platform/* y en la raíz).
     const segs = pathname.split("/").filter(Boolean);
-    const gymSlug = segs[0] === "auth" || segs.length === 0 ? null : segs[0];
+    const gymSlug = segs[0] === "auth" || segs[0] === "platform" || segs.length === 0 ? null : segs[0];
 
     const resolveHref = useCallback(
         (href: string) => {
-            if (!href.startsWith("/") || href.startsWith("/auth") || !gymSlug) return href;
+            if (!href.startsWith("/") || href.startsWith("/auth") || href.startsWith("/platform") || !gymSlug) return href;
             if (href === `/${gymSlug}` || href.startsWith(`/${gymSlug}/`)) return href;
             return `/${gymSlug}${href}`;
         },

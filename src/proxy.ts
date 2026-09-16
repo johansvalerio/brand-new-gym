@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const GLOBAL_PREFIXES = ['/auth', '/api']
+const GLOBAL_PREFIXES = ['/auth', '/api', '/platform']
 
 async function ownSlug(
     supabase: ReturnType<typeof createServerClient>,

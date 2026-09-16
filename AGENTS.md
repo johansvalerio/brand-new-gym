@@ -365,6 +365,8 @@ Base 375px, `sm:` restaura desktop. Dialogs `max-h-[85vh]` `overflow-y-auto`, st
 
 ## Global Rules
 
+**Feedback-first:** cuando el usuario pregunta *por qué* está algo así o pide feedback sobre una decisión de diseño, explicar el razonamiento (trade-offs, patrones de referencia, casos límite) antes de editar nada. Esperar confirmación antes de tocar código.
+
 **Anti-Patterns (2026-08-31 actualizado):**
 - ❌ `setState` síncrono en `useEffect` para sync `form` de `props` → usar `key` remount + `useState(()=>props)` lazy (fix `product-form:48`, `plan:48`, `walk-in:46`, `routine-form/chrome:97` ya migrado; `RoutineFormShell` ya no hace setState en effect).
 - ❌ `throw error` crudo de Supabase (PostgrestError object) → `throw new Error(error.message)` o `[object Object]` en devtools.

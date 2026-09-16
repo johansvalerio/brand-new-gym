@@ -14,6 +14,7 @@ type AuthContextValue = {
   isCoach: boolean
   isRecepcionista: boolean
   isStaff: boolean
+  isPlatformAdmin: boolean
   loading: boolean
 }
 
@@ -26,6 +27,7 @@ const AuthContext = createContext<AuthContextValue>({
   isCoach: false,
   isRecepcionista: false,
   isStaff: false,
+  isPlatformAdmin: false,
   loading: true,
 })
 
@@ -98,6 +100,7 @@ export function AuthProvider({
     isCoach: profile?.role === "coach",
     isRecepcionista: profile?.role === "recepcionista",
     isStaff: profile?.role === "admin" || profile?.role === "recepcionista",
+    isPlatformAdmin: profile?.is_platform_admin === true,
     loading,
   }
 

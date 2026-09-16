@@ -15,7 +15,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, LogOut, UserCircle, Trophy, Bell, Banknote, LayoutDashboard, CalendarDays, Utensils, ShieldCheck, TrendingUp, Wallet } from 'lucide-react';
+import { Home, Dumbbell, MapPin, Users, CreditCard, Camera, LogIn, Package, UserPlus, Flame, LogOut, UserCircle, Trophy, Bell, Banknote, LayoutDashboard, CalendarDays, Utensils, ShieldCheck, TrendingUp, Wallet, Building2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { usePageTransition } from '@/_features/shared/hooks/usePageTransition';
 import { usePathname } from 'next/navigation';
@@ -48,6 +48,7 @@ type UserProfile = {
   avatar: string | null;
   isAdmin: boolean;
   isCoach: boolean;
+  isPlatformAdmin: boolean;
   profileId: string | null;
 };
 
@@ -56,6 +57,7 @@ function getUserProfile(
   isAdmin: boolean,
   isCoach: boolean,
   profileId: string | null,
+  isPlatformAdmin: boolean,
 ): UserProfile | null {
   if (!user) return null;
 
@@ -78,16 +80,17 @@ function getUserProfile(
     avatar,
     isAdmin, // viene del hook → DB, no de user_metadata
     isCoach,
+    isPlatformAdmin,
     profileId,
   };
 }
 
 export function FloatingNav() {
   const [scrolled, setScrolled] = useState(false);
-  const { user, loading, isAdmin, isCoach, profile } = useAuthSession();
+  const { user, loading, isAdmin, isCoach, isPlatformAdmin, profile } = useAuthSession();
   const userProfile = useMemo(
-    () => getUserProfile(user, isAdmin, isCoach, profile?.id ?? null),
-    [user, isAdmin, isCoach, profile],
+    () => getUserProfile(user, isAdmin, isCoach, profile?.id ?? null, isPlatformAdmin),
+    [user, isAdmin, isCoach, profile, isPlatformAdmin],
   );
   const { navigate } = usePageTransition();
   const pathname = usePathname();
@@ -126,6 +129,9 @@ export function FloatingNav() {
   }, []);
 
   if (loading) return null;
+
+  // /platform es global de Jaula (sin gym, sin sidebar): FloatingNav no aplica.
+  if (pathname.startsWith("/platform")) return null;
 
   // En rutas app (/dashboard, /workout...) el sidebar reemplaza al floating nav — después de todos los hooks
   if (["/dashboard", "/users", "/workout", "/ranking", "/routine", "/membership", "/products", "/memberships", "/income", "/expenses", "/plans", "/nutrition"].some((p) => inGymPath.startsWith(p))) {
@@ -331,6 +337,17 @@ function AvatarDropdown({ user }: { user: UserProfile }) {
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator className="my-2" />
+
+        {/* Plataforma (solo platform admin — invisible para el resto). */}
+        {user.isPlatformAdmin ? (
+          <DropdownMenuItem
+            onClick={() => navigate('/platform')}
+            className="cursor-pointer rounded-xl px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary focus:bg-primary"
+          >
+            <Building2 className="h-4 w-4 mr-1" />
+            Jaula Global
+          </DropdownMenuItem>
+        ) : null}
 
         <DropdownMenuGroup>
           <DropdownMenuItem
